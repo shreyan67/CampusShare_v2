@@ -19,7 +19,8 @@ app.use(cors({
   origin: [
     'http://localhost:3000',
     'http://localhost:5173',
-    'https://campusshare-v2-frontend.onrender.com'
+    'https://campusshare-v2-frontend.onrender.com',
+    'https://www.campusshare.co.in'
   ],
   credentials: true
 }))
