@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 const BASE_URL = window.location.hostname === "localhost"
   ? "http://localhost:4000"
-  : "https://campusshare-backend-zht7.onrender.com";
+  : "https://campusshare-v2-backend.onrender.com";
 
 const S = {
   page:    { padding: "24px", fontFamily: "'DM Sans', sans-serif", background: "#f5f5f0", minHeight: "100vh" },
