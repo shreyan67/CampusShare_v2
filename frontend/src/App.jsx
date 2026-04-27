@@ -27,7 +27,7 @@ const T = {
 }
 
 const FONTS = `
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -44,7 +44,7 @@ const FONTS = `
   --shadow: 0 4px 24px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.04);
   --shadow-lg: 0 16px 48px rgba(15,23,42,0.16), 0 4px 12px rgba(15,23,42,0.08);
   --shadow-coral: 0 4px 24px rgba(255,77,109,0.24);
-  --font-head: 'Syne', sans-serif;
+  --font-head: 'Space Grotesk', sans-serif;
   --font-body: 'DM Sans', sans-serif;
 }
 
@@ -68,9 +68,23 @@ body { background: var(--cream); font-family: var(--font-body); color: var(--nav
 .pop-in      { animation: popIn  0.28s cubic-bezier(0.22,1,0.36,1) both; }
 .fade-in     { animation: fadeIn 0.24s ease both; }
 
-/* Card hover lift */
-.item-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
-.item-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg) !important; }
+/* Card stagger entrance */
+@keyframes cardIn { from { opacity:0; transform:translateY(18px) scale(0.97) } to { opacity:1; transform:translateY(0) scale(1) } }
+.item-card {
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+  animation: cardIn 0.38s cubic-bezier(0.22,1,0.36,1) both;
+}
+.item-card:hover { transform: translateY(-4px) scale(1.01); box-shadow: var(--shadow-lg) !important; }
+/* Stagger delays for grid children */
+.item-card:nth-child(1)  { animation-delay: 0.03s }
+.item-card:nth-child(2)  { animation-delay: 0.07s }
+.item-card:nth-child(3)  { animation-delay: 0.11s }
+.item-card:nth-child(4)  { animation-delay: 0.15s }
+.item-card:nth-child(5)  { animation-delay: 0.19s }
+.item-card:nth-child(6)  { animation-delay: 0.23s }
+.item-card:nth-child(7)  { animation-delay: 0.27s }
+.item-card:nth-child(8)  { animation-delay: 0.31s }
+.item-card:nth-child(n+9){ animation-delay: 0.35s }
 
 /* Button press */
 .btn-press:active { transform: scale(0.96); }
@@ -433,9 +447,14 @@ function ListItemModal({ open, onClose, onSuccess }) {
 
   return (
     <Modal open={open} onClose={onClose}>
-      <ModalTitle>List an item ✦</ModalTitle>
-      <ModalSub>Share something you're not using right now</ModalSub>
-      <div style={{ ...OK, fontSize:12 }}>✓ Verified: {user?.name} · {user?.roll_number} · {user?.college_name}</div>
+      {/* Navy header strip */}
+      <div style={{ margin:'-8px -24px 20px', padding:'20px 24px 16px', background:`linear-gradient(135deg, ${T.navy} 0%, #1E293B 100%)`, borderRadius:'16px 16px 0 0' }}>
+        <div style={{ fontFamily:'var(--font-head)', fontSize:22, fontWeight:700, color:'#fff', letterSpacing:'-0.5px', marginBottom:4 }}>List an item ✦</div>
+        <div style={{ fontSize:13, color:'rgba(255,255,255,0.55)' }}>Share what you're not using</div>
+        <div style={{ marginTop:10, padding:'8px 12px', background:'rgba(255,255,255,0.08)', borderRadius:'var(--radius-xs)', fontSize:12, color:'rgba(255,255,255,0.7)', ...row(6) }}>
+          <span>✓</span><span>{user?.name} · {user?.roll_number} · {user?.college_name}</span>
+        </div>
+      </div>
       {err && <div style={ERR}>{err}</div>}
 
       <div style={{ ...row(8), marginBottom:16 }}>
@@ -713,14 +732,28 @@ function ActivityModal({ open, onClose, refresh, showToast }) {
   const [tab,     setTab]     = useState('borrowing')
   const [reqs,    setReqs]    = useState([])
   const [loading, setLoading] = useState(false)
+  const [lastUpdated, setLastUpdated] = useState(null)
+  const pollRef = useRef(null)
+
+  async function fetchReqs(silent=false) {
+    if (!silent) setLoading(true)
+    const r = await api.getMyRequests()
+    if (!silent) setLoading(false)
+    if (!r.error) { setReqs(r.requests||[]); setLastUpdated(new Date()) }
+  }
 
   useEffect(() => {
-    if (!open) return
-    setLoading(true)
-    api.getMyRequests().then(r => { setLoading(false); if (!r.error) setReqs(r.requests||[]) })
+    if (!open) {
+      clearInterval(pollRef.current)
+      return
+    }
+    fetchReqs(false)
+    // Poll every 8 seconds while activity modal is open
+    pollRef.current = setInterval(() => fetchReqs(true), 8000)
+    return () => clearInterval(pollRef.current)
   }, [open])
 
-  async function reload() { const r=await api.getMyRequests(); if(!r.error) setReqs(r.requests||[]); refresh() }
+  async function reload() { await fetchReqs(true); refresh() }
   async function act(fn, ...args) {
     try {
       const res = await fn(...args)
@@ -745,26 +778,32 @@ function ActivityModal({ open, onClose, refresh, showToast }) {
     const isPaid = r.is_paid
     const isLF   = r.listing_type === 'lost_found'
 
+    const statusColors = { pending:'#F59E0B', selected:T.coral, active:T.navy, returned:T.success, declined:T.error, overdue:T.error }
+    const accentColor = statusColors[r.status] || T.navy
+
     return (
-      <div className="fade-in" style={{ border:'1px solid var(--border-soft)', borderRadius:'var(--radius-sm)', padding:14, marginBottom:10, background:'#fff', boxShadow:'var(--shadow)' }}>
-        <div style={{ ...row(10), marginBottom:10 }}>
+      <div className="fade-in" style={{ borderRadius:'var(--radius-sm)', marginBottom:12, background:'#fff', boxShadow:'var(--shadow)', overflow:'hidden', border:`1px solid ${accentColor}22`, borderLeft:`4px solid ${accentColor}` }}>
+        {/* Card header with navy background */}
+        <div style={{ background:`linear-gradient(135deg, ${T.navy} 0%, #1E293B 100%)`, padding:'12px 14px', ...row(10) }}>
           <Av user={isBorrowing ? {name:r.owner_name} : {avatar:r.borrower_avatar, color:r.borrower_color}} size={36} />
           <div style={{ flex:1, minWidth:0 }}>
-            <div style={{ fontSize:14, fontWeight:600, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{r.item_title}</div>
-            <div style={{ fontSize:12, color:T.textMid, marginTop:1 }}>
+            <div style={{ fontSize:14, fontWeight:700, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', color:'#fff', fontFamily:'var(--font-head)' }}>{r.item_title}</div>
+            <div style={{ fontSize:12, color:'rgba(255,255,255,0.6)', marginTop:2 }}>
               {isBorrowing ? `from ${r.owner_name}` : r.borrower_name}
               {!isLF && ` · ${r.requested_days}d`}
-              {isPaid && ` · ₹${r.total_amount}`}
+              {isPaid && <span style={{ color:T.coral, fontWeight:600 }}> · ₹{r.total_amount}</span>}
               {r.message ? ` · "${r.message}"` : ''}
             </div>
           </div>
           <SBadge status={r.status} inline />
         </div>
 
+        <div style={{ padding:'12px 14px 14px' }}>
         {r.status==='active' && r.due_at && (
-          <div style={{ fontSize:12, color:T.textMid, marginBottom:8 }}>
-            Due: {new Date(r.due_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}
-            {new Date()>new Date(r.due_at) && <span style={{ color:T.error, marginLeft:6, fontWeight:600 }}>⚠ Overdue</span>}
+          <div style={{ fontSize:12, color:T.textMid, marginBottom:8, ...row(6) }}>
+            <span>📅</span>
+            <span>Due: {new Date(r.due_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</span>
+            {new Date()>new Date(r.due_at) && <span style={{ color:T.error, fontWeight:600 }}>⚠ Overdue</span>}
           </div>
         )}
 
@@ -965,27 +1004,40 @@ function ActivityModal({ open, onClose, refresh, showToast }) {
             }}>Confirm Return</button>
           )}
         </div>
+        </div>{/* end card body */}
       </div>
     )
   }
 
   return (
     <Modal open={open} onClose={onClose} wide>
-      <ModalTitle>My Activity</ModalTitle>
+      {/* Navy header */}
+      <div style={{ margin:'-8px -24px 20px', padding:'20px 24px 16px', background:`linear-gradient(135deg, ${T.navy} 0%, #1E293B 100%)`, borderRadius:'16px 16px 0 0' }}>
+        <div style={{ ...row(0), justifyContent:'space-between', marginBottom:2 }}>
+          <div style={{ fontFamily:'var(--font-head)', fontSize:22, fontWeight:700, color:'#fff', letterSpacing:'-0.5px' }}>My Activity</div>
+          <div style={{ ...row(6) }}>
+            <div style={{ width:7, height:7, borderRadius:'50%', background:'#10B981', animation:'pulse 2s infinite' }} />
+            <span style={{ fontSize:11, color:'rgba(255,255,255,0.5)' }}>
+              {lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}` : 'Loading…'}
+            </span>
+          </div>
+        </div>
+        <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)', marginBottom:16 }}>Updates every 8 seconds</div>
 
-      {/* Tabs */}
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:6, marginBottom:16, background:'rgba(15,23,42,0.04)', borderRadius:'var(--radius-sm)', padding:4 }}>
-        {tabs.map(t=>(
-          <button key={t.id} onClick={()=>setTab(t.id)} style={{
-            padding:'8px 4px', borderRadius:'var(--radius-xs)', border:'none', cursor:'pointer', fontSize:12, fontWeight:600,
-            background: tab===t.id ? '#fff' : 'transparent',
-            color: tab===t.id ? T.coral : T.textMid,
-            boxShadow: tab===t.id ? 'var(--shadow)' : 'none',
-            transition:'all 0.18s',
-          }}>
-            {t.icon} {t.label}{t.count!==undefined ? ` (${t.count})` : ''}
-          </button>
-        ))}
+        {/* Tabs on navy */}
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:4 }}>
+          {tabs.map(t=>(
+            <button key={t.id} onClick={()=>setTab(t.id)} style={{
+              padding:'9px 4px', borderRadius:'var(--radius-xs)', border:`1.5px solid ${tab===t.id?T.coral:'rgba(255,255,255,0.12)'}`,
+              cursor:'pointer', fontSize:12, fontWeight:600,
+              background: tab===t.id ? T.coral : 'rgba(255,255,255,0.06)',
+              color: tab===t.id ? '#fff' : 'rgba(255,255,255,0.6)',
+              transition:'all 0.18s',
+            }}>
+              {t.icon} {t.label}{t.count!==undefined ? ` (${t.count})` : ''}
+            </button>
+          ))}
+        </div>
       </div>
 
       {loading && (
@@ -1253,7 +1305,12 @@ export default function App() {
 
           {/* SIDEBAR */}
           {tab==='marketplace' && (
-            <div className="desktop-only" style={{ borderRight:`1px solid var(--border-soft)`, padding:'20px 14px', background:'rgba(255,255,255,0.4)' }}>
+            <div className="desktop-only" style={{ borderRight:`1px solid var(--border-soft)`, padding:'0', background:'rgba(255,255,255,0.4)', display:'flex', flexDirection:'column' }}>
+              <div style={{ background:`linear-gradient(180deg, ${T.navy} 0%, #1E293B 100%)`, padding:'20px 14px 14px' }}>
+                <div style={{ fontFamily:'var(--font-head)', fontSize:14, fontWeight:700, color:'#fff', marginBottom:2 }}>Browse</div>
+                <div style={{ fontSize:11, color:'rgba(255,255,255,0.45)' }}>Filter by category</div>
+              </div>
+              <div style={{ padding:'14px 14px 0' }}>
               <div style={{ fontSize:11, fontWeight:700, letterSpacing:'0.08em', color:T.textSoft, textTransform:'uppercase', marginBottom:10 }}>Category</div>
               {[['all','All items',items.length],...CATEGORIES.map(c=>[c,c,CAT_COUNTS[c]])].map(([val,label,count])=>(
                 <button key={val} onClick={()=>setCat(val)} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 10px', borderRadius:'var(--radius-xs)', fontSize:13, cursor:'pointer', color:cat===val?T.coral:T.text, fontWeight:cat===val?600:400, background:cat===val?`${T.coral}10`:'transparent', border:'none', width:'100%', textAlign:'left', marginBottom:2, transition:'all 0.15s' }}>
@@ -1266,6 +1323,7 @@ export default function App() {
               {[['all','Show all'],['available','Available now']].map(([val,label])=>(
                 <button key={val} onClick={()=>setAvail(val)} style={{ display:'flex', padding:'8px 10px', borderRadius:'var(--radius-xs)', fontSize:13, cursor:'pointer', color:avail===val?T.coral:T.text, fontWeight:avail===val?600:400, background:avail===val?`${T.coral}10`:'transparent', border:'none', width:'100%', textAlign:'left', marginBottom:2, transition:'all 0.15s' }}>{label}</button>
               ))}
+              </div>{/* end inner padding */}
             </div>
           )}
 
