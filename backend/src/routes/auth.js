@@ -42,18 +42,26 @@ router.post('/signup', async (req, res) => {
       return res.status(400).json({ error: 'Invalid email format.' })
 
     // 🔥 AUTO-DETECT COLLEGE
-    const emailDomain = email.split('@')[1]
+ const emailDomain = email.split('@')[1]
 
-    const college = await queryOne(
-      'SELECT * FROM colleges WHERE domain = $1',
-      [emailDomain]
-    )
+// 🔥 BYPASS FOR RAZORPAY
+let college
 
-    if (!college) {
-      return res.status(400).json({
-        error: 'Your college is not supported yet.'
-      })
-    }
+if (emailDomain === 'razorpay.com') {
+  // pick ANY existing college (for testing)
+  college = await queryOne('SELECT * FROM colleges LIMIT 1')
+} else {
+  college = await queryOne(
+    'SELECT * FROM colleges WHERE domain = $1',
+    [emailDomain]
+  )
+
+  if (!college) {
+    return res.status(400).json({
+      error: 'Your college is not supported yet.'
+    })
+  }
+}
 
     // Check duplicate email
     if (await queryOne('SELECT id FROM users WHERE email=$1', [email]))
@@ -69,6 +77,27 @@ router.post('/signup', async (req, res) => {
        VALUES($1,$2,$3,$4,$5,$6) RETURNING *`,
       [college.id, name, email, rollNumber, avatar, color]
     )
+    // 🔥 BYPASS OTP FOR RAZORPAY TESTING
+if (email.endsWith('@razorpay.com')) {
+  await query(
+    'UPDATE users SET is_verified=TRUE WHERE id=$1',
+    [user.id]
+  )
+
+  const fullUser = await queryOne(
+    `SELECT u.*, c.name AS college_name, c.domain AS college_domain
+     FROM users u JOIN colleges c ON u.college_id=c.id WHERE u.id=$1`,
+    [user.id]
+  )
+
+  const token = makeToken(user.id, fullUser.college_id)
+
+  return res.status(201).json({
+    token,
+    user: safeUser(fullUser),
+    bypass: true
+  })
+}
 
     const otp = generateOtp()
     await storeOtp(user.id, otp)
@@ -92,6 +121,32 @@ router.post('/login', async (req, res) => {
     if (!email) return res.status(400).json({ error: 'Email is required.' })
 
     const user = await queryOne('SELECT id, name, email FROM users WHERE email=$1', [email])
+    if (!user) {
+  return res.status(404).json({
+    error: 'No account with that email. Please sign up first.'
+  })
+}
+    // 🔥 BYPASS OTP FOR RAZORPAY TESTING
+if (email.endsWith('@razorpay.com')) {
+  await query(
+    'UPDATE users SET is_verified=TRUE WHERE id=$1',
+    [user.id]
+  )
+
+  const fullUser = await queryOne(
+    `SELECT u.*, c.name AS college_name, c.domain AS college_domain
+     FROM users u JOIN colleges c ON u.college_id=c.id WHERE u.id=$1`,
+    [user.id]
+  )
+
+  const token = makeToken(user.id, fullUser.college_id)
+
+  return res.json({
+    token,
+    user: safeUser(fullUser),
+    bypass: true // optional flag
+  })
+}
     if (!user) return res.status(404).json({ error: 'No account with that email. Please sign up first.' })
 
     const otp = generateOtp()

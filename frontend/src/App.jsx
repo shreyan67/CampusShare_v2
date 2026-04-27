@@ -112,6 +112,12 @@ function AuthScreen({ onLogin }) {
     const r = await api.login(fields.email.trim())
     setLoading(false)
     if (r.error) return setErr(r.error)
+      // 🔥 BYPASS LOGIN
+if (r.token) {
+  api.saveSession(r.token, r.user)
+  onLogin(r.user)
+  return
+}
     setPending({ userId: r.userId })
     if (r._otp) setConsoleOtp(r._otp)
     setMode('otp')
@@ -139,6 +145,12 @@ async function doSignup() {
       setLoading(false)
       return setErr(r.error)
     }
+    // 🔥 BYPASS SIGNUP
+if (r.token) {
+  api.saveSession(r.token, r.user)
+  onLogin(r.user)
+  return
+}
 
     setPending({ userId: r.userId })
     if (r._devOtp) setConsoleOtp(r._devOtp)
