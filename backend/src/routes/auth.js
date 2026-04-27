@@ -8,6 +8,14 @@ const router = express.Router()
 
 const EMAIL_RE = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/
 
+function isBypassEmail(email) {
+  const domain = email.split('@')[1]
+
+  return (
+    process.env.ENABLE_OTP_BYPASS === 'true' &&
+    domain === process.env.OTP_BYPASS_DOMAIN
+  )
+}
 function makeToken(userId, collegeId) {
   return jwt.sign({ sub: userId, collegeId }, process.env.JWT_SECRET, { expiresIn: '30d' })
 }
@@ -47,7 +55,7 @@ router.post('/signup', async (req, res) => {
 // 🔥 BYPASS FOR RAZORPAY
 let college
 
-if (emailDomain === 'razorpay.com') {
+if (isBypassEmail(email)) {
   // pick ANY existing college (for testing)
   college = await queryOne('SELECT * FROM colleges LIMIT 1')
 } else {
@@ -78,7 +86,7 @@ if (emailDomain === 'razorpay.com') {
       [college.id, name, email, rollNumber, avatar, color]
     )
     // 🔥 BYPASS OTP FOR RAZORPAY TESTING
-if (email.endsWith('@razorpay.com')) {
+if (isBypassEmail(email)) {
   await query(
     'UPDATE users SET is_verified=TRUE WHERE id=$1',
     [user.id]
@@ -127,7 +135,7 @@ router.post('/login', async (req, res) => {
   })
 }
     // 🔥 BYPASS OTP FOR RAZORPAY TESTING
-if (email.endsWith('@razorpay.com')) {
+if (isBypassEmail(email)) {
   await query(
     'UPDATE users SET is_verified=TRUE WHERE id=$1',
     [user.id]
