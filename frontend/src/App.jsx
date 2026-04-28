@@ -92,40 +92,64 @@ body { background: var(--cream); font-family: var(--font-body); color: var(--nav
 /* ── RESPONSIVE MOBILE ── */
 @media (max-width: 768px) {
   .desktop-only { display: none !important; }
-  .main-content { padding-bottom: 76px !important; padding-left: 16px !important; padding-right: 16px !important; }
 
-  /* Modals full-screen on mobile */
-  /* Hero compact on mobile */
-  .hero-tagline { font-size: 17px !important; }
+  /* Prevent ALL horizontal overflow on mobile */
+  body, #root { overflow-x: hidden !important; max-width: 100vw !important; }
 
-  /* Item grid — 2 columns on mobile */
-  .item-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+  /* Main content padding + bottom nav clearance */
+  .main-content {
+    padding: 14px 12px 80px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
 
-  /* Stats chips wrap neatly */
-  .stats-chips { justify-content: flex-start !important; }
+  /* Item grid — 2 columns on mobile, full container width */
+  .item-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
 
-  /* Modal bottom sheet takes full width */
+  /* Modal full width bottom sheet */
   .modal-sheet { max-width: 100% !important; border-radius: 20px 20px 0 0 !important; }
 
-  /* Search bar full width on mobile */
-  .search-bar { min-width: 100% !important; max-width: 100% !important; }
-
-  /* Hero padding tighter */
-  .hero-pad { padding: 12px 16px 10px !important; }
-  .hero-bottom { padding: 0 16px 12px !important; flex-direction: column !important; align-items: stretch !important; }
-  .hero-tabs { justify-content: stretch !important; }
-  .hero-tabs button { flex: 1 !important; text-align: center !important; }
+  /* Hero — stack vertically, no overflow */
+  .hero-pad {
+    padding: 14px 16px 12px !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+    align-items: flex-start !important;
+  }
+  .stats-chips {
+    width: 100% !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+  .hero-bottom {
+    padding: 0 16px 12px !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+  .hero-tabs { width: 100% !important; }
+  .hero-tabs button { flex: 1 !important; }
+  .search-bar {
+    width: 100% !important;
+    min-width: unset !important;
+    max-width: 100% !important;
+    flex: unset !important;
+  }
 
   /* Activity cards */
   .req-actions { flex-wrap: wrap !important; }
-  .req-actions button { flex: 1 !important; min-width: 120px !important; }
+  .req-actions button { flex: 1 !important; min-width: 100px !important; }
 
-  /* Profile grid single col on tiny screens */
+  /* Profile grid */
   .profile-grid { grid-template-columns: 1fr 1fr !important; }
 }
 
-@media (max-width: 380px) {
-  .item-grid { grid-template-columns: 1fr !important; }
+@media (max-width: 400px) {
+  .item-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
   .profile-grid { grid-template-columns: 1fr !important; }
 }
 
@@ -1169,9 +1193,9 @@ function ItemCard({ item, currentUserId, onRequest, myRequests=[] }) {
   const firstPhoto = item.images?.[0]
 
   return (
-    <div className="item-card" style={{ ...card, cursor:canAct?'pointer':'default' }} onClick={()=>canAct&&onRequest(item)}>
+    <div className="item-card" style={{ ...card, cursor:canAct?'pointer':'default', minWidth:0, overflow:'hidden', width:'100%' }} onClick={()=>canAct&&onRequest(item)}>
       {/* Image / thumbnail */}
-      <div style={{ height:'clamp(110px,18vw,140px)', display:'flex', alignItems:'center', justifyContent:'center', background:firstPhoto?'#000':`linear-gradient(135deg, ${T.coral}10, ${T.navy}08)`, position:'relative', overflow:'hidden' }}>
+      <div style={{ height:120, display:'flex', alignItems:'center', justifyContent:'center', background:firstPhoto?'#000':`linear-gradient(135deg, ${T.coral}10, ${T.navy}08)`, position:'relative', overflow:'hidden', flexShrink:0 }}>
         {firstPhoto
           ? <img src={firstPhoto} alt={item.title} style={{ width:'100%', height:'100%', objectFit:'cover', opacity:0.9 }} />
           : <span style={{ fontSize:44, filter:'drop-shadow(0 2px 8px rgba(0,0,0,0.08))' }}>{isLF?'🔍':EMOJIS[item.category]||'📦'}</span>
@@ -1192,11 +1216,11 @@ function ItemCard({ item, currentUserId, onRequest, myRequests=[] }) {
 
       <div style={{ padding:'12px 14px 14px' }}>
         <div style={{ fontFamily:'var(--font-head)', fontSize:13, fontWeight:700, marginBottom:3, overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>{item.title}</div>
-        <div style={{ fontSize:12, color:T.textSoft, marginBottom:12 }}>{item.category}{!isLF?` · max ${item.max_borrow_days}d`:''}</div>
+        <div style={{ fontSize:11, color:T.textSoft, marginBottom:10, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.category}{!isLF?` · max ${item.max_borrow_days}d`:''}</div>
         <div style={{ ...row(0), justifyContent:'space-between', alignItems:'center' }}>
-          <div style={{ ...row(6), fontSize:12, color:T.textMid }}>
-            <Av user={{ avatar:item.owner_avatar, color:item.owner_color, name:item.owner_name }} size={20} />
-            {item.owner_name?.split(' ')[0]}
+          <div style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, color:T.textMid, minWidth:0, overflow:'hidden' }}>
+            <Av user={{ avatar:item.owner_avatar, color:item.owner_color, name:item.owner_name }} size={18} />
+            <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.owner_name?.split(' ')[0]}</span>
           </div>
           {isYours
             ? <span style={{ fontSize:11, color:T.textSoft }}>listed</span>
@@ -1272,7 +1296,7 @@ export default function App() {
     <Ctx.Provider value={{ user, setUser }}>
       <style>{FONTS}</style>
 
-      <div style={{ fontFamily:'var(--font-body)', color:T.navy, minHeight:'100vh', background:T.cream, position:'relative' }}>
+      <div style={{ fontFamily:'var(--font-body)', color:T.navy, minHeight:'100vh', background:T.cream, position:'relative', overflowX:'hidden', maxWidth:'100vw' }}>
 
         {/* MODALS */}
         {listOpen   && <ListItemModal  open={listOpen}    onClose={()=>setList(false)}  onSuccess={refresh} />}
@@ -1297,102 +1321,97 @@ export default function App() {
         </header>
 
         {/* MOBILE HEADER */}
-        <header className="mobile-only" style={{ ...row(0), justifyContent:'space-between', padding:'0 14px', height:52, background:'rgba(255,248,240,0.97)', backdropFilter:'blur(12px)', borderBottom:`1px solid var(--border-soft)`, position:'sticky', top:0, zIndex:100 }}>
+        <header className="mobile-only" style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 14px', height:52, background:'rgba(255,248,240,0.97)', backdropFilter:'blur(12px)', borderBottom:`1px solid var(--border-soft)`, position:'sticky', top:0, zIndex:100, width:'100%', boxSizing:'border-box', overflow:'hidden' }}>
           <Logo />
-          <div style={row(8)}>
+          <div style={{ display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
             <TierBadge tier={user.trust_tier}/>
-            <Av user={user} size={30} />
-            <button onClick={handleLogout} style={{ background:'rgba(15,23,42,0.07)', border:'none', borderRadius:8, padding:'5px 10px', fontSize:11, fontWeight:600, color:T.textMid, cursor:'pointer' }}>Sign out</button>
+            <button onClick={handleLogout} style={{ background:'rgba(15,23,42,0.07)', border:'none', borderRadius:8, padding:'5px 8px', fontSize:11, fontWeight:600, color:T.textMid, cursor:'pointer', whiteSpace:'nowrap' }}>↪ Out</button>
           </div>
         </header>
 
         {/* HERO — compact navy+coral split bar */}
-        <div style={{ background:`linear-gradient(135deg, ${T.navy} 0%, #1E293B 60%, #0F172A 100%)`, borderBottom:`1px solid rgba(232,68,90,0.2)` }}>
+        <div style={{ background:`linear-gradient(135deg, ${T.navy} 0%, #1E293B 60%, #0F172A 100%)`, borderBottom:`1px solid rgba(232,68,90,0.2)`, overflow:'hidden', width:'100%', boxSizing:'border-box' }}>
           {/* Top row: tagline + stats chips */}
-          <div className="hero-pad" style={{ padding:'16px 24px 12px', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
-            <div style={{ ...row(12) }}>
-              <div>
-                <div style={{ fontFamily:'var(--font-head)', fontSize:'clamp(18px,3.5vw,24px)', fontWeight:800, color:'#fff', letterSpacing:'-0.5px', lineHeight:1.1 }}>
-                  Share more, <span style={{ color:T.coral }}>spend less.</span>
-                </div>
-                <div style={{ fontSize:12, color:'rgba(255,255,255,0.45)', marginTop:3 }}>
-                  {user.college_name} · peer lending
-                </div>
+          <div className="hero-pad" style={{ padding:'16px 24px 12px', display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexWrap:'wrap', gap:10, width:'100%', boxSizing:'border-box' }}>
+            <div>
+              <div style={{ fontFamily:'var(--font-head)', fontSize:'clamp(20px,5vw,28px)', fontWeight:800, color:'#fff', letterSpacing:'-0.5px', lineHeight:1.1 }}>
+                Share more, <span style={{ color:T.coral }}>spend less.</span>
+              </div>
+              <div style={{ fontSize:12, color:'rgba(255,255,255,0.5)', marginTop:4 }}>
+                {user.college_name} · peer lending
               </div>
             </div>
             {/* Live stats chips */}
-            <div className="stats-chips" style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center' }}>
-              {/* Live indicator */}
-              <div style={{ ...row(5), padding:'5px 10px', background:'rgba(16,185,129,0.15)', borderRadius:20, border:'1px solid rgba(16,185,129,0.3)' }}>
-                <div style={{ width:6, height:6, borderRadius:'50%', background:'#10B981', animation:'pulse 2s infinite', flexShrink:0 }} />
-                <span style={{ fontSize:11, color:'#10B981', fontWeight:600 }}>Live</span>
+            <div className="stats-chips" style={{ display:'flex', gap:6, flexWrap:'wrap', alignItems:'center', maxWidth:'100%' }}>
+              {/* Live */}
+              <div style={{ display:'flex', alignItems:'center', gap:4, padding:'4px 8px', background:'rgba(16,185,129,0.15)', borderRadius:20, border:'1px solid rgba(16,185,129,0.3)', flexShrink:0 }}>
+                <div style={{ width:5, height:5, borderRadius:'50%', background:'#10B981', animation:'pulse 2s infinite' }} />
+                <span style={{ fontSize:10, color:'#10B981', fontWeight:600 }}>Live</span>
               </div>
-              {[[stats.available,'📦','available'],[stats.students,'🎓','students'],[stats.borrows,'🔄','borrows']].map(([n,ic,l])=>(
-                <div key={l} style={{ background:'rgba(255,255,255,0.08)', borderRadius:20, padding:'5px 12px', ...row(5), flexShrink:0 }}>
-                  <span style={{ fontSize:13 }}>{ic}</span>
-                  <span style={{ fontFamily:'var(--font-head)', fontSize:14, fontWeight:700, color:'#fff' }}>{n??'—'}</span>
-                  <span style={{ fontSize:11, color:'rgba(255,255,255,0.45)' }}>{l}</span>
+              {[[stats.available,'📦','avail'],[stats.students,'🎓','users']].map(([n,ic,l])=>(
+                <div key={l} style={{ background:'rgba(255,255,255,0.08)', borderRadius:20, padding:'4px 10px', display:'flex', alignItems:'center', gap:4, flexShrink:0 }}>
+                  <span style={{ fontSize:12 }}>{ic}</span>
+                  <span style={{ fontFamily:'var(--font-head)', fontSize:13, fontWeight:700, color:'#fff' }}>{n??'—'}</span>
+                  <span style={{ fontSize:10, color:'rgba(255,255,255,0.45)' }}>{l}</span>
                 </div>
               ))}
-              <div style={{ background:`${T.coral}22`, borderRadius:20, padding:'5px 12px', ...row(6), flexShrink:0, border:`1px solid ${T.coral}44` }}>
-                <span style={{ fontSize:12, color:T.coral, fontWeight:600 }}>
-                  {Math.max(0, tier.limit - activeCount)}/{tier.limit} free
-                </span>
+              <div style={{ background:`${T.coral}22`, borderRadius:20, padding:'4px 10px', display:'flex', alignItems:'center', gap:5, flexShrink:0, border:`1px solid ${T.coral}44` }}>
+                <span style={{ fontSize:11, color:T.coral, fontWeight:700 }}>{Math.max(0,tier.limit-activeCount)}/{tier.limit}</span>
                 <TierBadge tier={user.trust_tier}/>
               </div>
             </div>
           </div>
 
-          {/* Bottom row: tab pills + search */}
-          <div className="hero-bottom" style={{ padding:'0 24px 14px', display:'flex', alignItems:'center', gap:12, flexWrap:'wrap' }}>
-            <div className="hero-tabs" style={{ ...row(6) }}>
-              {[['marketplace','📦 Marketplace'],['lostfound','🔍 Lost & Found']].map(([id,label])=>(
+          {/* Bottom row: tab pills + search — stacks on mobile */}
+          <div className="hero-bottom" style={{ padding:'0 24px 14px', display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', width:'100%', boxSizing:'border-box' }}>
+            <div className="hero-tabs" style={{ display:'flex', gap:6, flexShrink:0 }}>
+              {[['marketplace','📦 Market'],['lostfound','🔍 L&F']].map(([id,label])=>(
                 <button key={id} className="btn-press" onClick={()=>{setTab(id);setSearch('');setCat('all')}} style={{
-                  padding:'7px 16px', borderRadius:40, border:`1.5px solid ${tab===id?T.coral:'rgba(255,255,255,0.15)'}`,
+                  padding:'7px 14px', borderRadius:40, border:`1.5px solid ${tab===id?T.coral:'rgba(255,255,255,0.15)'}`,
                   background:tab===id?T.coral:'rgba(255,255,255,0.06)', color:tab===id?'#fff':'rgba(255,255,255,0.65)',
                   fontWeight:600, cursor:'pointer', fontSize:12, transition:'all 0.18s',
-                  boxShadow:tab===id?'var(--shadow-coral)':'none', flexShrink:0,
+                  boxShadow:tab===id?'var(--shadow-coral)':'none', whiteSpace:'nowrap',
                 }}>{label}</button>
               ))}
             </div>
-            <div className="search-bar" style={{ position:'relative', flex:1, minWidth:200, maxWidth:400 }}>
-              <span style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', fontSize:14, pointerEvents:'none' }}>🔎</span>
-              <input className="dark-search" style={{ ...INP, paddingLeft:40, borderRadius:40, background:'rgba(255,255,255,0.1)', border:'1.5px solid rgba(255,255,255,0.12)', color:'#fff', fontSize:13 }}
-                placeholder={tab==='marketplace'?'Search items…':'Search lost & found…'}
+            <div className="search-bar" style={{ position:'relative', flex:1, minWidth:140 }}>
+              <span style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', fontSize:13, pointerEvents:'none' }}>🔎</span>
+              <input className="dark-search" style={{ ...INP, paddingLeft:36, borderRadius:40, background:'rgba(255,255,255,0.1)', border:'1.5px solid rgba(255,255,255,0.12)', color:'#fff', fontSize:13, width:'100%' }}
+                placeholder="Search…"
                 value={search} onChange={e=>setSearch(e.target.value)} />
             </div>
           </div>
         </div>
 
-        {/* BODY */}
-        <div style={{ display:'grid', gridTemplateColumns:tab==='marketplace'?'clamp(160px,16vw,200px) 1fr':'1fr', minHeight:'calc(100vh - 200px)' }}>
+        {/* BODY — desktop: sidebar + grid, mobile: grid only full width */}
+        <div style={{ display:'flex', minHeight:'calc(100vh - 200px)' }}>
 
-          {/* SIDEBAR */}
+          {/* SIDEBAR — desktop only, never rendered on mobile */}
           {tab==='marketplace' && (
-            <div className="desktop-only" style={{ borderRight:`1px solid var(--border-soft)`, padding:'0', background:'rgba(255,255,255,0.4)', display:'flex', flexDirection:'column' }}>
+            <div className="desktop-only" style={{ width:200, flexShrink:0, borderRight:`1px solid var(--border-soft)`, background:'rgba(255,255,255,0.4)', display:'flex', flexDirection:'column' }}>
               <div style={{ background:`linear-gradient(180deg, ${T.navy} 0%, #1E293B 100%)`, padding:'20px 14px 14px' }}>
                 <div style={{ fontFamily:'var(--font-head)', fontSize:14, fontWeight:700, color:'#fff', marginBottom:2 }}>Browse</div>
                 <div style={{ fontSize:11, color:'rgba(255,255,255,0.45)' }}>Filter by category</div>
               </div>
               <div style={{ padding:'14px 14px 0' }}>
-              <div style={{ fontSize:11, fontWeight:700, letterSpacing:'0.08em', color:T.textSoft, textTransform:'uppercase', marginBottom:10 }}>Category</div>
-              {[['all','All items',items.length],...CATEGORIES.map(c=>[c,c,CAT_COUNTS[c]])].map(([val,label,count])=>(
-                <button key={val} onClick={()=>setCat(val)} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 10px', borderRadius:'var(--radius-xs)', fontSize:13, cursor:'pointer', color:cat===val?T.coral:T.text, fontWeight:cat===val?600:400, background:cat===val?`${T.coral}10`:'transparent', border:'none', width:'100%', textAlign:'left', marginBottom:2, transition:'all 0.15s' }}>
-                  <span>{label}</span>
-                  <span style={{ fontSize:11, background:cat===val?`${T.coral}20`:'rgba(15,23,42,0.06)', color:cat===val?T.coral:T.textSoft, padding:'2px 7px', borderRadius:20 }}>{count}</span>
-                </button>
-              ))}
-              <Divider />
-              <div style={{ fontSize:11, fontWeight:700, letterSpacing:'0.08em', color:T.textSoft, textTransform:'uppercase', marginBottom:10 }}>Availability</div>
-              {[['all','Show all'],['available','Available now']].map(([val,label])=>(
-                <button key={val} onClick={()=>setAvail(val)} style={{ display:'flex', padding:'8px 10px', borderRadius:'var(--radius-xs)', fontSize:13, cursor:'pointer', color:avail===val?T.coral:T.text, fontWeight:avail===val?600:400, background:avail===val?`${T.coral}10`:'transparent', border:'none', width:'100%', textAlign:'left', marginBottom:2, transition:'all 0.15s' }}>{label}</button>
-              ))}
-              </div>{/* end inner padding */}
+                <div style={{ fontSize:11, fontWeight:700, letterSpacing:'0.08em', color:T.textSoft, textTransform:'uppercase', marginBottom:10 }}>Category</div>
+                {[['all','All items',items.length],...CATEGORIES.map(c=>[c,c,CAT_COUNTS[c]])].map(([val,label,count])=>(
+                  <button key={val} onClick={()=>setCat(val)} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 10px', borderRadius:'var(--radius-xs)', fontSize:13, cursor:'pointer', color:cat===val?T.coral:T.text, fontWeight:cat===val?600:400, background:cat===val?`${T.coral}10`:'transparent', border:'none', width:'100%', textAlign:'left', marginBottom:2, transition:'all 0.15s' }}>
+                    <span>{label}</span>
+                    <span style={{ fontSize:11, background:cat===val?`${T.coral}20`:'rgba(15,23,42,0.06)', color:cat===val?T.coral:T.textSoft, padding:'2px 7px', borderRadius:20 }}>{count}</span>
+                  </button>
+                ))}
+                <Divider />
+                <div style={{ fontSize:11, fontWeight:700, letterSpacing:'0.08em', color:T.textSoft, textTransform:'uppercase', marginBottom:10 }}>Availability</div>
+                {[['all','Show all'],['available','Available now']].map(([val,label])=>(
+                  <button key={val} onClick={()=>setAvail(val)} style={{ display:'flex', padding:'8px 10px', borderRadius:'var(--radius-xs)', fontSize:13, cursor:'pointer', color:avail===val?T.coral:T.text, fontWeight:avail===val?600:400, background:avail===val?`${T.coral}10`:'transparent', border:'none', width:'100%', textAlign:'left', marginBottom:2, transition:'all 0.15s' }}>{label}</button>
+                ))}
+              </div>
             </div>
           )}
 
-          {/* GRID */}
-          <div className="main-content" style={{ padding:'20px 24px', minWidth:0, overflowX:'hidden' }}>
+          {/* GRID — takes full width on mobile since sidebar is hidden */}
+          <div className="main-content" style={{ flex:1, minWidth:0, padding:'20px 20px', overflowX:'hidden', boxSizing:'border-box' }}>
             <div style={{ ...row(0), justifyContent:'space-between', marginBottom:16, flexWrap:'wrap', gap:8 }}>
               <span style={{ fontSize:14, color:T.textMid, fontWeight:500 }}>
                 {tab==='lostfound' ? `${items.length} found item${items.length!==1?'s':''}` : `${items.length} item${items.length!==1?'s':''}`}
@@ -1416,7 +1435,7 @@ export default function App() {
               </div>
             )}
 
-            <div className="item-grid" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(clamp(130px,40vw,185px),1fr))', gap:'clamp(8px,2vw,16px)' }}>
+            <div className="item-grid" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(min(160px,45vw),1fr))', gap:12 }}>
               {items.filter(item=>item.status!=='closed').map(item=>(
                 <ItemCard key={item.id+'-'+tick} item={item} currentUserId={user.id} onRequest={i=>setBorrow(i)} myRequests={myRequests} />
               ))}
@@ -1445,4 +1464,3 @@ export default function App() {
     </Ctx.Provider>
   )
 }
-  
