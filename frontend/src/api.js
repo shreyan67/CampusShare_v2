@@ -21,7 +21,13 @@ async function req(method, path, body) {
     fetchOpts.body = JSON.stringify(body)
   }
 
-  const res = await fetch(`${BASE}${path}`, fetchOpts)
+  let res
+  try {
+    res = await fetch(`${BASE}${path}`, fetchOpts)
+  } catch (networkErr) {
+    // Network error (backend down, ECONNREFUSED, offline) — return gracefully
+    return { error: 'Network error — check your connection.' }
+  }
 
   let data = null
   try {

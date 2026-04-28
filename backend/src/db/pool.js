@@ -3,22 +3,31 @@ const { Pool } = require('pg')
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-   ssl: {
-    rejectUnauthorized: false
-  },
+  ssl: { rejectUnauthorized: false },
   max: 10,
   idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
+  // Keep connections alive — prevents "Connection terminated unexpectedly"
+  keepAlive: true,
+  keepAliveInitialDelayMillis: 10000,
 })
 
-pool.on('error', err => console.error('DB pool error:', err))
+// Catch pool-level errors so they never crash the process
+pool.on('error', (err, client) => {
+  console.error('DB pool error (non-fatal):', err.message)
+})
 
 async function query(sql, params) {
-  const client = await pool.connect()
+  let client
   try {
+    client = await pool.connect()
     const result = await client.query(sql, params)
     return result.rows
+  } catch (err) {
+    console.error('DB query error:', err.message, '|', sql.slice(0, 80))
+    throw err
   } finally {
-    client.release()
+    if (client) client.release()
   }
 }
 
