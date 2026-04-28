@@ -358,13 +358,9 @@ function AuthScreen({ onLogin }) {
       <div style={{ position:'fixed', bottom:-100, left:-100, width:300, height:300, background:`radial-gradient(circle, ${T.coral}18 0%, transparent 70%)`, pointerEvents:'none' }} />
 
       {/* Header */}
-      <div style={{ padding:'24px 32px', display:'flex', flexDirection:'column', alignItems:'flex-start', gap:'6px' }}>
-        <Logo light /> 
-        
-        <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)'  }}>
-          
-          <span>College-verified peer sharing</span>
-        </div>
+      <div style={{ padding:'24px 32px', ...row(0), justifyContent:'space-between' }}>
+        <Logo light />
+        <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)' }}>College-verified peer sharing</div>
       </div>
 
       {/* Card */}
@@ -446,11 +442,11 @@ function AuthScreen({ onLogin }) {
 // ── LOGO ──────────────────────────────────────────────────────────────────────
 function Logo({ light=false }) {
   return (
-    <div style={{ fontFamily:'var(--font-head)', fontWeight:800, fontSize:20, letterSpacing:'-2.5px', color: light ? '#fff' : T.navy, ...row(6) }}>
-      <div style={{ width:28, height:28, background:T.coral, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center' }}>
-        <span style={{ fontSize:14 }}>◈</span>
+    <div style={{ fontFamily:'var(--font-head)', fontWeight:800, fontSize:'clamp(15px,4vw,20px)', letterSpacing:'-0.5px', color: light ? '#fff' : T.navy, display:'flex', alignItems:'center', gap:6, overflow:'hidden', minWidth:0 }}>
+      <div style={{ width:26, height:26, background:T.coral, borderRadius:7, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+        <span style={{ fontSize:13 }}>◈</span>
       </div>
-      <span>Campus<span style={{ color:T.coral }}>Share</span></span>
+      <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>Campus<span style={{ color:T.coral }}>Share</span></span>
     </div>
   )
 }
@@ -1244,6 +1240,7 @@ export default function App() {
   const [user,       setUser]       = useState(()=>api.getSavedUser())
   const [tab,        setTab]        = useState('marketplace')
   const [items,      setItems]      = useState([])
+  const prevTabRef = useRef('marketplace')
   const [stats,      setStats]      = useState({})
   const [cat,        setCat]        = useState('all')
   const [avail,      setAvail]      = useState('all')
@@ -1263,26 +1260,40 @@ export default function App() {
     })
   }, [])
 
-  // Cache key for localStorage stale-while-revalidate
-  const cacheKey = `cs_items_${tab}_${cat}_${avail}_${user?.college_id}`
+  // Cache key — tab-specific so marketplace and L&F never share cache
+  const cacheKey = `cs_items_${tab}_${cat}_${avail}_${user?.id}`
+  const statsKey = `cs_stats_${user?.id}`
 
-  // Fetch items + stats + requests — all in parallel for speed
+  // Fetch items + stats + requests — all parallel for speed
   const fetchMarketplace = useCallback(async (silent=false) => {
     if (!user) return
 
-    // On first (non-silent) load, show stale cached data instantly
+    const tabChanged = prevTabRef.current !== tab
+    prevTabRef.current = tab
+
     if (!silent) {
+      if (tabChanged) {
+        // Tab switched — clear immediately so wrong items never show
+        setItems([])
+      } else {
+        // Same tab — show stale cache for instant perceived load
+        try {
+          const cached = localStorage.getItem(cacheKey)
+          if (cached) setItems(JSON.parse(cached))
+        } catch (_) {}
+      }
+      // Show cached stats immediately
       try {
-        const cached = localStorage.getItem(cacheKey)
-        if (cached) setItems(JSON.parse(cached))
+        const cachedStats = localStorage.getItem(statsKey)
+        if (cachedStats) setStats(JSON.parse(cachedStats))
       } catch (_) {}
     }
 
-    // Fire all three requests in parallel — much faster than sequential
     const itemParams = tab==='marketplace'
       ? { listingType:'borrow', category:cat!=='all'?cat:undefined, status:avail==='available'?'available':undefined, search:search||undefined }
       : { listingType:'lost_found', search:search||undefined }
 
+    // All three in parallel
     const [itemsRes, statsRes, reqsRes] = await Promise.all([
       api.getItems(itemParams),
       api.getStats(),
@@ -1291,21 +1302,23 @@ export default function App() {
 
     if (!itemsRes.error) {
       setItems(itemsRes.items||[])
-      // Cache for next visit
       try { localStorage.setItem(cacheKey, JSON.stringify(itemsRes.items||[])) } catch (_) {}
     }
-    if (!statsRes.error) setStats(statsRes)
-    if (!reqsRes.error)  setMyRequests(reqsRes.requests||[])
+    if (!statsRes.error) {
+      setStats(statsRes)
+      try { localStorage.setItem(statsKey, JSON.stringify(statsRes)) } catch (_) {}
+    }
+    if (!reqsRes.error) setMyRequests(reqsRes.requests||[])
 
-  }, [user, tab, cat, avail, search, cacheKey])
+  }, [user, tab, cat, avail, search, cacheKey, statsKey])
 
-  // Trigger on filter/tab/search changes
+  // Trigger on filter/tab/search/tick changes
   useEffect(() => { fetchMarketplace(false) }, [fetchMarketplace, tick])
 
-  // Silent real-time polling every 12 seconds
+  // Silent background polling every 15 seconds
   useEffect(() => {
     if (!user) return
-    const interval = setInterval(() => fetchMarketplace(true), 12000)
+    const interval = setInterval(() => fetchMarketplace(true), 15000)
     return () => clearInterval(interval)
   }, [fetchMarketplace])
 
@@ -1379,7 +1392,9 @@ export default function App() {
               {[[stats.available,'📦','avail'],[stats.students,'🎓','users']].map(([n,ic,l])=>(
                 <div key={l} style={{ background:'rgba(255,255,255,0.08)', borderRadius:20, padding:'4px 10px', display:'flex', alignItems:'center', gap:4, flexShrink:0 }}>
                   <span style={{ fontSize:12 }}>{ic}</span>
-                  <span style={{ fontFamily:'var(--font-head)', fontSize:13, fontWeight:700, color:'#fff' }}>{n??'—'}</span>
+                  <span style={{ fontFamily:'var(--font-head)', fontSize:13, fontWeight:700, color:'#fff' }}>
+                    {n !== undefined && n !== null ? n : <span style={{ opacity:0.4 }}>·</span>}
+                  </span>
                   <span style={{ fontSize:10, color:'rgba(255,255,255,0.45)' }}>{l}</span>
                 </div>
               ))}
@@ -1393,8 +1408,11 @@ export default function App() {
           {/* Bottom row: tab pills + search — stacks on mobile */}
           <div className="hero-bottom" style={{ padding:'0 24px 14px', display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', width:'100%', boxSizing:'border-box' }}>
             <div className="hero-tabs" style={{ display:'flex', gap:6, flexShrink:0 }}>
-              {[['marketplace','📦 Market'],['lostfound','🔍 Lost & Found']].map(([id,label])=>(
-                <button key={id} className="btn-press" onClick={()=>{setTab(id);setSearch('');setCat('all')}} style={{
+              {[['marketplace','📦 Market'],['lostfound','🔍 L&F']].map(([id,label])=>(
+                <button key={id} className="btn-press" onClick={()=>{
+                  if(id!==tab){ setItems([]); setSearch(''); setCat('all') }
+                  setTab(id)
+                }} style={{
                   padding:'7px 14px', borderRadius:40, border:`1.5px solid ${tab===id?T.coral:'rgba(255,255,255,0.15)'}`,
                   background:tab===id?T.coral:'rgba(255,255,255,0.06)', color:tab===id?'#fff':'rgba(255,255,255,0.65)',
                   fontWeight:600, cursor:'pointer', fontSize:12, transition:'all 0.18s',
@@ -1474,8 +1492,8 @@ export default function App() {
         {/* MOBILE BOTTOM NAV */}
         <nav className="mobile-only" style={{ position:'fixed', bottom:0, left:0, right:0, height:68, background:'rgba(255,248,240,0.96)', backdropFilter:'blur(16px)', borderTop:`1px solid var(--border-soft)`, display:'flex', alignItems:'center', justifyContent:'space-around', padding:'0 8px 8px', zIndex:150 }}>
           {[
-            { icon:'📦', label:'Market',  action:()=>setTab('marketplace'), active:tab==='marketplace' },
-            { icon:'🔍', label:'L&F',     action:()=>setTab('lostfound'),   active:tab==='lostfound'   },
+            { icon:'📦', label:'Market',  action:()=>{ if(tab!=='marketplace'){ setItems([]) } setTab('marketplace') }, active:tab==='marketplace' },
+            { icon:'🔍', label:'L&F',     action:()=>{ if(tab!=='lostfound'){ setItems([]) } setTab('lostfound') },   active:tab==='lostfound'   },
             { icon:'➕', label:'List',    action:()=>setList(true),         active:false, primary:true  },
             { icon:'📋', label:'Activity',action:()=>setAct(true),          active:false               },
             { icon:'⚙️', label:'Admin',   action:()=>setIsAdmin(true),      active:false               },
