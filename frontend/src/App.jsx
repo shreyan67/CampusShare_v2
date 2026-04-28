@@ -442,7 +442,7 @@ function AuthScreen({ onLogin }) {
 // ── LOGO ──────────────────────────────────────────────────────────────────────
 function Logo({ light=false }) {
   return (
-    <div style={{ fontFamily:'var(--font-head)', fontWeight:800, fontSize:20, letterSpacing:'-0.5px', color: light ? '#fff' : T.navy, ...row(6) }}>
+    <div style={{ fontFamily:'var(--font-head)', fontWeight:800, fontSize:20, letterSpacing:'-3.0px', color: light ? '#fff' : T.navy, ...row(6) }}>
       <div style={{ width:28, height:28, background:T.coral, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center' }}>
         <span style={{ fontSize:14 }}>◈</span>
       </div>
@@ -1389,7 +1389,7 @@ export default function App() {
           {/* Bottom row: tab pills + search — stacks on mobile */}
           <div className="hero-bottom" style={{ padding:'0 24px 14px', display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', width:'100%', boxSizing:'border-box' }}>
             <div className="hero-tabs" style={{ display:'flex', gap:6, flexShrink:0 }}>
-              {[['marketplace','📦 Market'],['lostfound','🔍 L&F']].map(([id,label])=>(
+              {[['marketplace','📦 Market'],['lostfound','🔍 Lost & Found']].map(([id,label])=>(
                 <button key={id} className="btn-press" onClick={()=>{setTab(id);setSearch('');setCat('all')}} style={{
                   padding:'7px 14px', borderRadius:40, border:`1.5px solid ${tab===id?T.coral:'rgba(255,255,255,0.15)'}`,
                   background:tab===id?T.coral:'rgba(255,255,255,0.06)', color:tab===id?'#fff':'rgba(255,255,255,0.65)',
