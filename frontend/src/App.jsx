@@ -298,6 +298,8 @@ function InfoBanner({ type='info', children }) {
 
 // ── AUTH SCREEN ───────────────────────────────────────────────────────────────
 function AuthScreen({ onLogin }) {
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+
   const [mode,       setMode]      = useState('login')
   const [pending,    setPending]   = useState(null)
   const [err,        setErr]       = useState('')
@@ -305,7 +307,24 @@ function AuthScreen({ onLogin }) {
   const [consoleOtp, setConsoleOtp] = useState('')
   const [fields, setFields] = useState({ name:'', email:'', roll:'', otp:'' })
   const set = key => e => setFields(prev => ({ ...prev, [key]: e.target.value }))
+useEffect(() => {
+  const handler = (e) => {
+    e.preventDefault();
+    setDeferredPrompt(e);
+  };
 
+  window.addEventListener("beforeinstallprompt", handler);
+
+  return () => window.removeEventListener("beforeinstallprompt", handler);
+}, []);
+const installApp = async () => {
+  if (!deferredPrompt) return;
+
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+
+  setDeferredPrompt(null);
+};
   async function doLogin() {
     setErr('')
     if (!fields.email.trim()) return setErr('Please enter your college email.')
@@ -361,7 +380,27 @@ function AuthScreen({ onLogin }) {
      <div style={{ padding:'24px 32px', display:'flex', flexDirection:'column', alignItems:'flex-start', gap:'6px' ,}}>
         <Logo light />
         <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)' }}>College-verified peer sharing</div>
+        
       </div>
+      {deferredPrompt && (
+  <div style={{ padding: '0 32px', marginTop: '8px' }}>
+    <button
+      onClick={installApp}
+      style={{
+        padding: "8px 14px",
+        background: "#E8445A",
+        color: "#fff",
+        border: "none",
+        borderRadius: "8px",
+        cursor: "pointer",
+        fontWeight: 600,
+        fontSize: "13px"
+      }}
+    >
+      Install App 🚀
+    </button>
+  </div>
+)}
 
       {/* Card */}
       <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:'24px 16px' }}>
@@ -1254,6 +1293,31 @@ export default function App() {
   // fetchId prevents stale responses from overwriting fresh ones
   const fetchIdRef = useRef(0)
   const statsKey = `cs_stats_${user?.id}`
+const [deferredPrompt, setDeferredPrompt] = useState(null);
+
+useEffect(() => {
+  const handler = (e) => {
+    e.preventDefault();
+    setDeferredPrompt(e);
+  };
+
+  window.addEventListener("beforeinstallprompt", handler);
+
+  return () => window.removeEventListener("beforeinstallprompt", handler);
+}, []);
+
+const installApp = async () => {
+  if (!deferredPrompt) return;
+
+  deferredPrompt.prompt();
+  const choice = await deferredPrompt.userChoice;
+
+  if (choice.outcome === "accepted") {
+    console.log("App installed");
+  }
+
+  setDeferredPrompt(null);
+};
 
   useEffect(()=>{
     if (!user) return
