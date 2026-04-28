@@ -358,7 +358,7 @@ function AuthScreen({ onLogin }) {
       <div style={{ position:'fixed', bottom:-100, left:-100, width:300, height:300, background:`radial-gradient(circle, ${T.coral}18 0%, transparent 70%)`, pointerEvents:'none' }} />
 
       {/* Header */}
-      <div style={{ padding:'24px 32px', ...row(0), justifyContent:'space-between' }}>
+     <div style={{ padding:'24px 32px', display:'flex', flexDirection:'column', alignItems:'flex-start', gap:'6px' ,}}>
         <Logo light />
         <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)' }}>College-verified peer sharing</div>
       </div>
