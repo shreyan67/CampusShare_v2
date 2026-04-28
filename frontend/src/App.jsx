@@ -1240,7 +1240,6 @@ export default function App() {
   const [user,       setUser]       = useState(()=>api.getSavedUser())
   const [tab,        setTab]        = useState('marketplace')
   const [items,      setItems]      = useState([])
-  const prevTabRef = useRef('marketplace')
   const [stats,      setStats]      = useState({})
   const [cat,        setCat]        = useState('all')
   const [avail,      setAvail]      = useState('all')
@@ -1252,75 +1251,89 @@ export default function App() {
   const [toast,      showToast]     = useToast()
   const [myRequests, setMyRequests] = useState([])
   const refresh = useCallback(()=>setTick(t=>t+1),[])
+  // fetchId prevents stale responses from overwriting fresh ones
+  const fetchIdRef = useRef(0)
+  const statsKey = `cs_stats_${user?.id}`
 
   useEffect(()=>{
     if (!user) return
     api.getMe().then(r => {
       if (r?.user) { setUser(r.user); api.persistUser(r.user) }
     })
-  }, [])
+    // Load cached stats immediately on mount
+    try {
+      const cachedStats = localStorage.getItem(statsKey)
+      if (cachedStats) setStats(JSON.parse(cachedStats))
+    } catch (_) {}
+  }, []) // eslint-disable-line
 
-  // Cache key — tab-specific so marketplace and L&F never share cache
-  const cacheKey = `cs_items_${tab}_${cat}_${avail}_${user?.id}`
-  const statsKey = `cs_stats_${user?.id}`
-
-  // Fetch items + stats + requests — all parallel for speed
-  const fetchMarketplace = useCallback(async (silent=false) => {
+  // Single effect that owns ALL data fetching — no race conditions
+  useEffect(() => {
     if (!user) return
 
-    const tabChanged = prevTabRef.current !== tab
-    prevTabRef.current = tab
+    // Give this fetch a unique ID — if tab/filter changes before
+    // this resolves, the ID won't match and we discard the result
+    const myId = ++fetchIdRef.current
 
-    if (!silent) {
-      if (tabChanged) {
-        // Tab switched — clear immediately so wrong items never show
-        setItems([])
-      } else {
-        // Same tab — show stale cache for instant perceived load
-        try {
-          const cached = localStorage.getItem(cacheKey)
-          if (cached) setItems(JSON.parse(cached))
-        } catch (_) {}
-      }
-      // Show cached stats immediately
-      try {
-        const cachedStats = localStorage.getItem(statsKey)
-        if (cachedStats) setStats(JSON.parse(cachedStats))
-      } catch (_) {}
-    }
+    const cacheKey = `cs_items_${tab}_${cat}_${avail}_${user.id}`
 
-    const itemParams = tab==='marketplace'
+    // Show cached items immediately (same tab only)
+    try {
+      const cached = localStorage.getItem(cacheKey)
+      if (cached) setItems(JSON.parse(cached))
+    } catch (_) {}
+
+    const itemParams = tab === 'marketplace'
       ? { listingType:'borrow', category:cat!=='all'?cat:undefined, status:avail==='available'?'available':undefined, search:search||undefined }
       : { listingType:'lost_found', search:search||undefined }
 
-    // All three in parallel
-    const [itemsRes, statsRes, reqsRes] = await Promise.all([
+    // Fire all in parallel
+    Promise.all([
       api.getItems(itemParams),
       api.getStats(),
       api.getMyRequests(),
-    ])
+    ]).then(([itemsRes, statsRes, reqsRes]) => {
+      // CRITICAL: only apply results if this is still the latest fetch
+      if (fetchIdRef.current !== myId) return
 
-    if (!itemsRes.error) {
-      setItems(itemsRes.items||[])
-      try { localStorage.setItem(cacheKey, JSON.stringify(itemsRes.items||[])) } catch (_) {}
-    }
-    if (!statsRes.error) {
-      setStats(statsRes)
-      try { localStorage.setItem(statsKey, JSON.stringify(statsRes)) } catch (_) {}
-    }
-    if (!reqsRes.error) setMyRequests(reqsRes.requests||[])
+      if (!itemsRes?.error) {
+        setItems(itemsRes.items || [])
+        try { localStorage.setItem(cacheKey, JSON.stringify(itemsRes.items || [])) } catch (_) {}
+      }
+      if (!statsRes?.error) {
+        setStats(statsRes)
+        try { localStorage.setItem(statsKey, JSON.stringify(statsRes)) } catch (_) {}
+      }
+      if (!reqsRes?.error) setMyRequests(reqsRes.requests || [])
+    })
+  }, [user, tab, cat, avail, search, tick]) // eslint-disable-line
 
-  }, [user, tab, cat, avail, search, cacheKey, statsKey])
-
-  // Trigger on filter/tab/search/tick changes
-  useEffect(() => { fetchMarketplace(false) }, [fetchMarketplace, tick])
-
-  // Silent background polling every 15 seconds
+  // Separate polling effect — fires silently, also uses fetchId
   useEffect(() => {
     if (!user) return
-    const interval = setInterval(() => fetchMarketplace(true), 15000)
+    const interval = setInterval(() => {
+      const myId = ++fetchIdRef.current
+      const cacheKey = `cs_items_${tab}_${cat}_${avail}_${user.id}`
+      const itemParams = tab === 'marketplace'
+        ? { listingType:'borrow', category:cat!=='all'?cat:undefined, status:avail==='available'?'available':undefined, search:search||undefined }
+        : { listingType:'lost_found', search:search||undefined }
+
+      Promise.all([
+        api.getItems(itemParams),
+        api.getStats(),
+        api.getMyRequests(),
+      ]).then(([itemsRes, statsRes, reqsRes]) => {
+        if (fetchIdRef.current !== myId) return
+        if (!itemsRes?.error) {
+          setItems(itemsRes.items || [])
+          try { localStorage.setItem(cacheKey, JSON.stringify(itemsRes.items || [])) } catch (_) {}
+        }
+        if (!statsRes?.error) setStats(statsRes)
+        if (!reqsRes?.error)  setMyRequests(reqsRes.requests || [])
+      })
+    }, 15000)
     return () => clearInterval(interval)
-  }, [fetchMarketplace])
+  }, [user, tab, cat, avail, search]) // eslint-disable-line
 
   function handleLogout() { api.clearSession(); setUser(null) }
 
@@ -1410,7 +1423,7 @@ export default function App() {
             <div className="hero-tabs" style={{ display:'flex', gap:6, flexShrink:0 }}>
               {[['marketplace','📦 Market'],['lostfound','🔍 L&F']].map(([id,label])=>(
                 <button key={id} className="btn-press" onClick={()=>{
-                  if(id!==tab){ setItems([]); setSearch(''); setCat('all') }
+                  if(id!==tab){ fetchIdRef.current++; setItems([]); setSearch(''); setCat('all') }
                   setTab(id)
                 }} style={{
                   padding:'7px 14px', borderRadius:40, border:`1.5px solid ${tab===id?T.coral:'rgba(255,255,255,0.15)'}`,
@@ -1492,8 +1505,8 @@ export default function App() {
         {/* MOBILE BOTTOM NAV */}
         <nav className="mobile-only" style={{ position:'fixed', bottom:0, left:0, right:0, height:68, background:'rgba(255,248,240,0.96)', backdropFilter:'blur(16px)', borderTop:`1px solid var(--border-soft)`, display:'flex', alignItems:'center', justifyContent:'space-around', padding:'0 8px 8px', zIndex:150 }}>
           {[
-            { icon:'📦', label:'Market',  action:()=>{ if(tab!=='marketplace'){ setItems([]) } setTab('marketplace') }, active:tab==='marketplace' },
-            { icon:'🔍', label:'L&F',     action:()=>{ if(tab!=='lostfound'){ setItems([]) } setTab('lostfound') },   active:tab==='lostfound'   },
+            { icon:'📦', label:'Market',  action:()=>{ if(tab!=='marketplace'){ fetchIdRef.current++; setItems([]) } setTab('marketplace') }, active:tab==='marketplace' },
+            { icon:'🔍', label:'L&F',     action:()=>{ if(tab!=='lostfound'){ fetchIdRef.current++; setItems([]) } setTab('lostfound') }, active:tab==='lostfound' },
             { icon:'➕', label:'List',    action:()=>setList(true),         active:false, primary:true  },
             { icon:'📋', label:'Activity',action:()=>setAct(true),          active:false               },
             { icon:'⚙️', label:'Admin',   action:()=>setIsAdmin(true),      active:false               },
