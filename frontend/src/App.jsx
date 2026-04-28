@@ -5,13 +5,13 @@ import Admin from "./pages/Admin"
 // ── DESIGN TOKENS ─────────────────────────────────────────────────────────────
 const T = {
   navy:    '#0F172A',
-  coral:   '#FF4D6D',
+  coral:   '#E8445A',
   cream:   '#FFF8F0',
-  coralDim:'#FF4D6D22',
-  coralMid:'#FF4D6D44',
+  coralDim:'#E8445A22',
+  coralMid:'#E8445A44',
   glass:   'rgba(255,248,240,0.72)',
   glassDk: 'rgba(15,23,42,0.82)',
-  border:  'rgba(255,77,109,0.18)',
+  border:  'rgba(232,68,90,0.18)',
   borderSoft: 'rgba(15,23,42,0.08)',
   text:    '#0F172A',
   textMid: '#475569',
@@ -27,24 +27,24 @@ const T = {
 }
 
 const FONTS = `
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
   --navy: #0F172A;
-  --coral: #FF4D6D;
+  --coral: #E8445A;
   --cream: #FFF8F0;
   --glass: rgba(255,248,240,0.72);
-  --border: rgba(255,77,109,0.18);
+  --border: rgba(232,68,90,0.18);
   --border-soft: rgba(15,23,42,0.08);
   --radius: 16px;
   --radius-sm: 10px;
   --radius-xs: 7px;
   --shadow: 0 4px 24px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.04);
   --shadow-lg: 0 16px 48px rgba(15,23,42,0.16), 0 4px 12px rgba(15,23,42,0.08);
-  --shadow-coral: 0 4px 24px rgba(255,77,109,0.24);
-  --font-head: 'Space Grotesk', sans-serif;
+  --shadow-coral: 0 4px 24px rgba(232,68,90,0.24);
+  --font-head: 'Syne', sans-serif;
   --font-body: 'DM Sans', sans-serif;
 }
 
@@ -53,7 +53,7 @@ body { background: var(--cream); font-family: var(--font-body); color: var(--nav
 /* Scrollbar */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,77,109,0.3); border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: rgba(232,68,90,0.3); border-radius: 4px; }
 
 /* Animations */
 @keyframes slideUp   { from { opacity:0; transform:translateY(20px) } to { opacity:1; transform:translateY(0) } }
@@ -89,14 +89,53 @@ body { background: var(--cream); font-family: var(--font-body); color: var(--nav
 /* Button press */
 .btn-press:active { transform: scale(0.96); }
 
-/* Bottom nav */
+/* ── RESPONSIVE MOBILE ── */
 @media (max-width: 768px) {
   .desktop-only { display: none !important; }
-  .main-content { padding-bottom: 72px !important; }
+  .main-content { padding-bottom: 76px !important; padding-left: 16px !important; padding-right: 16px !important; }
+
+  /* Modals full-screen on mobile */
+  /* Hero compact on mobile */
+  .hero-tagline { font-size: 17px !important; }
+
+  /* Item grid — 2 columns on mobile */
+  .item-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+
+  /* Stats chips wrap neatly */
+  .stats-chips { justify-content: flex-start !important; }
+
+  /* Modal bottom sheet takes full width */
+  .modal-sheet { max-width: 100% !important; border-radius: 20px 20px 0 0 !important; }
+
+  /* Search bar full width on mobile */
+  .search-bar { min-width: 100% !important; max-width: 100% !important; }
+
+  /* Hero padding tighter */
+  .hero-pad { padding: 12px 16px 10px !important; }
+  .hero-bottom { padding: 0 16px 12px !important; flex-direction: column !important; align-items: stretch !important; }
+  .hero-tabs { justify-content: stretch !important; }
+  .hero-tabs button { flex: 1 !important; text-align: center !important; }
+
+  /* Activity cards */
+  .req-actions { flex-wrap: wrap !important; }
+  .req-actions button { flex: 1 !important; min-width: 120px !important; }
+
+  /* Profile grid single col on tiny screens */
+  .profile-grid { grid-template-columns: 1fr 1fr !important; }
 }
+
+@media (max-width: 380px) {
+  .item-grid { grid-template-columns: 1fr !important; }
+  .profile-grid { grid-template-columns: 1fr !important; }
+}
+
 @media (min-width: 769px) {
   .mobile-only { display: none !important; }
 }
+
+/* Search placeholder on dark hero */
+.dark-search::placeholder { color: rgba(255,255,255,0.38) !important; }
+.dark-search { caret-color: #fff; }
 
 /* Skeleton loading */
 .skeleton {
@@ -186,9 +225,9 @@ function Modal({ open, onClose, children, wide=false }) {
 
   if (!open) return null
   return (
-    <div style={{ position:'fixed', inset:0, background:'rgba(15,23,42,0.6)', backdropFilter:'blur(8px)', zIndex:200, display:'flex', justifyContent:'center', alignItems:'flex-end', padding:'0' }}
+    <div style={{ position:'fixed', inset:0, background:'rgba(15,23,42,0.6)', backdropFilter:'blur(8px)', zIndex:200, display:'flex', justifyContent:'center', alignItems:'flex-end', padding:'0', overflowY:'hidden' }}
       onMouseDown={e => { if(e.target===e.currentTarget) onClose() }}>
-      <div className="slide-up" style={{ background:'#fff', borderRadius:'24px 24px 0 0', width:'100%', maxWidth: wide ? 680 : 480, maxHeight:'90vh', overflowY:'auto', padding:'8px 0 0' }}>
+      <div className="slide-up modal-sheet" style={{ background:'#fff', borderRadius:'24px 24px 0 0', width:'100%', maxWidth: wide ? 680 : 480, maxHeight:'90vh', overflowY:'auto', padding:'8px 0 0' }}>
         {/* Handle bar */}
         <div style={{ width:40, height:4, background:'rgba(15,23,42,0.12)', borderRadius:4, margin:'12px auto 20px' }} />
         <div style={{ padding:'0 24px 32px' }}>
@@ -211,7 +250,7 @@ function SBadge({ status, inline=false }) {
 function Av({ user, size=26 }) {
   const init = user?.avatar || user?.name?.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase() || '?'
   return (
-    <div style={{ width:size, height:size, borderRadius:'50%', background: user?.color || 'linear-gradient(135deg,#FF4D6D,#0F172A)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:Math.round(size*.38), fontWeight:700, color:'#fff', flexShrink:0, letterSpacing:'-0.02em' }}>{init}</div>
+    <div style={{ width:size, height:size, borderRadius:'50%', background: user?.color || 'linear-gradient(135deg,#E8445A,#0F172A)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:Math.round(size*.38), fontWeight:700, color:'#fff', flexShrink:0, letterSpacing:'-0.02em' }}>{init}</div>
   )
 }
 function Divider() { return <div style={{ height:1, background:'var(--border-soft)', margin:'14px 0' }} /> }
@@ -850,7 +889,7 @@ function ActivityModal({ open, onClose, refresh, showToast }) {
         )}
 
         {/* ACTION BUTTONS */}
-        <div style={{ ...row(8), flexWrap:'wrap', marginTop:8 }}>
+        <div className="req-actions" style={{ ...row(8), flexWrap:'wrap', marginTop:8 }}>
 
           {/* Pay button */}
           {isBorrowing && r.status==='selected' && isPaid && !r.payment_confirmed && (
@@ -1085,7 +1124,7 @@ function ActivityModal({ open, onClose, refresh, showToast }) {
             </div>
           </div>
 
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:16 }}>
+          <div className="profile-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:16 }}>
             {[
               ['Trust tier', <TierBadge tier={user?.trust_tier}/>],
               ['Borrow limit', `${tier.limit} items`],
@@ -1132,7 +1171,7 @@ function ItemCard({ item, currentUserId, onRequest, myRequests=[] }) {
   return (
     <div className="item-card" style={{ ...card, cursor:canAct?'pointer':'default' }} onClick={()=>canAct&&onRequest(item)}>
       {/* Image / thumbnail */}
-      <div style={{ height:130, display:'flex', alignItems:'center', justifyContent:'center', background:firstPhoto?'#000':`linear-gradient(135deg, ${T.coral}10, ${T.navy}08)`, position:'relative', overflow:'hidden' }}>
+      <div style={{ height:'clamp(110px,18vw,140px)', display:'flex', alignItems:'center', justifyContent:'center', background:firstPhoto?'#000':`linear-gradient(135deg, ${T.coral}10, ${T.navy}08)`, position:'relative', overflow:'hidden' }}>
         {firstPhoto
           ? <img src={firstPhoto} alt={item.title} style={{ width:'100%', height:'100%', objectFit:'cover', opacity:0.9 }} />
           : <span style={{ fontSize:44, filter:'drop-shadow(0 2px 8px rgba(0,0,0,0.08))' }}>{isLF?'🔍':EMOJIS[item.category]||'📦'}</span>
@@ -1196,18 +1235,29 @@ export default function App() {
     })
   }, [])
 
-  useEffect(()=>{
+  // Fetch items + stats + requests — used both on change and for silent polling
+  const fetchMarketplace = useCallback(async (silent=false) => {
     if (!user) return
     if (tab==='marketplace') {
-      api.getItems({ listingType:'borrow', category:cat!=='all'?cat:undefined, status:avail==='available'?'available':undefined, search:search||undefined })
-        .then(r=>{ if(!r.error) setItems(r.items||[]) })
+      const r = await api.getItems({ listingType:'borrow', category:cat!=='all'?cat:undefined, status:avail==='available'?'available':undefined, search:search||undefined })
+      if (!r.error) setItems(r.items||[])
     } else {
-      api.getItems({ listingType:'lost_found', search:search||undefined })
-        .then(r=>{ if(!r.error) setItems(r.items||[]) })
+      const r = await api.getItems({ listingType:'lost_found', search:search||undefined })
+      if (!r.error) setItems(r.items||[])
     }
     api.getStats().then(r=>{ if(!r.error) setStats(r) })
     api.getMyRequests().then(r=>{ if(!r.error) setMyRequests(r.requests||[]) })
-  },[user,tab,cat,avail,search,tick])
+  }, [user, tab, cat, avail, search])
+
+  // Trigger on filter/tab/search changes
+  useEffect(() => { fetchMarketplace(false) }, [fetchMarketplace, tick])
+
+  // Silent real-time polling every 10 seconds — items appear/disappear without refresh
+  useEffect(() => {
+    if (!user) return
+    const interval = setInterval(() => fetchMarketplace(true), 10000)
+    return () => clearInterval(interval)
+  }, [fetchMarketplace])
 
   function handleLogout() { api.clearSession(); setUser(null) }
 
@@ -1255,53 +1305,64 @@ export default function App() {
           </div>
         </header>
 
-        {/* HERO */}
-        <div style={{ padding:'28px 24px 20px', borderBottom:`1px solid var(--border-soft)`, background:`linear-gradient(135deg, rgba(255,77,109,0.04) 0%, rgba(255,248,240,0) 100%)` }}>
-          <h1 style={{ fontFamily:'var(--font-head)', fontSize:'clamp(26px,5vw,38px)', fontWeight:800, letterSpacing:'-1.5px', lineHeight:1.1, margin:'0 0 6px' }}>
-            Share more,<br/><span style={{ color:T.coral }}>spend less.</span>
-          </h1>
-          <p style={{ fontSize:14, color:T.textMid, margin:'0 0 20px', lineHeight:1.6 }}>
-            Borrow what you need. Lend what you don't.<br/>
-            <strong>{user.college_name}</strong> only.
-          </p>
-
-          {/* Tab pills */}
-          <div style={{ ...row(8), marginBottom:16 }}>
-            {[['marketplace','📦 Marketplace'],['lostfound','🔍 Lost & Found']].map(([id,label])=>(
-              <button key={id} className="btn-press" onClick={()=>{setTab(id);setSearch('');setCat('all')}} style={{
-                padding:'9px 18px', borderRadius:40, border:`2px solid ${tab===id?T.coral:'var(--border-soft)'}`,
-                background:tab===id?T.coral:'transparent', color:tab===id?'#fff':T.textMid,
-                fontWeight:600, cursor:'pointer', fontSize:13, transition:'all 0.18s',
-                boxShadow:tab===id?'var(--shadow-coral)':'none',
-              }}>{label}</button>
-            ))}
-          </div>
-
-          {/* Search */}
-          <div style={{ position:'relative', maxWidth:480 }}>
-            <span style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', fontSize:16, pointerEvents:'none' }}>🔎</span>
-            <input style={{ ...INP, paddingLeft:42, borderRadius:40 }}
-              placeholder={tab==='marketplace'?'Search books, calculators, lab kits…':'Search lost & found…'}
-              value={search} onChange={e=>setSearch(e.target.value)} />
-          </div>
-        </div>
-
-        {/* STATS BAR */}
-        <div style={{ ...row(0), gap:0, padding:'0 24px', borderBottom:`1px solid var(--border-soft)`, background:'rgba(255,255,255,0.5)', backdropFilter:'blur(4px)', overflowX:'auto' }}>
-          {[[stats.available,'available','#10B981'],[stats.students,'students',T.navy],[stats.borrows,'borrows',T.coral],[stats.pending,'pending',T.warn]].map(([n,l,c])=>(
-            <div key={l} style={{ ...row(6), padding:'10px 20px 10px 0', flexShrink:0 }}>
-              <span style={{ fontFamily:'var(--font-head)', fontSize:22, fontWeight:800, color:c }}>{n??'—'}</span>
-              <span style={{ fontSize:12, color:T.textMid }}>{l}</span>
+        {/* HERO — compact navy+coral split bar */}
+        <div style={{ background:`linear-gradient(135deg, ${T.navy} 0%, #1E293B 60%, #0F172A 100%)`, borderBottom:`1px solid rgba(232,68,90,0.2)` }}>
+          {/* Top row: tagline + stats chips */}
+          <div className="hero-pad" style={{ padding:'16px 24px 12px', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
+            <div style={{ ...row(12) }}>
+              <div>
+                <div style={{ fontFamily:'var(--font-head)', fontSize:'clamp(18px,3.5vw,24px)', fontWeight:800, color:'#fff', letterSpacing:'-0.5px', lineHeight:1.1 }}>
+                  Share more, <span style={{ color:T.coral }}>spend less.</span>
+                </div>
+                <div style={{ fontSize:12, color:'rgba(255,255,255,0.45)', marginTop:3 }}>
+                  {user.college_name} · peer lending
+                </div>
+              </div>
             </div>
-          ))}
-          <div style={{ ...row(6), padding:'10px 0', marginLeft:'auto', flexShrink:0 }}>
-            <span style={{ fontSize:12, color:T.textSoft }}>{activeCount}/{tier.limit} slots</span>
-            <TierBadge tier={user.trust_tier}/>
+            {/* Live stats chips */}
+            <div className="stats-chips" style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center' }}>
+              {/* Live indicator */}
+              <div style={{ ...row(5), padding:'5px 10px', background:'rgba(16,185,129,0.15)', borderRadius:20, border:'1px solid rgba(16,185,129,0.3)' }}>
+                <div style={{ width:6, height:6, borderRadius:'50%', background:'#10B981', animation:'pulse 2s infinite', flexShrink:0 }} />
+                <span style={{ fontSize:11, color:'#10B981', fontWeight:600 }}>Live</span>
+              </div>
+              {[[stats.available,'📦','available'],[stats.students,'🎓','students'],[stats.borrows,'🔄','borrows']].map(([n,ic,l])=>(
+                <div key={l} style={{ background:'rgba(255,255,255,0.08)', borderRadius:20, padding:'5px 12px', ...row(5), flexShrink:0 }}>
+                  <span style={{ fontSize:13 }}>{ic}</span>
+                  <span style={{ fontFamily:'var(--font-head)', fontSize:14, fontWeight:700, color:'#fff' }}>{n??'—'}</span>
+                  <span style={{ fontSize:11, color:'rgba(255,255,255,0.45)' }}>{l}</span>
+                </div>
+              ))}
+              <div style={{ background:`${T.coral}22`, borderRadius:20, padding:'5px 12px', ...row(6), flexShrink:0, border:`1px solid ${T.coral}44` }}>
+                <span style={{ fontSize:12, color:T.coral, fontWeight:600 }}>{activeCount}/{tier.limit} slots</span>
+                <TierBadge tier={user.trust_tier}/>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom row: tab pills + search */}
+          <div className="hero-bottom" style={{ padding:'0 24px 14px', display:'flex', alignItems:'center', gap:12, flexWrap:'wrap' }}>
+            <div className="hero-tabs" style={{ ...row(6) }}>
+              {[['marketplace','📦 Marketplace'],['lostfound','🔍 Lost & Found']].map(([id,label])=>(
+                <button key={id} className="btn-press" onClick={()=>{setTab(id);setSearch('');setCat('all')}} style={{
+                  padding:'7px 16px', borderRadius:40, border:`1.5px solid ${tab===id?T.coral:'rgba(255,255,255,0.15)'}`,
+                  background:tab===id?T.coral:'rgba(255,255,255,0.06)', color:tab===id?'#fff':'rgba(255,255,255,0.65)',
+                  fontWeight:600, cursor:'pointer', fontSize:12, transition:'all 0.18s',
+                  boxShadow:tab===id?'var(--shadow-coral)':'none', flexShrink:0,
+                }}>{label}</button>
+              ))}
+            </div>
+            <div className="search-bar" style={{ position:'relative', flex:1, minWidth:200, maxWidth:400 }}>
+              <span style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', fontSize:14, pointerEvents:'none' }}>🔎</span>
+              <input className="dark-search" style={{ ...INP, paddingLeft:40, borderRadius:40, background:'rgba(255,255,255,0.1)', border:'1.5px solid rgba(255,255,255,0.12)', color:'#fff', fontSize:13 }}
+                placeholder={tab==='marketplace'?'Search items…':'Search lost & found…'}
+                value={search} onChange={e=>setSearch(e.target.value)} />
+            </div>
           </div>
         </div>
 
         {/* BODY */}
-        <div style={{ display:'grid', gridTemplateColumns:tab==='marketplace'?'200px 1fr':'1fr', minHeight:'calc(100vh - 200px)' }}>
+        <div style={{ display:'grid', gridTemplateColumns:tab==='marketplace'?'clamp(160px,16vw,200px) 1fr':'1fr', minHeight:'calc(100vh - 200px)' }}>
 
           {/* SIDEBAR */}
           {tab==='marketplace' && (
@@ -1328,7 +1389,7 @@ export default function App() {
           )}
 
           {/* GRID */}
-          <div className="main-content" style={{ padding:'20px 24px' }}>
+          <div className="main-content" style={{ padding:'20px 24px', minWidth:0, overflowX:'hidden' }}>
             <div style={{ ...row(0), justifyContent:'space-between', marginBottom:16, flexWrap:'wrap', gap:8 }}>
               <span style={{ fontSize:14, color:T.textMid, fontWeight:500 }}>
                 {tab==='lostfound' ? `${items.length} found item${items.length!==1?'s':''}` : `${items.length} item${items.length!==1?'s':''}`}
@@ -1352,7 +1413,7 @@ export default function App() {
               </div>
             )}
 
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(185px,1fr))', gap:16 }}>
+            <div className="item-grid" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(185px,1fr))', gap:16 }}>
               {items.filter(item=>item.status!=='closed').map(item=>(
                 <ItemCard key={item.id+'-'+tick} item={item} currentUserId={user.id} onRequest={i=>setBorrow(i)} myRequests={myRequests} />
               ))}
