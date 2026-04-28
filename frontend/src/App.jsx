@@ -1259,27 +1259,49 @@ export default function App() {
     })
   }, [])
 
-  // Fetch items + stats + requests — used both on change and for silent polling
+  // Cache key for localStorage stale-while-revalidate
+  const cacheKey = `cs_items_${tab}_${cat}_${avail}_${user?.college_id}`
+
+  // Fetch items + stats + requests — all in parallel for speed
   const fetchMarketplace = useCallback(async (silent=false) => {
     if (!user) return
-    if (tab==='marketplace') {
-      const r = await api.getItems({ listingType:'borrow', category:cat!=='all'?cat:undefined, status:avail==='available'?'available':undefined, search:search||undefined })
-      if (!r.error) setItems(r.items||[])
-    } else {
-      const r = await api.getItems({ listingType:'lost_found', search:search||undefined })
-      if (!r.error) setItems(r.items||[])
+
+    // On first (non-silent) load, show stale cached data instantly
+    if (!silent) {
+      try {
+        const cached = localStorage.getItem(cacheKey)
+        if (cached) setItems(JSON.parse(cached))
+      } catch (_) {}
     }
-    api.getStats().then(r=>{ if(!r.error) setStats(r) })
-    api.getMyRequests().then(r=>{ if(!r.error) setMyRequests(r.requests||[]) })
-  }, [user, tab, cat, avail, search])
+
+    // Fire all three requests in parallel — much faster than sequential
+    const itemParams = tab==='marketplace'
+      ? { listingType:'borrow', category:cat!=='all'?cat:undefined, status:avail==='available'?'available':undefined, search:search||undefined }
+      : { listingType:'lost_found', search:search||undefined }
+
+    const [itemsRes, statsRes, reqsRes] = await Promise.all([
+      api.getItems(itemParams),
+      api.getStats(),
+      api.getMyRequests(),
+    ])
+
+    if (!itemsRes.error) {
+      setItems(itemsRes.items||[])
+      // Cache for next visit
+      try { localStorage.setItem(cacheKey, JSON.stringify(itemsRes.items||[])) } catch (_) {}
+    }
+    if (!statsRes.error) setStats(statsRes)
+    if (!reqsRes.error)  setMyRequests(reqsRes.requests||[])
+
+  }, [user, tab, cat, avail, search, cacheKey])
 
   // Trigger on filter/tab/search changes
   useEffect(() => { fetchMarketplace(false) }, [fetchMarketplace, tick])
 
-  // Silent real-time polling every 10 seconds — items appear/disappear without refresh
+  // Silent real-time polling every 12 seconds
   useEffect(() => {
     if (!user) return
-    const interval = setInterval(() => fetchMarketplace(true), 10000)
+    const interval = setInterval(() => fetchMarketplace(true), 12000)
     return () => clearInterval(interval)
   }, [fetchMarketplace])
 
@@ -1321,11 +1343,13 @@ export default function App() {
         </header>
 
         {/* MOBILE HEADER */}
-        <header className="mobile-only" style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 14px', height:52, background:'rgba(255,248,240,0.97)', backdropFilter:'blur(12px)', borderBottom:`1px solid var(--border-soft)`, position:'sticky', top:0, zIndex:100, width:'100%', boxSizing:'border-box', overflow:'hidden' }}>
-          <Logo />
-          <div style={{ display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
+        <header className="mobile-only" style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 12px', height:50, background:'rgba(255,248,240,0.97)', backdropFilter:'blur(12px)', borderBottom:`1px solid var(--border-soft)`, position:'sticky', top:0, zIndex:100, width:'100%', boxSizing:'border-box' }}>
+          <div style={{ flexShrink:1, minWidth:0, overflow:'hidden' }}>
+            <Logo />
+          </div>
+          <div style={{ display:'flex', alignItems:'center', gap:5, flexShrink:0, paddingLeft:8 }}>
             <TierBadge tier={user.trust_tier}/>
-            <button onClick={handleLogout} style={{ background:'rgba(15,23,42,0.07)', border:'none', borderRadius:8, padding:'5px 8px', fontSize:11, fontWeight:600, color:T.textMid, cursor:'pointer', whiteSpace:'nowrap' }}>↪ Out</button>
+            <button onClick={handleLogout} style={{ background:'rgba(15,23,42,0.07)', border:'none', borderRadius:7, padding:'4px 8px', fontSize:11, fontWeight:600, color:T.textMid, cursor:'pointer', whiteSpace:'nowrap', flexShrink:0 }}>↪ Out</button>
           </div>
         </header>
 
