@@ -442,7 +442,7 @@ function AuthScreen({ onLogin }) {
 // ── LOGO ──────────────────────────────────────────────────────────────────────
 function Logo({ light=false }) {
   return (
-    <div style={{ fontFamily:'var(--font-head)', fontWeight:800, fontSize:20, letterSpacing:'-3.0px', color: light ? '#fff' : T.navy, ...row(6) }}>
+    <div style={{ fontFamily:'var(--font-head)', fontWeight:800, fontSize:20, letterSpacing:'-2.5px', color: light ? '#fff' : T.navy, ...row(6) }}>
       <div style={{ width:28, height:28, background:T.coral, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center' }}>
         <span style={{ fontSize:14 }}>◈</span>
       </div>
