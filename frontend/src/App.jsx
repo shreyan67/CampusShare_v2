@@ -837,7 +837,7 @@ function ActivityModal({ open, onClose, refresh, showToast }) {
           <SBadge status={r.status} inline />
         </div>
 
-        <div style={{ padding:'12px 14px 14px' }}>
+        <div style={{ padding:'10px 10px 12px' }}>
         {r.status==='active' && r.due_at && (
           <div style={{ fontSize:12, color:T.textMid, marginBottom:8, ...row(6) }}>
             <span>📅</span>
@@ -1191,7 +1191,7 @@ function ItemCard({ item, currentUserId, onRequest, myRequests=[] }) {
       </div>
 
       <div style={{ padding:'12px 14px 14px' }}>
-        <div style={{ fontFamily:'var(--font-head)', fontSize:14, fontWeight:700, marginBottom:3, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{item.title}</div>
+        <div style={{ fontFamily:'var(--font-head)', fontSize:13, fontWeight:700, marginBottom:3, overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>{item.title}</div>
         <div style={{ fontSize:12, color:T.textSoft, marginBottom:12 }}>{item.category}{!isLF?` · max ${item.max_borrow_days}d`:''}</div>
         <div style={{ ...row(0), justifyContent:'space-between', alignItems:'center' }}>
           <div style={{ ...row(6), fontSize:12, color:T.textMid }}>
@@ -1297,11 +1297,12 @@ export default function App() {
         </header>
 
         {/* MOBILE HEADER */}
-        <header className="mobile-only" style={{ ...row(0), justifyContent:'space-between', padding:'0 16px', height:56, background:'rgba(255,248,240,0.95)', backdropFilter:'blur(12px)', borderBottom:`1px solid var(--border-soft)`, position:'sticky', top:0, zIndex:100 }}>
+        <header className="mobile-only" style={{ ...row(0), justifyContent:'space-between', padding:'0 14px', height:52, background:'rgba(255,248,240,0.97)', backdropFilter:'blur(12px)', borderBottom:`1px solid var(--border-soft)`, position:'sticky', top:0, zIndex:100 }}>
           <Logo />
-          <div style={row(6)}>
-            <Av user={user} size={32} />
+          <div style={row(8)}>
             <TierBadge tier={user.trust_tier}/>
+            <Av user={user} size={30} />
+            <button onClick={handleLogout} style={{ background:'rgba(15,23,42,0.07)', border:'none', borderRadius:8, padding:'5px 10px', fontSize:11, fontWeight:600, color:T.textMid, cursor:'pointer' }}>Sign out</button>
           </div>
         </header>
 
@@ -1334,7 +1335,9 @@ export default function App() {
                 </div>
               ))}
               <div style={{ background:`${T.coral}22`, borderRadius:20, padding:'5px 12px', ...row(6), flexShrink:0, border:`1px solid ${T.coral}44` }}>
-                <span style={{ fontSize:12, color:T.coral, fontWeight:600 }}>{activeCount}/{tier.limit} slots</span>
+                <span style={{ fontSize:12, color:T.coral, fontWeight:600 }}>
+                  {Math.max(0, tier.limit - activeCount)}/{tier.limit} free
+                </span>
                 <TierBadge tier={user.trust_tier}/>
               </div>
             </div>
@@ -1413,7 +1416,7 @@ export default function App() {
               </div>
             )}
 
-            <div className="item-grid" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(185px,1fr))', gap:16 }}>
+            <div className="item-grid" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(clamp(130px,40vw,185px),1fr))', gap:'clamp(8px,2vw,16px)' }}>
               {items.filter(item=>item.status!=='closed').map(item=>(
                 <ItemCard key={item.id+'-'+tick} item={item} currentUserId={user.id} onRequest={i=>setBorrow(i)} myRequests={myRequests} />
               ))}
@@ -1442,3 +1445,4 @@ export default function App() {
     </Ctx.Provider>
   )
 }
+  

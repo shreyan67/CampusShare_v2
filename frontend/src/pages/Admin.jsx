@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 
-const BASE_URL = window.location.hostname === "localhost"
-  ? "http://localhost:4000"
-  : "https://campusshare-v2-backend.onrender.com";
+// Derive backend root from the same VITE_API_URL env var used by api.js
+// VITE_API_URL = "https://your-backend.onrender.com/api"
+// We strip "/api" to get the backend root for admin routes
+const _apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000/api'
+const BASE_URL = _apiUrl.replace(/\/api$/, '')
 
 const S = {
   page:    { padding: "24px", fontFamily: "'DM Sans', sans-serif", background: "#f5f5f0", minHeight: "100vh" },
@@ -38,7 +40,7 @@ function useAdmin() {
 }
 
 // ── AUTH GATE ─────────────────────────────────────────────────────────────────
-function AuthGate({ onAuth }) {
+function AuthGate({ onAuth, goBack }) {
   const [val, setVal] = useState("")
   const [err, setErr] = useState("")
 
@@ -57,7 +59,12 @@ function AuthGate({ onAuth }) {
   return (
     <div style={{ ...S.page, display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ ...S.card, width: 320 }}>
-        <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>🔐 Admin Login</div>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom: 6 }}>
+          <div style={{ fontSize: 20, fontWeight: 700 }}>🔐 Admin Login</div>
+          {goBack && (
+            <button onClick={goBack} style={{ background:"transparent", border:"0.5px solid #ddd", borderRadius:8, padding:"4px 10px", fontSize:12, color:"#666", cursor:"pointer" }}>← Back</button>
+          )}
+        </div>
         <div style={{ fontSize: 13, color: "#666", marginBottom: 16 }}>Enter your ADMIN_SECRET to continue.</div>
         {err && <div style={{ color: "#c0392b", fontSize: 13, marginBottom: 10 }}>{err}</div>}
         <input
@@ -378,7 +385,7 @@ export default function Admin({ goBack }) {
   const [tab, setTab] = useState("payouts")
   const { key, saveKey, apiFetch } = useAdmin()
 
-  if (!key) return <AuthGate onAuth={saveKey} />
+  if (!key) return <AuthGate onAuth={saveKey} goBack={goBack} />
 
   return (
     <div style={S.page}>
