@@ -88,6 +88,44 @@ router.patch('/:id/confirm-payment', requireAuth, async (req, res) => {
     res.status(500).json({ error: 'Failed.' })
   }
 })
+// PATCH /api/requests/:id/activate-after-payment
+// Called by BORROWER immediately after Razorpay payment is verified.
+// Moves the request from 'selected' → 'active' so the lender is notified
+// and can send pickup details. No lender action required for paid items —
+// Razorpay signature verification is sufficient proof of payment.
+router.patch('/:id/activate-after-payment', requireAuth, async (req, res) => {
+  try {
+    const r    = await queryOne('SELECT * FROM borrow_requests WHERE id=$1', [req.params.id])
+    const item = await queryOne('SELECT * FROM items WHERE id=$1', [r?.item_id])
+
+    if (!r || !item) return res.status(404).json({ error: 'Not found.' })
+    if (r.borrower_id !== req.userId) return res.status(403).json({ error: 'Not your request.' })
+    if (r.status !== 'selected') return res.status(409).json({ error: 'Request not in selected state.' })
+    if (!r.payment_confirmed) return res.status(409).json({ error: 'Payment not confirmed yet.' })
+
+    const dueAt = new Date(Date.now() + r.requested_days * 864e5)
+
+    await query(
+      "UPDATE borrow_requests SET status='active', due_at=$1 WHERE id=$2",
+      [dueAt, r.id]
+    )
+
+    // Decline all other pending/selected requests for this item — payment is committed
+    if (!item.allow_multiple) {
+      await query("UPDATE items SET status='borrowed' WHERE id=$1", [item.id])
+      await query(
+        "UPDATE borrow_requests SET status='declined' WHERE item_id=$1 AND id<>$2 AND status IN ('pending','selected')",
+        [item.id, r.id]
+      )
+    }
+
+    res.json({ success: true, dueAt })
+  } catch (err) {
+    console.error('[activate-after-payment] error:', err)
+    res.status(500).json({ error: 'Failed.' })
+  }
+})
+
 // PATCH /api/requests/:id/finalize
 // For PAID items: owner confirms payment received → goes active (pickup flow starts)
 // For NON-PAID items: owner just confirms selection → goes active (pickup flow starts)

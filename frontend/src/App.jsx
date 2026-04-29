@@ -332,12 +332,6 @@ const installApp = async () => {
     const r = await api.login(fields.email.trim())
     setLoading(false)
     if (r.error) return setErr(r.error)
-      // ✅ FIX: skip OTP for razorpay emails
-if (fields.email.includes('@razorpay.com') && r.token && r.user) {
-  api.saveSession(r.token, r.user)
-  onLogin(r.user)
-  return
-}
     setPending({ userId: r.userId })
     if (r._otp) setConsoleOtp(r._otp)
     setMode('otp')
@@ -354,12 +348,6 @@ if (fields.email.includes('@razorpay.com') && r.token && r.user) {
     try {
       const r = await api.signup(name, email, roll)
       if (r.error) { setLoading(false); return setErr(r.error) }
-      // ✅ FIX: skip OTP for razorpay emails
-if (email.includes('@razorpay.com') && r.token && r.user) {
-  api.saveSession(r.token, r.user)
-  onLogin(r.user)
-  return
-}
       setPending({ userId: r.userId })
       if (r._devOtp) setConsoleOtp(r._devOtp)
       setMode('otp')
@@ -724,10 +712,18 @@ function BorrowModal({ open, item, onClose, onSuccess, showToast }) {
 }
 
 // ── LF PICKUP PANEL ───────────────────────────────────────────────────────────
+// Draft text is preserved across 8-second polls via a module-level cache.
+const _lfPickupDraftCache = {}
+
 function LFPickupPanel({ r, reload, showToast }) {
-  const [msg,    setMsg]    = useState(r.pickup_message || '')
+  const [msg,    setMsg]    = useState(() => _lfPickupDraftCache[r.id] ?? r.pickup_message ?? '')
   const [saving, setSaving] = useState(false)
   const [sent,   setSent]   = useState(!!r.pickup_message)
+
+  function handleChange(val) {
+    _lfPickupDraftCache[r.id] = val
+    setMsg(val)
+  }
 
   async function send() {
     if (!msg.trim()) { showToast('Please enter a pickup message.'); return }
@@ -736,6 +732,7 @@ function LFPickupPanel({ r, reload, showToast }) {
     setSaving(false)
     if (res?.error) { showToast(res.error); return }
     setSent(true)
+    delete _lfPickupDraftCache[r.id]
     showToast('Pickup message sent!')
     await reload()
   }
@@ -749,7 +746,7 @@ function LFPickupPanel({ r, reload, showToast }) {
       <div style={{ fontWeight:600, marginBottom:8 }}>📍 Send pickup message to lender</div>
       <div style={{ fontSize:12, marginBottom:8, opacity:0.8 }}>Tell them where/when you can collect the item.</div>
       <div style={{ display:'flex', gap:8 }}>
-        <input style={{ ...INP, flex:1, fontSize:13, padding:'8px 12px' }} placeholder="e.g. Hostel B gate, free 4–6pm" value={msg} onChange={e=>setMsg(e.target.value)} />
+        <input style={{ ...INP, flex:1, fontSize:13, padding:'8px 12px' }} placeholder="e.g. Hostel B gate, free 4–6pm" value={msg} onChange={e=>handleChange(e.target.value)} />
         <button className="btn-press" style={{ ...btn(true,true), whiteSpace:'nowrap' }} onClick={send} disabled={saving}>{saving?'…':'Send'}</button>
       </div>
     </InfoBanner>
@@ -757,10 +754,21 @@ function LFPickupPanel({ r, reload, showToast }) {
 }
 
 // ── PICKUP DETAILS PANEL ──────────────────────────────────────────────────────
+// Draft text is stored in a module-level map keyed by request ID so that
+// the 8-second auto-refresh of the activity modal does NOT clear what the
+// lender is currently typing.
+const _pickupDraftCache = {}
+
 function PickupDetailsPanel({ r, reload, showToast }) {
-  const [details, setDetails] = useState(r.pickup_details || '')
+  const [details, setDetails] = useState(() => _pickupDraftCache[r.id] ?? r.pickup_details ?? '')
   const [saving,  setSaving]  = useState(false)
   const [sent,    setSent]    = useState(!!r.pickup_details)
+
+  // Keep draft cache in sync so a re-mount (caused by poll refresh) restores text
+  function handleChange(val) {
+    _pickupDraftCache[r.id] = val
+    setDetails(val)
+  }
 
   async function send() {
     if (!details.trim()) { showToast('Please enter pickup details.'); return }
@@ -769,6 +777,7 @@ function PickupDetailsPanel({ r, reload, showToast }) {
     setSaving(false)
     if (res?.error) { showToast(res.error); return }
     setSent(true)
+    delete _pickupDraftCache[r.id]
     showToast('Pickup details sent!')
     await reload()
   }
@@ -785,7 +794,7 @@ function PickupDetailsPanel({ r, reload, showToast }) {
       <div style={{ fontWeight:600, marginBottom:8 }}>📍 Send pickup details to borrower</div>
       <div style={{ fontSize:12, marginBottom:8, opacity:0.8 }}>Tell them where and when to collect.</div>
       <div style={{ display:'flex', gap:8 }}>
-        <input style={{ ...INP, flex:1, fontSize:13, padding:'8px 12px' }} placeholder="e.g. Hostel C room 301, 5–7pm" value={details} onChange={e=>setDetails(e.target.value)} />
+        <input style={{ ...INP, flex:1, fontSize:13, padding:'8px 12px' }} placeholder="e.g. Hostel C room 301, 5–7pm" value={details} onChange={e=>handleChange(e.target.value)} />
         <button className="btn-press" style={{ ...btn(true,true), whiteSpace:'nowrap' }} onClick={send} disabled={saving}>{saving?'…':'Send'}</button>
       </div>
     </InfoBanner>
@@ -949,7 +958,14 @@ function ActivityModal({ open, onClose, refresh, showToast }) {
           <InfoBanner type="warn">💳 Pay <strong>₹{r.total_amount}</strong> via UPI to confirm rental.</InfoBanner>
         )}
         {isBorrowing && r.status==='selected' && isPaid && r.payment_confirmed && (
-          <InfoBanner type="success">✅ Payment of ₹{r.total_amount} confirmed. Waiting for handover.</InfoBanner>
+          <InfoBanner type="success">✅ Payment of ₹{r.total_amount} confirmed. Waiting for lender to send pickup details.</InfoBanner>
+        )}
+        {/* Lender: shown as soon as status flips to active after borrower pays */}
+        {!isBorrowing && r.status==='active' && isPaid && r.payment_confirmed && !r.pickup_details && (
+          <InfoBanner type="success">
+            💰 <strong>Borrower has paid ₹{r.total_amount} — admin has received it.</strong>
+            <div style={{marginTop:6, opacity:0.9}}>Send your meetup/pickup details to the borrower below so they can collect the item.</div>
+          </InfoBanner>
         )}
 
         {/* Payout banners */}
@@ -991,7 +1007,13 @@ function ActivityModal({ open, onClose, refresh, showToast }) {
                     razorpay_signature:  response.razorpay_signature,
                   })
                   if (verifyRes?.error) { showToast('Verification failed. Contact support.'); return }
-                  showToast('Payment successful! Waiting for handover.')
+                  // Move request to active — borrower calls this because lender doesn't need
+                  // to manually confirm a Razorpay-verified payment.
+                  const activateRes = await api.activateAfterPayment(r.id)
+                  if (activateRes?.error) {
+                    console.warn('Activate warning:', activateRes.error)
+                  }
+                  showToast('Payment successful! Lender has been notified to send pickup details.')
                   await reload()
                 },
                 modal: { ondismiss: () => showToast('Payment cancelled.') },
@@ -1021,13 +1043,7 @@ function ActivityModal({ open, onClose, refresh, showToast }) {
             </>
           )}
 
-          {/* Confirm payment (paid) */}
-          {!isBorrowing && r.status==='selected' && isPaid && r.payment_confirmed && (
-            <button className="btn-press" style={btn(true,true)} onClick={async()=>{
-              const res = await act(api.finalizeBorrow, r.id)
-              if(res&&!res.error){ showToast('Payment confirmed! Send pickup details.'); await reload() }
-            }}>Confirm Payment</button>
-          )}
+          {/* No "Confirm Payment" button for lender — finalize is called automatically after borrower pays via Razorpay */}
 
           {/* Confirm & proceed (non-paid) */}
           {!isBorrowing && r.status==='selected' && !isPaid && !isLF && (
@@ -1108,14 +1124,17 @@ function ActivityModal({ open, onClose, refresh, showToast }) {
             </>
           )}
 
-          {/* Confirm return */}
-          {!isBorrowing && r.listing_type!=='lost_found' && ['active','overdue'].includes(r.status) && (
+          {/* Confirm return — only available AFTER borrower confirms receipt */}
+          {!isBorrowing && r.listing_type!=='lost_found' && ['active','overdue'].includes(r.status) && r.borrower_received && (
             <button className="btn-press" style={btn(true,true)} onClick={async()=>{
               const res = await act(api.confirmReturn, r.id)
-              console.log("RETURN RESPONSE:", res)
               if(!res||res.error){ showToast("Return failed"); return }
               showToast(res.onTime===false ? 'Return confirmed (late).' : 'Return confirmed!')
             }}>Confirm Return</button>
+          )}
+          {/* Waiting banner: item given but borrower hasn't confirmed receipt yet */}
+          {!isBorrowing && r.listing_type!=='lost_found' && ['active','overdue'].includes(r.status) && r.item_given && !r.borrower_received && (
+            <InfoBanner type="info">⏳ Waiting for borrower to confirm item received — then you can confirm return.</InfoBanner>
           )}
         </div>
         </div>{/* end card body */}

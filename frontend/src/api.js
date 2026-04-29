@@ -91,8 +91,9 @@ export const declineRequest   = id  => patch(`/requests/${id}/decline`)
 export const confirmReturn    = id  => patch(`/requests/${id}/return`)
 
 // Payments (Razorpay)
-export const createPaymentOrder = (requestId) => post('/payments/create-order', { requestId })
-export const verifyPayment      = (data)       => post('/payments/verify', data)
+export const createPaymentOrder    = (requestId) => post('/payments/create-order', { requestId })
+export const verifyPayment         = (data)       => post('/payments/verify', data)
+export const activateAfterPayment  = (id)         => patch(`/requests/${id}/activate-after-payment`)
 
 // Profile
 export const updateUpi = (upiId) => req('PATCH', '/users/me/upi', { upiId })
