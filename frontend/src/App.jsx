@@ -332,6 +332,12 @@ const installApp = async () => {
     const r = await api.login(fields.email.trim())
     setLoading(false)
     if (r.error) return setErr(r.error)
+      // ✅ FIX: skip OTP for razorpay emails
+if (fields.email.includes('@razorpay.com') && r.token && r.user) {
+  api.saveSession(r.token, r.user)
+  onLogin(r.user)
+  return
+}
     setPending({ userId: r.userId })
     if (r._otp) setConsoleOtp(r._otp)
     setMode('otp')
@@ -348,6 +354,12 @@ const installApp = async () => {
     try {
       const r = await api.signup(name, email, roll)
       if (r.error) { setLoading(false); return setErr(r.error) }
+      // ✅ FIX: skip OTP for razorpay emails
+if (email.includes('@razorpay.com') && r.token && r.user) {
+  api.saveSession(r.token, r.user)
+  onLogin(r.user)
+  return
+}
       setPending({ userId: r.userId })
       if (r._devOtp) setConsoleOtp(r._devOtp)
       setMode('otp')
