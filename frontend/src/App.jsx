@@ -4,26 +4,26 @@ import Admin from "./pages/Admin"
 
 // ── DESIGN TOKENS ─────────────────────────────────────────────────────────────
 const T = {
-  navy:    '#0F172A',
-  coral:   '#E8445A',
-  cream:   '#FFF8F0',
-  coralDim:'#E8445A22',
-  coralMid:'#E8445A44',
-  glass:   'rgba(255,248,240,0.72)',
+  navy: '#0F172A',
+  coral: '#E8445A',
+  cream: '#FFF8F0',
+  coralDim: '#E8445A22',
+  coralMid: '#E8445A44',
+  glass: 'rgba(255,248,240,0.72)',
   glassDk: 'rgba(15,23,42,0.82)',
-  border:  'rgba(232,68,90,0.18)',
+  border: 'rgba(232,68,90,0.18)',
   borderSoft: 'rgba(15,23,42,0.08)',
-  text:    '#0F172A',
+  text: '#0F172A',
   textMid: '#475569',
-  textSoft:'#94A3B8',
+  textSoft: '#94A3B8',
   success: '#10B981',
-  successBg:'#D1FAE5',
-  warn:    '#F59E0B',
-  warnBg:  '#FEF3C7',
-  error:   '#EF4444',
+  successBg: '#D1FAE5',
+  warn: '#F59E0B',
+  warnBg: '#FEF3C7',
+  error: '#EF4444',
   errorBg: '#FEE2E2',
-  info:    '#3B82F6',
-  infoBg:  '#DBEAFE',
+  info: '#3B82F6',
+  infoBg: '#DBEAFE',
 }
 
 const FONTS = `
@@ -172,53 +172,53 @@ body { background: var(--cream); font-family: var(--font-body); color: var(--nav
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 const TRUST_TIERS = {
-  newcomer: { label:'Newcomer',   color:'#64748B', bg:'#F1F5F9', limit:1 },
-  regular:  { label:'Regular',    color:'#3B82F6', bg:'#DBEAFE', limit:3 },
-  trusted:  { label:'Trusted',    color:'#10B981', bg:'#D1FAE5', limit:5 },
-  rep:      { label:'Campus Rep', color:'#8B5CF6', bg:'#EDE9FE', limit:8 },
+  newcomer: { label: 'Newcomer', color: '#64748B', bg: '#F1F5F9', limit: 1 },
+  regular: { label: 'Regular', color: '#3B82F6', bg: '#DBEAFE', limit: 3 },
+  trusted: { label: 'Trusted', color: '#10B981', bg: '#D1FAE5', limit: 5 },
+  rep: { label: 'Campus Rep', color: '#8B5CF6', bg: '#EDE9FE', limit: 8 },
 }
-const CATEGORIES = ['Books','Lab Equipment','Electronics','Notes & Guides','Accessories','Other']
-const EMOJIS = { 'Books':'📗','Lab Equipment':'🔬','Electronics':'🔌','Notes & Guides':'📝','Accessories':'🎒','Other':'📦','lost_found':'🔍' }
+const CATEGORIES = ['Books', 'Lab Equipment', 'Electronics', 'Notes & Guides', 'Accessories', 'Other']
+const EMOJIS = { 'Books': '📗', 'Lab Equipment': '🔬', 'Electronics': '🔌', 'Notes & Guides': '📝', 'Accessories': '🎒', 'Other': '📦', 'lost_found': '🔍' }
 const STATUS_MAP = {
-  available: { bg:'#D1FAE5', color:'#065F46', label:'Available' },
-  borrowed:  { bg:'#FEF3C7', color:'#92400E', label:'Borrowed'  },
-  pending:   { bg:'#FEF3C7', color:'#92400E', label:'Pending'   },
-  selected:  { bg:'#DBEAFE', color:'#1E40AF', label:'Selected'  },
-  active:    { bg:'#DBEAFE', color:'#1E40AF', label:'Active'    },
-  returned:  { bg:'#D1FAE5', color:'#065F46', label:'Returned'  },
-  declined:  { bg:'#FEE2E2', color:'#991B1B', label:'Declined'  },
-  overdue:   { bg:'#FEE2E2', color:'#991B1B', label:'Overdue'   },
-  completed: { bg:'#D1FAE5', color:'#065F46', label:'Claimed'   },
+  available: { bg: '#D1FAE5', color: '#065F46', label: 'Available' },
+  borrowed: { bg: '#FEF3C7', color: '#92400E', label: 'Borrowed' },
+  pending: { bg: '#FEF3C7', color: '#92400E', label: 'Pending' },
+  selected: { bg: '#DBEAFE', color: '#1E40AF', label: 'Selected' },
+  active: { bg: '#DBEAFE', color: '#1E40AF', label: 'Active' },
+  returned: { bg: '#D1FAE5', color: '#065F46', label: 'Returned' },
+  declined: { bg: '#FEE2E2', color: '#991B1B', label: 'Declined' },
+  overdue: { bg: '#FEE2E2', color: '#991B1B', label: 'Overdue' },
+  completed: { bg: '#D1FAE5', color: '#065F46', label: 'Claimed' },
 }
 
 // ── STYLE HELPERS ─────────────────────────────────────────────────────────────
-const btn = (primary=false, sm=false) => ({
-  fontFamily:'var(--font-body)', fontWeight:600,
+const btn = (primary = false, sm = false) => ({
+  fontFamily: 'var(--font-body)', fontWeight: 600,
   fontSize: sm ? 12 : 14,
   padding: sm ? '6px 14px' : '10px 20px',
   borderRadius: 'var(--radius-xs)',
-  cursor:'pointer', border:'none',
+  cursor: 'pointer', border: 'none',
   background: primary ? 'var(--coral)' : 'rgba(15,23,42,0.06)',
   color: primary ? '#fff' : 'var(--navy)',
-  transition:'all 0.18s ease',
+  transition: 'all 0.18s ease',
   letterSpacing: primary ? '0.01em' : 0,
   boxShadow: primary ? 'var(--shadow-coral)' : 'none',
 })
 
 const INP = {
-  width:'100%', padding:'11px 14px', fontSize:14,
-  border:'1.5px solid var(--border-soft)',
-  borderRadius:'var(--radius-xs)',
-  background:'rgba(255,255,255,0.8)',
-  color:'var(--navy)', outline:'none',
-  fontFamily:'var(--font-body)',
-  transition:'border-color 0.18s',
+  width: '100%', padding: '11px 14px', fontSize: 14,
+  border: '1.5px solid var(--border-soft)',
+  borderRadius: 'var(--radius-xs)',
+  background: 'rgba(255,255,255,0.8)',
+  color: 'var(--navy)', outline: 'none',
+  fontFamily: 'var(--font-body)',
+  transition: 'border-color 0.18s',
 }
-const LBL = { display:'block', fontSize:12, fontWeight:600, color:T.textMid, marginBottom:6, letterSpacing:'0.01em' }
-const ERR = { padding:'10px 14px', background:T.errorBg, color:'#991B1B', borderRadius:'var(--radius-xs)', fontSize:13, marginBottom:12, border:`1px solid ${T.error}22` }
-const OK  = { padding:'10px 14px', background:T.successBg, color:'#065F46', borderRadius:'var(--radius-xs)', fontSize:13, marginBottom:12 }
-const row = (gap=8) => ({ display:'flex', alignItems:'center', gap })
-const card = { background:'#fff', border:'1px solid var(--border-soft)', borderRadius:'var(--radius)', overflow:'hidden', boxShadow:'var(--shadow)' }
+const LBL = { display: 'block', fontSize: 12, fontWeight: 600, color: T.textMid, marginBottom: 6, letterSpacing: '0.01em' }
+const ERR = { padding: '10px 14px', background: T.errorBg, color: '#991B1B', borderRadius: 'var(--radius-xs)', fontSize: 13, marginBottom: 12, border: `1px solid ${T.error}22` }
+const OK = { padding: '10px 14px', background: T.successBg, color: '#065F46', borderRadius: 'var(--radius-xs)', fontSize: 13, marginBottom: 12 }
+const row = (gap = 8) => ({ display: 'flex', alignItems: 'center', gap })
+const card = { background: '#fff', border: '1px solid var(--border-soft)', borderRadius: 'var(--radius)', overflow: 'hidden', boxShadow: 'var(--shadow)' }
 
 // ── CONTEXT ───────────────────────────────────────────────────────────────────
 const Ctx = createContext(null)
@@ -226,21 +226,21 @@ const useApp = () => useContext(Ctx)
 
 // ── TOAST ─────────────────────────────────────────────────────────────────────
 function useToast() {
-  const [msg,setMsg] = useState('')
-  const show = useCallback(m => { setMsg(m); setTimeout(()=>setMsg(''),3200) }, [])
+  const [msg, setMsg] = useState('')
+  const show = useCallback(m => { setMsg(m); setTimeout(() => setMsg(''), 3200) }, [])
   return [msg, show]
 }
 function Toast({ msg }) {
   if (!msg) return null
   return (
-    <div style={{ position:'fixed', bottom:84, left:'50%', transform:'translateX(-50%)', zIndex:9999, pointerEvents:'none', animation:'toastIn 0.3s cubic-bezier(0.22,1,0.36,1) both' }}>
-      <div style={{ background:T.navy, color:'#fff', padding:'12px 24px', borderRadius:40, fontSize:14, fontWeight:500, maxWidth:340, textAlign:'center', boxShadow:'0 8px 32px rgba(15,23,42,0.24)', whiteSpace:'nowrap' }}>{msg}</div>
+    <div style={{ position: 'fixed', bottom: 84, left: '50%', transform: 'translateX(-50%)', zIndex: 9999, pointerEvents: 'none', animation: 'toastIn 0.3s cubic-bezier(0.22,1,0.36,1) both' }}>
+      <div style={{ background: T.navy, color: '#fff', padding: '12px 24px', borderRadius: 40, fontSize: 14, fontWeight: 500, maxWidth: 340, textAlign: 'center', boxShadow: '0 8px 32px rgba(15,23,42,0.24)', whiteSpace: 'nowrap' }}>{msg}</div>
     </div>
   )
 }
 
 // ── MODAL ─────────────────────────────────────────────────────────────────────
-function Modal({ open, onClose, children, wide=false }) {
+function Modal({ open, onClose, children, wide = false }) {
   useEffect(() => {
     if (open) document.body.style.overflow = 'hidden'
     else document.body.style.overflow = ''
@@ -249,12 +249,12 @@ function Modal({ open, onClose, children, wide=false }) {
 
   if (!open) return null
   return (
-    <div style={{ position:'fixed', inset:0, background:'rgba(15,23,42,0.6)', backdropFilter:'blur(8px)', zIndex:200, display:'flex', justifyContent:'center', alignItems:'flex-end', padding:'0', overflowY:'hidden' }}
-      onMouseDown={e => { if(e.target===e.currentTarget) onClose() }}>
-      <div className="slide-up modal-sheet" style={{ background:'#fff', borderRadius:'24px 24px 0 0', width:'100%', maxWidth: wide ? 680 : 480, maxHeight:'90vh', overflowY:'auto', padding:'8px 0 0' }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(8px)', zIndex: 200, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', padding: '0', overflowY: 'hidden' }}
+      onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="slide-up modal-sheet" style={{ background: '#fff', borderRadius: '24px 24px 0 0', width: '100%', maxWidth: wide ? 680 : 480, maxHeight: '90vh', overflowY: 'auto', padding: '8px 0 0' }}>
         {/* Handle bar */}
-        <div style={{ width:40, height:4, background:'rgba(15,23,42,0.12)', borderRadius:4, margin:'12px auto 20px' }} />
-        <div style={{ padding:'0 24px 32px' }}>
+        <div style={{ width: 40, height: 4, background: 'rgba(15,23,42,0.12)', borderRadius: 4, margin: '12px auto 20px' }} />
+        <div style={{ padding: '0 24px 32px' }}>
           {children}
         </div>
       </div>
@@ -265,32 +265,32 @@ function Modal({ open, onClose, children, wide=false }) {
 // ── SMALL UI ATOMS ────────────────────────────────────────────────────────────
 function TierBadge({ tier }) {
   const t = TRUST_TIERS[tier] || TRUST_TIERS.newcomer
-  return <span style={{ background:t.bg, color:t.color, fontSize:11, fontWeight:600, padding:'3px 10px', borderRadius:20, letterSpacing:'0.01em' }}>{t.label}</span>
+  return <span style={{ background: t.bg, color: t.color, fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, letterSpacing: '0.01em' }}>{t.label}</span>
 }
-function SBadge({ status, inline=false }) {
+function SBadge({ status, inline = false }) {
   const s = STATUS_MAP[status] || STATUS_MAP.available
-  return <span style={{ background:s.bg, color:s.color, fontSize:11, fontWeight:600, padding:'3px 10px', borderRadius:20, ...(inline?{}:{ position:'absolute', top:10, right:10 }) }}>{s.label}</span>
+  return <span style={{ background: s.bg, color: s.color, fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, ...(inline ? {} : { position: 'absolute', top: 10, right: 10 }) }}>{s.label}</span>
 }
-function Av({ user, size=26 }) {
-  const init = user?.avatar || user?.name?.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase() || '?'
+function Av({ user, size = 26 }) {
+  const init = user?.avatar || user?.name?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?'
   return (
-    <div style={{ width:size, height:size, borderRadius:'50%', background: user?.color || 'linear-gradient(135deg,#E8445A,#0F172A)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:Math.round(size*.38), fontWeight:700, color:'#fff', flexShrink:0, letterSpacing:'-0.02em' }}>{init}</div>
+    <div style={{ width: size, height: size, borderRadius: '50%', background: user?.color || 'linear-gradient(135deg,#E8445A,#0F172A)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: Math.round(size * .38), fontWeight: 700, color: '#fff', flexShrink: 0, letterSpacing: '-0.02em' }}>{init}</div>
   )
 }
-function Divider() { return <div style={{ height:1, background:'var(--border-soft)', margin:'14px 0' }} /> }
-function ModalTitle({ children }) { return <div style={{ fontFamily:'var(--font-head)', fontSize:22, fontWeight:800, marginBottom:4, letterSpacing:'-0.5px', color:T.navy }}>{children}</div> }
-function ModalSub({ children }) { return <div style={{ fontSize:14, color:T.textMid, marginBottom:18, lineHeight:1.5 }}>{children}</div> }
+function Divider() { return <div style={{ height: 1, background: 'var(--border-soft)', margin: '14px 0' }} /> }
+function ModalTitle({ children }) { return <div style={{ fontFamily: 'var(--font-head)', fontSize: 22, fontWeight: 800, marginBottom: 4, letterSpacing: '-0.5px', color: T.navy }}>{children}</div> }
+function ModalSub({ children }) { return <div style={{ fontSize: 14, color: T.textMid, marginBottom: 18, lineHeight: 1.5 }}>{children}</div> }
 
-function InfoBanner({ type='info', children }) {
+function InfoBanner({ type = 'info', children }) {
   const styles = {
-    info:    { bg:T.infoBg,    color:T.info,    border:`1px solid ${T.info}33`    },
-    success: { bg:T.successBg, color:T.success, border:`1px solid ${T.success}33` },
-    warn:    { bg:T.warnBg,    color:'#92400E', border:`1px solid ${T.warn}44`    },
-    error:   { bg:T.errorBg,   color:T.error,   border:`1px solid ${T.error}33`   },
+    info: { bg: T.infoBg, color: T.info, border: `1px solid ${T.info}33` },
+    success: { bg: T.successBg, color: T.success, border: `1px solid ${T.success}33` },
+    warn: { bg: T.warnBg, color: '#92400E', border: `1px solid ${T.warn}44` },
+    error: { bg: T.errorBg, color: T.error, border: `1px solid ${T.error}33` },
   }
   const s = styles[type] || styles.info
   return (
-    <div style={{ padding:'10px 14px', background:s.bg, color:s.color, borderRadius:'var(--radius-xs)', fontSize:13, marginBottom:10, border:s.border, lineHeight:1.5 }}>
+    <div style={{ padding: '10px 14px', background: s.bg, color: s.color, borderRadius: 'var(--radius-xs)', fontSize: 13, marginBottom: 10, border: s.border, lineHeight: 1.5 }}>
       {children}
     </div>
   )
@@ -300,31 +300,31 @@ function InfoBanner({ type='info', children }) {
 function AuthScreen({ onLogin }) {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
 
-  const [mode,       setMode]      = useState('login')
-  const [pending,    setPending]   = useState(null)
-  const [err,        setErr]       = useState('')
-  const [loading,    setLoading]   = useState(false)
+  const [mode, setMode] = useState('login')
+  const [pending, setPending] = useState(null)
+  const [err, setErr] = useState('')
+  const [loading, setLoading] = useState(false)
   const [consoleOtp, setConsoleOtp] = useState('')
-  const [fields, setFields] = useState({ name:'', email:'', roll:'', otp:'' })
+  const [fields, setFields] = useState({ name: '', email: '', roll: '', otp: '' })
   const set = key => e => setFields(prev => ({ ...prev, [key]: e.target.value }))
-useEffect(() => {
-  const handler = (e) => {
-    e.preventDefault();
-    setDeferredPrompt(e);
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener("beforeinstallprompt", handler);
+
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+  const installApp = async () => {
+    if (!deferredPrompt) return;
+
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+
+    setDeferredPrompt(null);
   };
-
-  window.addEventListener("beforeinstallprompt", handler);
-
-  return () => window.removeEventListener("beforeinstallprompt", handler);
-}, []);
-const installApp = async () => {
-  if (!deferredPrompt) return;
-
-  deferredPrompt.prompt();
-  await deferredPrompt.userChoice;
-
-  setDeferredPrompt(null);
-};
   async function doLogin() {
     setErr('')
     if (!fields.email.trim()) return setErr('Please enter your college email.')
@@ -369,108 +369,108 @@ const installApp = async () => {
   function switchMode(m) { setErr(''); setMode(m) }
 
   return (
-    <div style={{ minHeight:'100vh', background:`linear-gradient(135deg, ${T.navy} 0%, #1E293B 50%, #0F172A 100%)`, display:'flex', flexDirection:'column', fontFamily:'var(--font-body)' }}>
+    <div style={{ minHeight: '100vh', background: `linear-gradient(135deg, ${T.navy} 0%, #1E293B 50%, #0F172A 100%)`, display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-body)' }}>
       <style>{FONTS}</style>
 
       {/* Decorative blobs */}
-      <div style={{ position:'fixed', top:-100, right:-100, width:400, height:400, background:`radial-gradient(circle, ${T.coral}22 0%, transparent 70%)`, pointerEvents:'none' }} />
-      <div style={{ position:'fixed', bottom:-100, left:-100, width:300, height:300, background:`radial-gradient(circle, ${T.coral}18 0%, transparent 70%)`, pointerEvents:'none' }} />
+      <div style={{ position: 'fixed', top: -100, right: -100, width: 400, height: 400, background: `radial-gradient(circle, ${T.coral}22 0%, transparent 70%)`, pointerEvents: 'none' }} />
+      <div style={{ position: 'fixed', bottom: -100, left: -100, width: 300, height: 300, background: `radial-gradient(circle, ${T.coral}18 0%, transparent 70%)`, pointerEvents: 'none' }} />
 
       {/* Header */}
-     <div style={{ padding:'24px 32px', display:'flex', flexDirection:'column', alignItems:'flex-start', gap:'6px' ,}}>
+      <div style={{ padding: '24px 32px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '6px', }}>
         <Logo light />
-        <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)' }}>College-verified peer sharing</div>
-        
+        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>College-verified peer sharing</div>
+
       </div>
       {deferredPrompt && (
-  <div style={{ padding: '0 32px', marginTop: '8px' }}>
-    <button
-      onClick={installApp}
-      style={{
-        padding: "8px 14px",
-        background: "#E8445A",
-        color: "#fff",
-        border: "none",
-        borderRadius: "8px",
-        cursor: "pointer",
-        fontWeight: 600,
-        fontSize: "13px"
-      }}
-    >
-      Install App 🚀
-    </button>
-  </div>
-)}
+        <div style={{ padding: '0 32px', marginTop: '8px' }}>
+          <button
+            onClick={installApp}
+            style={{
+              padding: "8px 14px",
+              background: "#E8445A",
+              color: "#fff",
+              border: "none",
+              borderRadius: "8px",
+              cursor: "pointer",
+              fontWeight: 600,
+              fontSize: "13px"
+            }}
+          >
+            Install App 🚀
+          </button>
+        </div>
+      )}
 
       {/* Card */}
-      <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:'24px 16px' }}>
-        <div className="pop-in" style={{ background:'rgba(255,255,255,0.97)', borderRadius:24, width:'100%', maxWidth:400, padding:'36px 32px', boxShadow:'0 32px 80px rgba(0,0,0,0.32)' }}>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 16px' }}>
+        <div className="pop-in" style={{ background: 'rgba(255,255,255,0.97)', borderRadius: 24, width: '100%', maxWidth: 400, padding: '36px 32px', boxShadow: '0 32px 80px rgba(0,0,0,0.32)' }}>
 
-          {mode==='login' && <>
-            <div style={{ fontFamily:'var(--font-head)', fontSize:28, fontWeight:800, letterSpacing:'-1px', marginBottom:4 }}>Welcome back 👋</div>
-            <div style={{ fontSize:14, color:T.textMid, marginBottom:24 }}>Sign in with your college email</div>
+          {mode === 'login' && <>
+            <div style={{ fontFamily: 'var(--font-head)', fontSize: 28, fontWeight: 800, letterSpacing: '-1px', marginBottom: 4 }}>Welcome back 👋</div>
+            <div style={{ fontSize: 14, color: T.textMid, marginBottom: 24 }}>Sign in with your college email</div>
             {err && <div style={ERR}>{err}</div>}
-            <div style={{ marginBottom:16 }}>
+            <div style={{ marginBottom: 16 }}>
               <label style={LBL}>College email</label>
-              <input style={INP} placeholder="cs2021001@mail.iitb.ac.in" value={fields.email} onChange={set('email')} onKeyDown={e=>e.key==='Enter'&&doLogin()} autoComplete="email" />
+              <input style={INP} placeholder="cs2021001@mail.iitb.ac.in" value={fields.email} onChange={set('email')} onKeyDown={e => e.key === 'Enter' && doLogin()} autoComplete="email" />
             </div>
-            <button className="btn-press" style={{ ...btn(true), width:'100%', padding:'13px', fontSize:15 }} onClick={doLogin} disabled={loading}>
+            <button className="btn-press" style={{ ...btn(true), width: '100%', padding: '13px', fontSize: 15 }} onClick={doLogin} disabled={loading}>
               {loading ? 'Sending code…' : 'Continue →'}
             </button>
-            <p style={{ fontSize:13, color:T.textMid, textAlign:'center', marginTop:16 }}>
-              No account? <span style={{ color:T.coral, cursor:'pointer', fontWeight:600 }} onClick={()=>switchMode('signup')}>Sign up</span>
+            <p style={{ fontSize: 13, color: T.textMid, textAlign: 'center', marginTop: 16 }}>
+              No account? <span style={{ color: T.coral, cursor: 'pointer', fontWeight: 600 }} onClick={() => switchMode('signup')}>Sign up</span>
             </p>
             <Divider />
-            <p style={{ fontSize:11, color:T.textSoft, textAlign:'center' }}>Demo: <code style={{ background:'#f0f0f0', padding:'2px 6px', borderRadius:4 }}>cs2021001@mail.iitb.ac.in</code></p>
+            <p style={{ fontSize: 11, color: T.textSoft, textAlign: 'center' }}>Demo: <code style={{ background: '#f0f0f0', padding: '2px 6px', borderRadius: 4 }}>cs2021001@mail.iitb.ac.in</code></p>
           </>}
 
-          {mode==='signup' && <>
-            <div style={{ fontFamily:'var(--font-head)', fontSize:28, fontWeight:800, letterSpacing:'-1px', marginBottom:4 }}>Join CampusShare ✦</div>
-            <div style={{ fontSize:13, color:T.textMid, marginBottom:24, lineHeight:1.6 }}>
+          {mode === 'signup' && <>
+            <div style={{ fontFamily: 'var(--font-head)', fontSize: 28, fontWeight: 800, letterSpacing: '-1px', marginBottom: 4 }}>Join CampusShare ✦</div>
+            <div style={{ fontSize: 13, color: T.textMid, marginBottom: 24, lineHeight: 1.6 }}>
               Use your college email — each college sees only their own listings.
             </div>
             {err && <div style={ERR}>{err}</div>}
             {['Full name|name|Rahul Mehta|name', 'College email|email|cs2021001@mail.iitb.ac.in|email', 'Roll number|roll|CS2021001|off'].map(s => {
-              const [label,key,ph,ac] = s.split('|')
+              const [label, key, ph, ac] = s.split('|')
               return (
-                <div key={key} style={{ marginBottom:14 }}>
+                <div key={key} style={{ marginBottom: 14 }}>
                   <label style={LBL}>{label}</label>
-                  <input style={INP} placeholder={ph} value={fields[key]} onChange={set(key)} autoComplete={ac} onKeyDown={e=>e.key==='Enter'&&key==='roll'&&doSignup()} />
+                  <input style={INP} placeholder={ph} value={fields[key]} onChange={set(key)} autoComplete={ac} onKeyDown={e => e.key === 'Enter' && key === 'roll' && doSignup()} />
                 </div>
               )
             })}
-            <button className="btn-press" type="button" style={{ ...btn(true), width:'100%', padding:'13px', fontSize:15 }} onClick={doSignup} disabled={loading}>
+            <button className="btn-press" type="button" style={{ ...btn(true), width: '100%', padding: '13px', fontSize: 15 }} onClick={doSignup} disabled={loading}>
               {loading ? 'Sending code…' : 'Create account →'}
             </button>
-            <p style={{ fontSize:13, color:T.textMid, textAlign:'center', marginTop:16 }}>
-              Have an account? <span style={{ color:T.coral, cursor:'pointer', fontWeight:600 }} onClick={()=>switchMode('login')}>Sign in</span>
+            <p style={{ fontSize: 13, color: T.textMid, textAlign: 'center', marginTop: 16 }}>
+              Have an account? <span style={{ color: T.coral, cursor: 'pointer', fontWeight: 600 }} onClick={() => switchMode('login')}>Sign in</span>
             </p>
           </>}
 
-          {mode==='otp' && <>
-            <div style={{ textAlign:'center', marginBottom:8 }}>
-              <div style={{ fontSize:40, marginBottom:8 }}>📬</div>
-              <div style={{ fontFamily:'var(--font-head)', fontSize:24, fontWeight:800, letterSpacing:'-0.5px', marginBottom:6 }}>Check your inbox</div>
-              <div style={{ fontSize:14, color:T.textMid, lineHeight:1.6 }}>Enter the 6-digit code sent to your college email.</div>
+          {mode === 'otp' && <>
+            <div style={{ textAlign: 'center', marginBottom: 8 }}>
+              <div style={{ fontSize: 40, marginBottom: 8 }}>📬</div>
+              <div style={{ fontFamily: 'var(--font-head)', fontSize: 24, fontWeight: 800, letterSpacing: '-0.5px', marginBottom: 6 }}>Check your inbox</div>
+              <div style={{ fontSize: 14, color: T.textMid, lineHeight: 1.6 }}>Enter the 6-digit code sent to your college email.</div>
             </div>
-            {err && <div style={{ ...ERR, marginTop:16 }}>{err}</div>}
+            {err && <div style={{ ...ERR, marginTop: 16 }}>{err}</div>}
             {consoleOtp && (
-              <div style={{ ...OK, marginTop:16, textAlign:'center' }}>
-                Dev mode — OTP: <strong style={{ letterSpacing:'0.15em', fontSize:18 }}>{consoleOtp}</strong>
+              <div style={{ ...OK, marginTop: 16, textAlign: 'center' }}>
+                Dev mode — OTP: <strong style={{ letterSpacing: '0.15em', fontSize: 18 }}>{consoleOtp}</strong>
               </div>
             )}
-            <div style={{ marginTop:20, marginBottom:16 }}>
+            <div style={{ marginTop: 20, marginBottom: 16 }}>
               <input
-                style={{ ...INP, letterSpacing:'0.4em', fontSize:28, textAlign:'center', padding:'16px', fontFamily:'var(--font-head)', fontWeight:700 }}
+                style={{ ...INP, letterSpacing: '0.4em', fontSize: 28, textAlign: 'center', padding: '16px', fontFamily: 'var(--font-head)', fontWeight: 700 }}
                 placeholder="——————" maxLength={6} value={fields.otp} onChange={set('otp')}
-                onKeyDown={e=>e.key==='Enter'&&doOtp()} autoComplete="one-time-code" inputMode="numeric"
+                onKeyDown={e => e.key === 'Enter' && doOtp()} autoComplete="one-time-code" inputMode="numeric"
               />
-              {window.__DEV_OTP__ && <p style={{ marginTop:8, color:T.textSoft, fontSize:12, textAlign:'center' }}>Dev OTP: <b>{window.__DEV_OTP__}</b></p>}
+              {window.__DEV_OTP__ && <p style={{ marginTop: 8, color: T.textSoft, fontSize: 12, textAlign: 'center' }}>Dev OTP: <b>{window.__DEV_OTP__}</b></p>}
             </div>
-            <button className="btn-press" style={{ ...btn(true), width:'100%', padding:'13px', fontSize:15 }} onClick={doOtp} disabled={loading}>
+            <button className="btn-press" style={{ ...btn(true), width: '100%', padding: '13px', fontSize: 15 }} onClick={doOtp} disabled={loading}>
               {loading ? 'Verifying…' : 'Verify & enter →'}
             </button>
-            <p style={{ fontSize:12, color:T.textSoft, textAlign:'center', marginTop:14, cursor:'pointer' }} onClick={()=>switchMode('login')}>← Use a different email</p>
+            <p style={{ fontSize: 12, color: T.textSoft, textAlign: 'center', marginTop: 14, cursor: 'pointer' }} onClick={() => switchMode('login')}>← Use a different email</p>
           </>}
         </div>
       </div>
@@ -479,13 +479,13 @@ const installApp = async () => {
 }
 
 // ── LOGO ──────────────────────────────────────────────────────────────────────
-function Logo({ light=false }) {
+function Logo({ light = false }) {
   return (
-    <div style={{ fontFamily:'var(--font-head)', fontWeight:800, fontSize:'clamp(15px,4vw,20px)', letterSpacing:'-0.5px', color: light ? '#fff' : T.navy, display:'flex', alignItems:'center', gap:6, overflow:'hidden', minWidth:0 }}>
-      <div style={{ width:26, height:26, background:T.coral, borderRadius:7, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-        <span style={{ fontSize:13 }}>◈</span>
+    <div style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 'clamp(15px,4vw,20px)', letterSpacing: '-0.5px', color: light ? '#fff' : T.navy, display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden', minWidth: 0 }}>
+      <div style={{ width: 26, height: 26, background: T.coral, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <span style={{ fontSize: 13 }}>◈</span>
       </div>
-      <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>Campus<span style={{ color:T.coral }}>Share</span></span>
+      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Campus<span style={{ color: T.coral }}>Share</span></span>
     </div>
   )
 }
@@ -494,31 +494,33 @@ function Logo({ light=false }) {
 function ListItemModal({ open, onClose, onSuccess }) {
   const { user, setUser } = useApp()
   const titleRef = useRef(''), notesRef = useRef('')
-  const [category, setCat]       = useState('Books')
-  const [maxDays,  setMaxDays]   = useState('7')
-  const [ltype,    setLtype]     = useState('borrow')
-  const [isPaid,   setPaid]      = useState(false)
-  const [ppd,      setPpd]       = useState('')
-  const [upiId,    setUpiId]     = useState(user?.upi_id || '')
+  const [category, setCat] = useState('Books')
+  const [maxDays, setMaxDays] = useState('7')
+  const [ltype, setLtype] = useState('borrow')
+  const [txType, setTxType] = useState('lend')  // rent|sell|donate|lend
+  const [ppd, setPpd] = useState('')
+  const [upiId, setUpiId] = useState(user?.upi_id || '')
   const [allowMulti, setAllowMulti] = useState(false)
-  const [photos,   setPhotos]    = useState([])
-  const [previews, setPreviews]  = useState([])
-  const [err,      setErr]       = useState('')
-  const [loading,  setLoading]   = useState(false)
+  const [photos, setPhotos] = useState([])
+  const [previews, setPreviews] = useState([])
+  const [err, setErr] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const isPaid = ['rent', 'sell'].includes(txType)
+  const isSell = txType === 'sell'
 
   function onPhotoPick(e) {
-    const files = Array.from(e.target.files).slice(0,4)
-    setPhotos(files)
-    setPreviews(files.map(f=>URL.createObjectURL(f)))
+    const files = Array.from(e.target.files).slice(0, 4)
+    setPhotos(files); setPreviews(files.map(f => URL.createObjectURL(f)))
   }
 
   async function submit() {
     setErr(''); setLoading(true)
-    if (isPaid && ltype==='borrow') {
+    if (isPaid) {
       const trimmedUpi = upiId.trim()
       const UPI_RE = /^[a-zA-Z0-9._\-+]+@[a-zA-Z0-9]+$/
-      if (!trimmedUpi) { setErr('Please enter your UPI ID to receive rental payments.'); setLoading(false); return }
-      if (!UPI_RE.test(trimmedUpi)) { setErr('Invalid UPI ID format. Expected: name@bank'); setLoading(false); return }
+      if (!trimmedUpi) { setErr('Please enter your UPI ID to receive payments.'); setLoading(false); return }
+      if (!UPI_RE.test(trimmedUpi)) { setErr('Invalid UPI ID. Expected: name@bank'); setLoading(false); return }
       if (trimmedUpi !== user?.upi_id) {
         const upiRes = await api.updateUpi(trimmedUpi)
         if (upiRes?.error) { setErr(upiRes.error); setLoading(false); return }
@@ -528,11 +530,12 @@ function ListItemModal({ open, onClose, onSuccess }) {
     const r = await api.listItem({
       title: titleRef.current, category,
       conditionNotes: notesRef.current,
-      maxBorrowDays: maxDays,
+      maxBorrowDays: isSell ? '1' : maxDays,
       listingType: ltype,
       isPaid: isPaid ? 'true' : 'false',
       pricePerDay: isPaid ? ppd : '',
-      allowMultiple: ltype==='borrow' ? String(allowMulti) : 'false',
+      transactionType: txType,
+      allowMultiple: (!isSell && ltype === 'borrow') ? String(allowMulti) : 'false',
       photos,
     })
     setLoading(false)
@@ -540,130 +543,141 @@ function ListItemModal({ open, onClose, onSuccess }) {
     onSuccess(); onClose()
   }
 
-  const TypeBtn = ({ val, icon, label }) => (
-    <button onClick={()=>setLtype(val)} style={{ flex:1, padding:'12px', borderRadius:'var(--radius-sm)', border:`2px solid ${ltype===val?T.coral:'var(--border-soft)'}`, background:ltype===val?`${T.coral}10`:'transparent', color:ltype===val?T.coral:T.textMid, fontWeight:600, cursor:'pointer', fontSize:13, textAlign:'center', transition:'all 0.18s' }}>
-      <div style={{ fontSize:20, marginBottom:4 }}>{icon}</div>
-      {label}
+  const LTypeBtn = ({ val, icon, label }) => (
+    <button onClick={() => setLtype(val)} style={{ flex: 1, padding: '12px', borderRadius: 'var(--radius-sm)', border: `2px solid ${ltype === val ? T.coral : 'var(--border-soft)'}`, background: ltype === val ? `${T.coral}10` : 'transparent', color: ltype === val ? T.coral : T.textMid, fontWeight: 600, cursor: 'pointer', fontSize: 13, textAlign: 'center', transition: 'all 0.18s' }}>
+      <div style={{ fontSize: 20, marginBottom: 4 }}>{icon}</div>{label}
     </button>
   )
 
+  const TX_OPTIONS = isPaid
+    ? [{ val: 'rent', icon: '🔄', label: 'Rent it', desc: 'Borrower returns it. Earn per day.' },
+    { val: 'sell', icon: '💰', label: 'Sell it', desc: 'No return. One-time payment.' }]
+    : [{ val: 'lend', icon: '🤝', label: 'Lend it', desc: 'Free. Borrower returns it.' },
+    { val: 'donate', icon: '🎁', label: 'Donate it', desc: 'Free. No return expected.' }]
+
   return (
     <Modal open={open} onClose={onClose}>
-      {/* Navy header strip */}
-      <div style={{ margin:'-8px -24px 20px', padding:'20px 24px 16px', background:`linear-gradient(135deg, ${T.navy} 0%, #1E293B 100%)`, borderRadius:'16px 16px 0 0' }}>
-        <div style={{ fontFamily:'var(--font-head)', fontSize:22, fontWeight:700, color:'#fff', letterSpacing:'-0.5px', marginBottom:4 }}>List an item ✦</div>
-        <div style={{ fontSize:13, color:'rgba(255,255,255,0.55)' }}>Share what you're not using</div>
-        <div style={{ marginTop:10, padding:'8px 12px', background:'rgba(255,255,255,0.08)', borderRadius:'var(--radius-xs)', fontSize:12, color:'rgba(255,255,255,0.7)', ...row(6) }}>
+      <div style={{ margin: '-8px -24px 20px', padding: '20px 24px 16px', background: `linear-gradient(135deg, ${T.navy} 0%, #1E293B 100%)`, borderRadius: '16px 16px 0 0' }}>
+        <div style={{ fontFamily: 'var(--font-head)', fontSize: 22, fontWeight: 700, color: '#fff', letterSpacing: '-0.5px', marginBottom: 4 }}>List an item ✦</div>
+        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>Share what you're not using</div>
+        <div style={{ marginTop: 10, padding: '8px 12px', background: 'rgba(255,255,255,0.08)', borderRadius: 'var(--radius-xs)', fontSize: 12, color: 'rgba(255,255,255,0.7)', ...row(6) }}>
           <span>✓</span><span>{user?.name} · {user?.roll_number} · {user?.college_name}</span>
         </div>
       </div>
       {err && <div style={ERR}>{err}</div>}
 
-      <div style={{ ...row(8), marginBottom:16 }}>
-        <TypeBtn val="borrow"     icon="📦" label="Lend / Borrow" />
-        <TypeBtn val="lost_found" icon="🔍" label="Lost & Found"  />
+      <div style={{ ...row(8), marginBottom: 16 }}>
+        <LTypeBtn val="borrow" icon="📦" label="Marketplace" />
+        <LTypeBtn val="lost_found" icon="🔍" label="Lost & Found" />
       </div>
 
-      <div style={{ marginBottom:14 }}>
+      <div style={{ marginBottom: 14 }}>
         <label style={LBL}>Item name</label>
-        <input style={INP} placeholder="e.g. Casio FX-991EX" defaultValue={titleRef.current} onChange={e=>titleRef.current=e.target.value} />
+        <input style={INP} placeholder="e.g. Casio FX-991EX" defaultValue={titleRef.current} onChange={e => titleRef.current = e.target.value} />
       </div>
-      <div style={{ marginBottom:14 }}>
+      <div style={{ marginBottom: 14 }}>
         <label style={LBL}>Category</label>
-        <select style={INP} value={category} onChange={e=>setCat(e.target.value)}>
-          {CATEGORIES.map(c=><option key={c}>{c}</option>)}
+        <select style={INP} value={category} onChange={e => setCat(e.target.value)}>
+          {CATEGORIES.map(c => <option key={c}>{c}</option>)}
         </select>
       </div>
-      <div style={{ marginBottom:14 }}>
+      <div style={{ marginBottom: 14 }}>
         <label style={LBL}>Condition notes</label>
-        <input style={INP} placeholder="e.g. Good condition, minor cover wear" onChange={e=>notesRef.current=e.target.value} />
+        <input style={INP} placeholder="e.g. Good condition, minor cover wear" onChange={e => notesRef.current = e.target.value} />
       </div>
 
-      {ltype==='borrow' && <>
-        <div style={{ marginBottom:14 }}>
-          <label style={LBL}>Max borrow duration</label>
-          <select style={INP} value={maxDays} onChange={e=>setMaxDays(e.target.value)}>
-            {[['1','1 day'],['3','3 days'],['7','1 week'],['14','2 weeks']].map(([v,l])=><option key={v} value={v}>{l}</option>)}
-          </select>
+      {ltype === 'borrow' && <>
+        {/* Paid / Free selector */}
+        <div style={{ marginBottom: 14 }}>
+          <label style={LBL}>Arrangement</label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 10 }}>
+            {[['free', '🆓 Free'], ['paid', '💳 Paid']].map(([v, l]) => (
+              <button key={v} onClick={() => setTxType(v === 'paid' ? 'rent' : 'lend')} style={{ padding: '10px', borderRadius: 'var(--radius-sm)', border: `2px solid ${(v === 'paid' ? isPaid : !isPaid) ? T.coral : 'var(--border-soft)'}`, background: (v === 'paid' ? isPaid : !isPaid) ? `${T.coral}10` : 'transparent', color: (v === 'paid' ? isPaid : !isPaid) ? T.coral : T.textMid, fontWeight: 600, cursor: 'pointer', fontSize: 13, transition: 'all 0.18s' }}>{l}</button>
+            ))}
+          </div>
+          {/* Sub-options */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+            {TX_OPTIONS.map(opt => (
+              <button key={opt.val} onClick={() => setTxType(opt.val)} style={{ padding: '12px', borderRadius: 'var(--radius-sm)', border: `2px solid ${txType === opt.val ? T.coral : 'var(--border-soft)'}`, background: txType === opt.val ? `${T.coral}08` : 'transparent', cursor: 'pointer', textAlign: 'left', transition: 'all 0.18s' }}>
+                <div style={{ fontSize: 18, marginBottom: 4 }}>{opt.icon}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: txType === opt.val ? T.coral : T.navy }}>{opt.label}</div>
+                <div style={{ fontSize: 11, color: T.textMid, marginTop: 2, lineHeight: 1.4 }}>{opt.desc}</div>
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Paid toggle */}
-        <div style={{ marginBottom:14, padding:'14px', background:`${T.coral}08`, borderRadius:'var(--radius-sm)', border:`1.5px solid ${isPaid?T.coral:'var(--border-soft)'}`, transition:'border-color 0.2s' }}>
-          <div style={{ ...row(10), cursor:'pointer' }} onClick={()=>setPaid(p=>!p)}>
-            <div style={{ width:44, height:24, borderRadius:12, background:isPaid?T.coral:'rgba(15,23,42,0.12)', cursor:'pointer', position:'relative', transition:'background 0.2s', flexShrink:0 }}>
-              <div style={{ position:'absolute', top:3, left:isPaid?22:3, width:18, height:18, borderRadius:'50%', background:'#fff', transition:'left 0.2s', boxShadow:'0 1px 4px rgba(0,0,0,0.2)' }} />
-            </div>
-            <div>
-              <div style={{ fontSize:14, fontWeight:600 }}>Paid rental</div>
-              <div style={{ fontSize:12, color:T.textMid }}>Earn per day borrowed</div>
-            </div>
+        {!isSell && (
+          <div style={{ marginBottom: 14 }}>
+            <label style={LBL}>Max duration</label>
+            <select style={INP} value={maxDays} onChange={e => setMaxDays(e.target.value)}>
+              {[['1', '1 day'], ['3', '3 days'], ['7', '1 week'], ['14', '2 weeks']].map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            </select>
           </div>
-          {isPaid && (
-            <div style={{ marginTop:14 }}>
-              <div style={{ ...row(8), marginBottom:12 }}>
-                <span style={{ fontSize:20, fontWeight:700, color:T.coral }}>₹</span>
-                <div style={{ flex:1 }}>
-                  <input style={INP} type="number" min="1" placeholder="Amount per day" value={ppd} onChange={e=>setPpd(e.target.value)} />
-                </div>
-              </div>
-              <div style={{ fontSize:11, color:T.textMid, marginBottom:12 }}>Borrower pays this + 3% platform fee. You keep 97%.</div>
-              <label style={LBL}>Your UPI ID *</label>
-              <input style={{ ...INP, borderColor: upiId ? 'var(--border-soft)' : T.coral }} placeholder="name@okicici" value={upiId} onChange={e=>setUpiId(e.target.value)} />
-            </div>
-          )}
-        </div>
+        )}
 
-        {/* Multiple borrowers toggle */}
-        <div style={{ ...row(10), padding:'12px 14px', background:'rgba(15,23,42,0.04)', borderRadius:'var(--radius-xs)', marginBottom:14, cursor:'pointer' }} onClick={()=>setAllowMulti(m=>!m)}>
-          <div style={{ flex:1 }}>
-            <div style={{ fontSize:14, fontWeight:500 }}>Allow multiple borrowers?</div>
-            <div style={{ fontSize:12, color:T.textMid, marginTop:2 }}>{allowMulti ? 'Multiple can borrow simultaneously' : 'Only 1 borrower at a time'}</div>
+        {isPaid && (
+          <div style={{ marginBottom: 14, padding: '14px', background: `${T.coral}08`, borderRadius: 'var(--radius-sm)', border: `1.5px solid ${T.coral}` }}>
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10, color: T.coral }}>{isSell ? '💰 Selling price' : '💳 Price per day'}</div>
+            <div style={{ ...row(8), marginBottom: 12 }}>
+              <span style={{ fontSize: 20, fontWeight: 700, color: T.coral }}>₹</span>
+              <input style={{ ...INP, flex: 1 }} type="number" min="1" placeholder={isSell ? 'Total selling price' : 'Amount per day'} value={ppd} onChange={e => setPpd(e.target.value)} />
+            </div>
+            <div style={{ fontSize: 11, color: T.textMid, marginBottom: 12 }}>{isSell ? 'Buyer pays this + 3% fee. You keep 97%.' : 'Borrower pays per day + 3% fee. You keep 97%.'}</div>
+            <label style={LBL}>Your UPI ID *</label>
+            <input style={{ ...INP, borderColor: upiId ? 'var(--border-soft)' : T.coral }} placeholder="name@okicici" value={upiId} onChange={e => setUpiId(e.target.value)} />
           </div>
-          <div style={{ width:44, height:24, borderRadius:12, background:allowMulti?T.coral:'rgba(15,23,42,0.12)', position:'relative', transition:'background 0.2s', flexShrink:0 }}>
-            <div style={{ position:'absolute', top:3, left:allowMulti?22:3, width:18, height:18, borderRadius:'50%', background:'#fff', transition:'left 0.2s', boxShadow:'0 1px 4px rgba(0,0,0,0.2)' }} />
+        )}
+
+        {txType === 'lend' && (
+          <div style={{ ...row(10), padding: '12px 14px', background: 'rgba(15,23,42,0.04)', borderRadius: 'var(--radius-xs)', marginBottom: 14, cursor: 'pointer' }} onClick={() => setAllowMulti(m => !m)}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 14, fontWeight: 500 }}>Allow multiple borrowers?</div>
+              <div style={{ fontSize: 12, color: T.textMid, marginTop: 2 }}>{allowMulti ? 'Multiple can borrow simultaneously' : 'Only 1 at a time'}</div>
+            </div>
+            <div style={{ width: 44, height: 24, borderRadius: 12, background: allowMulti ? T.coral : 'rgba(15,23,42,0.12)', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
+              <div style={{ position: 'absolute', top: 3, left: allowMulti ? 22 : 3, width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }} />
+            </div>
           </div>
-        </div>
+        )}
       </>}
 
-      <div style={{ marginBottom:16 }}>
+      <div style={{ marginBottom: 16 }}>
         <label style={LBL}>Photos (up to 4)</label>
-        <input type="file" accept="image/*" multiple onChange={onPhotoPick} style={{ fontSize:13, color:T.textMid }} />
+        <input type="file" accept="image/*" multiple onChange={onPhotoPick} style={{ fontSize: 13, color: T.textMid }} />
         {previews.length > 0 && (
-          <div style={{ display:'flex', gap:8, marginTop:10, flexWrap:'wrap' }}>
-            {previews.map((p,i)=>(
-              <img key={i} src={p} alt="" style={{ width:72, height:72, objectFit:'cover', borderRadius:'var(--radius-xs)', border:'1px solid var(--border-soft)' }} />
-            ))}
+          <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+            {previews.map((p, i) => (<img key={i} src={p} alt="" style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 'var(--radius-xs)', border: '1px solid var(--border-soft)' }} />))}
           </div>
         )}
       </div>
 
-      <div style={{ ...row(8), justifyContent:'flex-end' }}>
+      <div style={{ ...row(8), justifyContent: 'flex-end' }}>
         <button className="btn-press" style={btn(false)} onClick={onClose}>Cancel</button>
-        <button className="btn-press" style={btn(true)} onClick={submit} disabled={loading}>{loading?'Listing…':'List Item ✦'}</button>
+        <button className="btn-press" style={btn(true)} onClick={submit} disabled={loading}>{loading ? 'Listing…' : 'List Item ✦'}</button>
       </div>
     </Modal>
   )
 }
 
-// ── BORROW / CLAIM MODAL ──────────────────────────────────────────────────────
 function BorrowModal({ open, item, onClose, onSuccess, showToast }) {
   const { user } = useApp()
   const msgRef = useRef('')
-  const [days, setDays]   = useState('3')
-  const [err,  setErr]    = useState('')
+  const [days, setDays] = useState('3')
+  const [err, setErr] = useState('')
   const [loading, setLoading] = useState(false)
   const tier = TRUST_TIERS[user?.trust_tier] || TRUST_TIERS.newcomer
   const isLostFound = item?.listing_type === 'lost_found'
   const PLATFORM_FEE_PERCENT = 3
-  const rentalCost  = item?.is_paid ? parseFloat((parseFloat(item.price_per_day) * parseInt(days)).toFixed(2)) : 0
+  const rentalCost = item?.is_paid ? parseFloat((parseFloat(item.price_per_day) * parseInt(days)).toFixed(2)) : 0
   const platformFee = item?.is_paid ? parseFloat((rentalCost * PLATFORM_FEE_PERCENT / 100).toFixed(2)) : 0
-  const totalCost   = item?.is_paid ? parseFloat((rentalCost + platformFee).toFixed(2)) : null
+  const totalCost = item?.is_paid ? parseFloat((rentalCost + platformFee).toFixed(2)) : null
 
   useEffect(() => { if (open) { setErr(''); setDays('3') } }, [open])
 
   async function submit() {
     setErr(''); setLoading(true)
-    const r = await api.requestBorrow({ itemId:item.id, requestedDays:isLostFound?1:parseInt(days), message:msgRef.current })
+    const r = await api.requestBorrow({ itemId: item.id, requestedDays: isLostFound ? 1 : parseInt(days), message: msgRef.current })
     setLoading(false)
     if (r.error) return setErr(r.error)
     onSuccess()
@@ -680,32 +694,32 @@ function BorrowModal({ open, item, onClose, onSuccess, showToast }) {
       {err && <div style={ERR}>{err}</div>}
 
       {!isLostFound && (
-        <div style={{ marginBottom:14 }}>
+        <div style={{ marginBottom: 14 }}>
           <label style={LBL}>Duration (max {item.max_borrow_days} days)</label>
-          <select style={INP} value={days} onChange={e=>setDays(e.target.value)}>
-            {[1,2,3,5,7,14].filter(d=>d<=item.max_borrow_days).map(d=><option key={d} value={d}>{d} day{d>1?'s':''}</option>)}
+          <select style={INP} value={days} onChange={e => setDays(e.target.value)}>
+            {[1, 2, 3, 5, 7, 14].filter(d => d <= item.max_borrow_days).map(d => <option key={d} value={d}>{d} day{d > 1 ? 's' : ''}</option>)}
           </select>
         </div>
       )}
 
       {item.is_paid && !isLostFound && (
-        <div style={{ marginBottom:14, padding:'14px', background:`${T.warn}15`, borderRadius:'var(--radius-sm)', border:`1px solid ${T.warn}44` }}>
-          <div style={{ fontSize:13, fontWeight:600, color:'#92400E', marginBottom:6 }}>💰 Paid rental breakdown</div>
-          <div style={{ fontSize:13, color:'#92400E' }}>₹{item.price_per_day}/day × {days} days = ₹{rentalCost}</div>
-          <div style={{ fontSize:12, color:'#92400E', marginTop:3 }}>Platform fee (3%): ₹{platformFee}</div>
-          <div style={{ fontSize:15, color:'#92400E', fontWeight:700, marginTop:6 }}>Total: ₹{totalCost}</div>
-          <div style={{ fontSize:11, color:'#92400E', marginTop:4, opacity:0.8 }}>Pay securely via UPI after approval.</div>
+        <div style={{ marginBottom: 14, padding: '14px', background: `${T.warn}15`, borderRadius: 'var(--radius-sm)', border: `1px solid ${T.warn}44` }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#92400E', marginBottom: 6 }}>💰 Paid rental breakdown</div>
+          <div style={{ fontSize: 13, color: '#92400E' }}>₹{item.price_per_day}/day × {days} days = ₹{rentalCost}</div>
+          <div style={{ fontSize: 12, color: '#92400E', marginTop: 3 }}>Platform fee (3%): ₹{platformFee}</div>
+          <div style={{ fontSize: 15, color: '#92400E', fontWeight: 700, marginTop: 6 }}>Total: ₹{totalCost}</div>
+          <div style={{ fontSize: 11, color: '#92400E', marginTop: 4, opacity: 0.8 }}>Pay securely via UPI after approval.</div>
         </div>
       )}
 
-      <div style={{ marginBottom:14 }}>
+      <div style={{ marginBottom: 14 }}>
         <label style={LBL}>{isLostFound ? 'Why do you think this is yours?' : 'Message (optional)'}</label>
-        <input style={INP} placeholder={isLostFound ? 'Describe your item to prove ownership…' : 'e.g. Need for Wednesday exam'} onChange={e=>msgRef.current=e.target.value} />
+        <input style={INP} placeholder={isLostFound ? 'Describe your item to prove ownership…' : 'e.g. Need for Wednesday exam'} onChange={e => msgRef.current = e.target.value} />
       </div>
 
-      <div style={{ ...row(8), justifyContent:'flex-end' }}>
+      <div style={{ ...row(8), justifyContent: 'flex-end' }}>
         <button className="btn-press" style={btn(false)} onClick={onClose}>Cancel</button>
-        <button className="btn-press" style={btn(true)} onClick={submit} disabled={loading}>{loading?'Sending…':isLostFound?'Send Claim':'Send Request'}</button>
+        <button className="btn-press" style={btn(true)} onClick={submit} disabled={loading}>{loading ? 'Sending…' : isLostFound ? 'Send Claim' : 'Send Request'}</button>
       </div>
     </Modal>
   )
@@ -716,9 +730,9 @@ function BorrowModal({ open, item, onClose, onSuccess, showToast }) {
 const _lfPickupDraftCache = {}
 
 function LFPickupPanel({ r, reload, showToast }) {
-  const [msg,    setMsg]    = useState(() => _lfPickupDraftCache[r.id] ?? r.pickup_message ?? '')
+  const [msg, setMsg] = useState(() => _lfPickupDraftCache[r.id] ?? r.pickup_message ?? '')
   const [saving, setSaving] = useState(false)
-  const [sent,   setSent]   = useState(!!r.pickup_message)
+  const [sent, setSent] = useState(!!r.pickup_message)
 
   function handleChange(val) {
     _lfPickupDraftCache[r.id] = val
@@ -738,16 +752,16 @@ function LFPickupPanel({ r, reload, showToast }) {
   }
 
   if (sent) return (
-    <InfoBanner type="success">✅ Pickup message sent: <strong>"{r.pickup_message || msg}"</strong><br/><span style={{opacity:0.8}}>Waiting for lender to hand over.</span></InfoBanner>
+    <InfoBanner type="success">✅ Pickup message sent: <strong>"{r.pickup_message || msg}"</strong><br /><span style={{ opacity: 0.8 }}>Waiting for lender to hand over.</span></InfoBanner>
   )
 
   return (
     <InfoBanner type="info">
-      <div style={{ fontWeight:600, marginBottom:8 }}>📍 Send pickup message to lender</div>
-      <div style={{ fontSize:12, marginBottom:8, opacity:0.8 }}>Tell them where/when you can collect the item.</div>
-      <div style={{ display:'flex', gap:8 }}>
-        <input style={{ ...INP, flex:1, fontSize:13, padding:'8px 12px' }} placeholder="e.g. Hostel B gate, free 4–6pm" value={msg} onChange={e=>handleChange(e.target.value)} />
-        <button className="btn-press" style={{ ...btn(true,true), whiteSpace:'nowrap' }} onClick={send} disabled={saving}>{saving?'…':'Send'}</button>
+      <div style={{ fontWeight: 600, marginBottom: 8 }}>📍 Send pickup message to lender</div>
+      <div style={{ fontSize: 12, marginBottom: 8, opacity: 0.8 }}>Tell them where/when you can collect the item.</div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input style={{ ...INP, flex: 1, fontSize: 13, padding: '8px 12px' }} placeholder="e.g. Hostel B gate, free 4–6pm" value={msg} onChange={e => handleChange(e.target.value)} />
+        <button className="btn-press" style={{ ...btn(true, true), whiteSpace: 'nowrap' }} onClick={send} disabled={saving}>{saving ? '…' : 'Send'}</button>
       </div>
     </InfoBanner>
   )
@@ -761,8 +775,8 @@ const _pickupDraftCache = {}
 
 function PickupDetailsPanel({ r, reload, showToast }) {
   const [details, setDetails] = useState(() => _pickupDraftCache[r.id] ?? r.pickup_details ?? '')
-  const [saving,  setSaving]  = useState(false)
-  const [sent,    setSent]    = useState(!!r.pickup_details)
+  const [saving, setSaving] = useState(false)
+  const [sent, setSent] = useState(!!r.pickup_details)
 
   // Keep draft cache in sync so a re-mount (caused by poll refresh) restores text
   function handleChange(val) {
@@ -785,17 +799,17 @@ function PickupDetailsPanel({ r, reload, showToast }) {
   if (sent) return (
     <InfoBanner type="success">
       📍 You told borrower: <strong>"{r.pickup_details || details}"</strong>
-      {!r.item_given && <div style={{marginTop:4, opacity:0.8}}>Once handed over, click "Item Given ✓" below.</div>}
+      {!r.item_given && <div style={{ marginTop: 4, opacity: 0.8 }}>Once handed over, click "Item Given ✓" below.</div>}
     </InfoBanner>
   )
 
   return (
     <InfoBanner type="warn">
-      <div style={{ fontWeight:600, marginBottom:8 }}>📍 Send pickup details to borrower</div>
-      <div style={{ fontSize:12, marginBottom:8, opacity:0.8 }}>Tell them where and when to collect.</div>
-      <div style={{ display:'flex', gap:8 }}>
-        <input style={{ ...INP, flex:1, fontSize:13, padding:'8px 12px' }} placeholder="e.g. Hostel C room 301, 5–7pm" value={details} onChange={e=>handleChange(e.target.value)} />
-        <button className="btn-press" style={{ ...btn(true,true), whiteSpace:'nowrap' }} onClick={send} disabled={saving}>{saving?'…':'Send'}</button>
+      <div style={{ fontWeight: 600, marginBottom: 8 }}>📍 Send pickup details to borrower</div>
+      <div style={{ fontSize: 12, marginBottom: 8, opacity: 0.8 }}>Tell them where and when to collect.</div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input style={{ ...INP, flex: 1, fontSize: 13, padding: '8px 12px' }} placeholder="e.g. Hostel C room 301, 5–7pm" value={details} onChange={e => handleChange(e.target.value)} />
+        <button className="btn-press" style={{ ...btn(true, true), whiteSpace: 'nowrap' }} onClick={send} disabled={saving}>{saving ? '…' : 'Send'}</button>
       </div>
     </InfoBanner>
   )
@@ -804,9 +818,9 @@ function PickupDetailsPanel({ r, reload, showToast }) {
 // ── UPI FIELD ─────────────────────────────────────────────────────────────────
 function UpiField({ user, setUser, showToast }) {
   const [editing, setEditing] = useState(false)
-  const [val,     setVal]     = useState(user?.upi_id || '')
-  const [saving,  setSaving]  = useState(false)
-  const [err,     setErr]     = useState('')
+  const [val, setVal] = useState(user?.upi_id || '')
+  const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState('')
 
   async function save() {
     setErr('')
@@ -823,26 +837,26 @@ function UpiField({ user, setUser, showToast }) {
 
   const hasUpi = !!user?.upi_id
   return (
-    <div style={{ marginBottom:14, padding:'14px', background: hasUpi?T.successBg:T.warnBg, borderRadius:'var(--radius-sm)', border:`1.5px solid ${hasUpi?T.success:T.warn}33` }}>
-      <div style={{ ...row(8), marginBottom:editing?12:0 }}>
-        <div style={{ flex:1 }}>
-          <div style={{ fontSize:13, fontWeight:600, color: hasUpi?'#065F46':'#92400E' }}>
+    <div style={{ marginBottom: 14, padding: '14px', background: hasUpi ? T.successBg : T.warnBg, borderRadius: 'var(--radius-sm)', border: `1.5px solid ${hasUpi ? T.success : T.warn}33` }}>
+      <div style={{ ...row(8), marginBottom: editing ? 12 : 0 }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: hasUpi ? '#065F46' : '#92400E' }}>
             {hasUpi ? '✅ Payout UPI ID' : '⚠️ Add UPI ID to receive payouts'}
           </div>
-          {!editing && <div style={{ fontSize:12, color:T.textMid, marginTop:2 }}>{hasUpi ? user.upi_id : 'Required for rental earnings'}</div>}
+          {!editing && <div style={{ fontSize: 12, color: T.textMid, marginTop: 2 }}>{hasUpi ? user.upi_id : 'Required for rental earnings'}</div>}
         </div>
-        <button className="btn-press" style={{ ...btn(false,true), whiteSpace:'nowrap' }} onClick={()=>{ setEditing(e=>!e); setVal(user?.upi_id||''); setErr('') }}>
+        <button className="btn-press" style={{ ...btn(false, true), whiteSpace: 'nowrap' }} onClick={() => { setEditing(e => !e); setVal(user?.upi_id || ''); setErr('') }}>
           {editing ? 'Cancel' : hasUpi ? 'Edit' : 'Add'}
         </button>
       </div>
       {editing && (
         <>
-          {err && <div style={{ ...ERR, marginBottom:8 }}>{err}</div>}
+          {err && <div style={{ ...ERR, marginBottom: 8 }}>{err}</div>}
           <div style={{ ...row(8) }}>
-            <input style={{ ...INP, flex:1 }} placeholder="name@okicici" value={val} onChange={e=>setVal(e.target.value)} />
-            <button className="btn-press" style={btn(true,true)} onClick={save} disabled={saving}>{saving?'…':'Save'}</button>
+            <input style={{ ...INP, flex: 1 }} placeholder="name@okicici" value={val} onChange={e => setVal(e.target.value)} />
+            <button className="btn-press" style={btn(true, true)} onClick={save} disabled={saving}>{saving ? '…' : 'Save'}</button>
           </div>
-          <div style={{ fontSize:11, color:T.textMid, marginTop:6 }}>You keep 97% of each rental. Platform fee: 3%.</div>
+          <div style={{ fontSize: 11, color: T.textMid, marginTop: 6 }}>You keep 97% of each rental. Platform fee: 3%.</div>
         </>
       )}
     </div>
@@ -850,145 +864,749 @@ function UpiField({ user, setUser, showToast }) {
 }
 
 // ── ACTIVITY MODAL ────────────────────────────────────────────────────────────
-function ActivityModal({ open, onClose, refresh, showToast }) {
-  const { user, setUser } = useApp()
-  const [tab,     setTab]     = useState('borrowing')
-  const [reqs,    setReqs]    = useState([])
-  const [loading, setLoading] = useState(false)
-  const [lastUpdated, setLastUpdated] = useState(null)
-  const pollRef = useRef(null)
 
-  async function fetchReqs(silent=false) {
-    if (!silent) setLoading(true)
-    const r = await api.getMyRequests()
-    if (!silent) setLoading(false)
-    if (!r.error) { setReqs(r.requests||[]); setLastUpdated(new Date()) }
+// ── LIFECYCLE VISUALIZER ──────────────────────────────────────────────────────
+// Shows current stage of item lifecycle in a beautiful visual timeline.
+// Supports all 4 transaction types: rent, sell, donate, lend
+
+function LifecycleVisualizer({ r, isBorrowing, onClose }) {
+  const txType = r.transaction_type || (r.is_paid ? 'rent' : 'lend')
+  const isLF = r.listing_type === 'lost_found'
+
+  // Define stages per transaction type
+  const STAGES = {
+    rent: [
+      { id: 'requested', icon: '📝', label: 'Requested', desc: 'Borrower sent request', role: 'both' },
+      { id: 'selected', icon: '✅', label: 'Approved', desc: 'Lender approved, payment pending', role: 'both' },
+      { id: 'paid', icon: '💳', label: 'Payment Made', desc: 'Borrower paid via UPI/Razorpay', role: 'borrower' },
+      { id: 'active', icon: '📍', label: 'Pickup Details Sent', desc: 'Lender shared where to collect', role: 'lender' },
+      { id: 'given', icon: '🤝', label: 'Item Handed Over', desc: 'Lender gave item to borrower', role: 'lender' },
+      { id: 'received', icon: '🎒', label: 'Receipt Confirmed', desc: 'Borrower confirmed they got it', role: 'borrower' },
+      { id: 'admin_paid', icon: '💸', label: 'Admin Paying Lender', desc: 'Admin processing lender payout', role: 'admin' },
+      { id: 'payout_done', icon: '💰', label: 'Payout Received', desc: 'Lender confirmed payment received', role: 'lender' },
+      { id: 'returned', icon: '📦', label: 'Return Confirmed', desc: 'Item returned, slot freed', role: 'lender' },
+    ],
+    sell: [
+      { id: 'requested', icon: '📝', label: 'Requested', desc: 'Buyer sent purchase request', role: 'both' },
+      { id: 'selected', icon: '✅', label: 'Approved', desc: 'Seller approved, payment pending', role: 'both' },
+      { id: 'paid', icon: '💳', label: 'Payment Made', desc: 'Buyer paid via UPI/Razorpay', role: 'borrower' },
+      { id: 'active', icon: '📍', label: 'Meetup Details Sent', desc: 'Seller shared where to handover', role: 'lender' },
+      { id: 'given', icon: '🤝', label: 'Item Handed Over', desc: 'Seller gave item to buyer', role: 'lender' },
+      { id: 'received', icon: '🎒', label: 'Receipt Confirmed', desc: 'Buyer confirmed they got it', role: 'borrower' },
+      { id: 'admin_paid', icon: '💸', label: 'Admin Paying Seller', desc: 'Admin processing seller payout', role: 'admin' },
+      { id: 'returned', icon: '🏁', label: 'Sale Complete', desc: 'Transaction done, no return needed', role: 'both' },
+    ],
+    donate: [
+      { id: 'requested', icon: '📝', label: 'Requested', desc: 'Receiver sent request', role: 'both' },
+      { id: 'selected', icon: '✅', label: 'Approved', desc: 'Donor approved the request', role: 'both' },
+      { id: 'active', icon: '📍', label: 'Pickup Details Sent', desc: 'Donor shared where to collect', role: 'lender' },
+      { id: 'given', icon: '🤝', label: 'Item Handed Over', desc: 'Donor gave item to receiver', role: 'lender' },
+      { id: 'returned', icon: '🎁', label: 'Donation Complete', desc: 'Item received, no return needed', role: 'both' },
+    ],
+    lend: [
+      { id: 'requested', icon: '📝', label: 'Requested', desc: 'Borrower sent request', role: 'both' },
+      { id: 'selected', icon: '✅', label: 'Approved', desc: 'Lender approved the request', role: 'both' },
+      { id: 'active', icon: '📍', label: 'Pickup Details Sent', desc: 'Lender shared where to collect', role: 'lender' },
+      { id: 'given', icon: '🤝', label: 'Item Handed Over', desc: 'Lender gave item to borrower', role: 'lender' },
+      { id: 'received', icon: '🎒', label: 'Receipt Confirmed', desc: 'Borrower confirmed they got it', role: 'borrower' },
+      { id: 'returned', icon: '📦', label: 'Return Confirmed', desc: 'Item returned, slot freed', role: 'lender' },
+    ],
+    lost_found: [
+      { id: 'requested', icon: '📝', label: 'Claimed', desc: 'Someone filed a claim', role: 'both' },
+      { id: 'selected', icon: '✅', label: 'Claim Accepted', desc: 'Poster accepted the claim', role: 'both' },
+      { id: 'active', icon: '📍', label: 'Pickup Arranged', desc: 'Pickup message exchanged', role: 'both' },
+      { id: 'returned', icon: '✅', label: 'Item Claimed', desc: 'Item returned to owner', role: 'both' },
+    ],
+  }
+
+  const stages = isLF ? STAGES.lost_found : (STAGES[txType] || STAGES.lend)
+
+  // Determine current stage index
+  function getCurrentStageIndex() {
+    if (r.status === 'returned' || r.status === 'completed') return stages.length - 1
+    if (r.payout_status === 'done') {
+      const i = stages.findIndex(s => s.id === 'payout_done')
+      if (i > -1) return i
+    }
+    if (r.payout_status === 'admin_paid') {
+      const i = stages.findIndex(s => s.id === 'admin_paid')
+      if (i > -1) return i
+    }
+    if (r.borrower_received) {
+      const i = stages.findIndex(s => s.id === 'received')
+      return i > -1 ? i : stages.findIndex(s => s.id === 'given')
+    }
+    if (r.item_given || r.handed_over) {
+      const i = stages.findIndex(s => s.id === 'given')
+      return i > -1 ? i : stages.findIndex(s => s.id === 'active')
+    }
+    if (r.status === 'active' && r.pickup_details) return stages.findIndex(s => s.id === 'active')
+    if (r.status === 'active') return stages.findIndex(s => s.id === 'active') - 1
+    if (r.payment_confirmed && r.status === 'selected') return stages.findIndex(s => s.id === 'paid')
+    if (r.status === 'selected') return stages.findIndex(s => s.id === 'selected')
+    return 0 // requested
+  }
+
+  const currentIdx = getCurrentStageIndex()
+
+  const TX_META = {
+    rent: { label: 'Rental', color: '#3B82F6', icon: '🔄' },
+    sell: { label: 'Sale', color: '#10B981', icon: '💰' },
+    donate: { label: 'Donation', color: '#8B5CF6', icon: '🎁' },
+    lend: { label: 'Lending', color: '#F59E0B', icon: '🤝' },
+    lost_found: { label: 'L&F', color: '#64748B', icon: '🔍' },
+  }
+  const meta = isLF ? TX_META.lost_found : (TX_META[txType] || TX_META.lend)
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.7)', backdropFilter: 'blur(8px)', zIndex: 300, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', padding: 0 }}
+      onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="slide-up" style={{ background: '#fff', borderRadius: '24px 24px 0 0', width: '100%', maxWidth: 480, maxHeight: '88vh', overflowY: 'auto', paddingBottom: 32 }}>
+        {/* Handle */}
+        <div style={{ width: 40, height: 4, background: 'rgba(15,23,42,0.12)', borderRadius: 4, margin: '12px auto 0' }} />
+
+        {/* Header */}
+        <div style={{ background: `linear-gradient(135deg, ${T.navy} 0%, #1E293B 100%)`, margin: '12px 0 0', padding: '16px 20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px' }}>Item Journey 🗺️</div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>
+                {r.item_title} · {isBorrowing ? 'Your borrowing' : 'Your lending'}
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: `${meta.color}33`, border: `1px solid ${meta.color}55`, borderRadius: 20, padding: '4px 10px' }}>
+              <span style={{ fontSize: 14 }}>{meta.icon}</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: meta.color }}>{meta.label}</span>
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          <div style={{ marginTop: 14, background: 'rgba(255,255,255,0.12)', borderRadius: 8, height: 6, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${Math.round(((currentIdx + 1) / stages.length) * 100)}%`, background: T.coral, borderRadius: 8, transition: 'width 0.6s ease' }} />
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>Start</span>
+            <span style={{ fontSize: 11, color: T.coral, fontWeight: 600 }}>{Math.round(((currentIdx + 1) / stages.length) * 100)}% complete</span>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>Done</span>
+          </div>
+        </div>
+
+        {/* Stage timeline */}
+        <div style={{ padding: '20px 20px 0' }}>
+          {stages.map((stage, idx) => {
+            const isDone = idx < currentIdx
+            const isCurrent = idx === currentIdx
+            const isFuture = idx > currentIdx
+
+            const stageColor = isDone ? T.success : isCurrent ? T.coral : 'rgba(15,23,42,0.15)'
+            const textColor = isDone ? T.success : isCurrent ? T.coral : T.textSoft
+
+            return (
+              <div key={stage.id} style={{ display: 'flex', gap: 12, marginBottom: idx < stages.length - 1 ? 0 : 0 }}>
+                {/* Left: circle + line */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 36, flexShrink: 0 }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: '50%',
+                    background: isDone ? T.success : isCurrent ? T.coral : 'rgba(15,23,42,0.06)',
+                    border: `2px solid ${stageColor}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 16,
+                    boxShadow: isCurrent ? `0 0 0 4px ${T.coral}22` : 'none',
+                    transition: 'all 0.3s',
+                    flexShrink: 0,
+                    position: 'relative',
+                    zIndex: 1,
+                  }}>
+                    {isDone ? '✓' : stage.icon}
+                  </div>
+                  {idx < stages.length - 1 && (
+                    <div style={{ width: 2, flex: 1, minHeight: 24, background: isDone ? T.success : 'rgba(15,23,42,0.08)', margin: '2px 0', transition: 'background 0.3s' }} />
+                  )}
+                </div>
+
+                {/* Right: label + desc */}
+                <div style={{ paddingBottom: 20, flex: 1, paddingTop: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ fontSize: 14, fontWeight: isCurrent ? 700 : isDone ? 600 : 400, color: textColor, transition: 'all 0.2s' }}>
+                      {stage.label}
+                    </div>
+                    {isCurrent && (
+                      <div style={{ fontSize: 10, fontWeight: 700, background: `${T.coral}20`, color: T.coral, border: `1px solid ${T.coral}44`, borderRadius: 20, padding: '1px 8px', letterSpacing: '0.04em' }}>
+                        YOU ARE HERE
+                      </div>
+                    )}
+                    {isDone && <span style={{ fontSize: 11, color: T.success }}>✓ Done</span>}
+                  </div>
+                  <div style={{ fontSize: 12, color: isFuture ? T.textSoft : textColor, marginTop: 2, lineHeight: 1.4, opacity: isFuture ? 0.6 : 1 }}>
+                    {stage.desc}
+                  </div>
+                  {/* Role badge */}
+                  <div style={{ marginTop: 4 }}>
+                    <span style={{ fontSize: 10, color: stage.role === 'admin' ? '#8B5CF6' : T.textSoft, background: 'rgba(15,23,42,0.05)', borderRadius: 20, padding: '2px 8px' }}>
+                      {stage.role === 'lender' ? (txType === 'sell' ? 'Seller action' : 'Lender action')
+                        : stage.role === 'borrower' ? (txType === 'sell' ? 'Buyer action' : 'Borrower action')
+                          : stage.role === 'admin' ? '⚙️ Admin action'
+                            : 'Both parties'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        <div style={{ padding: '0 20px' }}>
+          <button className="btn-press" style={{ ...btn(false), width: '100%', marginTop: 8 }} onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── ITEM REQUEST MODAL (Borrower posts "I need X") ────────────────────────────
+const _itemRequestCache = {}   // preserve draft across re-renders
+
+function ItemRequestModal({ open, onClose, onSuccess, showToast }) {
+  const { user } = useApp()
+  const [title, setTitle] = useState(() => _itemRequestCache.title || '')
+  const [desc, setDesc] = useState(() => _itemRequestCache.desc || '')
+  const [cat, setCat] = useState(() => _itemRequestCache.cat || 'Any')
+  const [urgency, setUrgency] = useState(() => _itemRequestCache.urgency || 'medium')
+  const [err, setErr] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  function save(key, val) {
+    _itemRequestCache[key] = val
+    if (key === 'title') setTitle(val)
+    else if (key === 'desc') setDesc(val)
+    else if (key === 'cat') setCat(val)
+    else if (key === 'urgency') setUrgency(val)
+  }
+
+  async function submit() {
+    if (!title.trim()) { setErr('Please describe what you need.'); return }
+    setLoading(true); setErr('')
+    const r = await api.postItemRequest({ title: title.trim(), description: desc.trim(), category: cat, urgency })
+    setLoading(false)
+    if (r?.error) { setErr(r.error); return }
+    // Clear cache
+    Object.keys(_itemRequestCache).forEach(k => delete _itemRequestCache[k])
+    showToast('Request posted! Others will be notified.')
+    onSuccess(); onClose()
+  }
+
+  const URGENCY_OPTS = [
+    { val: 'low', icon: '🟢', label: 'Low', desc: 'No rush' },
+    { val: 'medium', icon: '🟡', label: 'Medium', desc: 'Within a day or two' },
+    { val: 'high', icon: '🔴', label: 'High', desc: 'Need urgently!' },
+  ]
+
+  return (
+    <Modal open={open} onClose={onClose}>
+      <div style={{ margin: '-8px -24px 20px', padding: '20px 24px 16px', background: `linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%)`, borderRadius: '16px 16px 0 0' }}>
+        <div style={{ fontFamily: 'var(--font-head)', fontSize: 22, fontWeight: 700, color: '#fff', letterSpacing: '-0.5px', marginBottom: 4 }}>Request an Item 🙋</div>
+        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>Post what you need — classmates can offer to sell, rent, lend or donate it.</div>
+      </div>
+      {err && <div style={ERR}>{err}</div>}
+
+      <div style={{ marginBottom: 14 }}>
+        <label style={LBL}>What do you need? *</label>
+        <input style={INP} placeholder="e.g. 1 packet Maggi, DSA notes, calculator…" value={title} onChange={e => save('title', e.target.value)} />
+      </div>
+
+      <div style={{ marginBottom: 14 }}>
+        <label style={LBL}>Details (optional)</label>
+        <textarea style={{ ...INP, minHeight: 72, resize: 'vertical', lineHeight: 1.5 }} placeholder="Any specifics? Edition, brand, when you need by…" value={desc} onChange={e => save('desc', e.target.value)} />
+      </div>
+
+      <div style={{ marginBottom: 14 }}>
+        <label style={LBL}>Category</label>
+        <select style={INP} value={cat} onChange={e => save('cat', e.target.value)}>
+          {['Any', ...CATEGORIES].map(c => <option key={c}>{c}</option>)}
+        </select>
+      </div>
+
+      <div style={{ marginBottom: 18 }}>
+        <label style={LBL}>Urgency</label>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 6 }}>
+          {URGENCY_OPTS.map(o => (
+            <button key={o.val} onClick={() => save('urgency', o.val)} style={{ padding: '10px 8px', borderRadius: 'var(--radius-sm)', border: `2px solid ${urgency === o.val ? T.coral : 'var(--border-soft)'}`, background: urgency === o.val ? `${T.coral}10` : 'transparent', cursor: 'pointer', textAlign: 'center', transition: 'all 0.18s' }}>
+              <div style={{ fontSize: 18, marginBottom: 2 }}>{o.icon}</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: urgency === o.val ? T.coral : T.navy }}>{o.label}</div>
+              <div style={{ fontSize: 10, color: T.textSoft, marginTop: 1 }}>{o.desc}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ ...row(8), justifyContent: 'flex-end' }}>
+        <button className="btn-press" style={btn(false)} onClick={onClose}>Cancel</button>
+        <button className="btn-press" style={{ ...btn(true), background: '#7C3AED' }} onClick={submit} disabled={loading}>{loading ? 'Posting…' : 'Post Request 🙋'}</button>
+      </div>
+    </Modal>
+  )
+}
+
+// ── ITEM REQUESTS SECTION ─────────────────────────────────────────────────────
+// module-level offer note draft cache — survives polls
+const _offerNoteDraftCache = {}
+
+function ItemRequestsSection({ showToast, currentUserId, reload: reloadActivity, onMarkSeen }) {
+  const [requests, setRequests] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [expanded, setExpanded] = useState(null)
+  const [offers, setOffers] = useState({})
+  // borrowReqs keyed by item_request id — for inline lifecycle after acceptance
+  const [borrowReqs, setBorrowReqs] = useState({})
+  const [showOffer, setShowOffer] = useState(null)
+  const [offerTxType, setOfferTxType] = useState('lend')
+  const [offerPrice, setOfferPrice] = useState('')
+  const [offerErr, setOfferErr] = useState('')
+  const [offerSaving, setOfferSaving] = useState(false)
+  const pollRef = useRef(null)
+  const reqsRefIRS = useRef([])  // stable ref to avoid re-mounting on poll
+
+  // preserve offer note drafts across polls
+  const offerNoteRef = useRef(_offerNoteDraftCache[showOffer] || '')
+  useEffect(() => { offerNoteRef.current = _offerNoteDraftCache[showOffer] || '' }, [showOffer])
+
+  async function load(q = search) {
+    const r = await api.getItemRequests(q)
+    if (r?.error) { setLoading(false); return }
+    const newReqs = r.requests || []
+    // Smart merge — only update if something changed so inputs aren't disrupted
+    const prev = JSON.stringify(reqsRefIRS.current.map(x => ({ id: x.id, status: x.status, offer_count: x.offer_count })))
+    const next = JSON.stringify(newReqs.map(x => ({ id: x.id, status: x.status, offer_count: x.offer_count })))
+    if (prev !== next) { reqsRefIRS.current = newReqs; setRequests(newReqs) }
+    setLoading(false)
   }
 
   useEffect(() => {
-    if (!open) {
-      clearInterval(pollRef.current)
-      return
-    }
-    fetchReqs(false)
-    // Poll every 8 seconds while activity modal is open
-    pollRef.current = setInterval(() => fetchReqs(true), 8000)
+    load()
+    pollRef.current = setInterval(() => load(), 15000)
     return () => clearInterval(pollRef.current)
-  }, [open])
+  }, []) // eslint-disable-line
 
-  async function reload() { await fetchReqs(true); refresh() }
+  async function loadOffers(reqId) {
+    const r = await api.getItemRequestOffers(reqId)
+    if (!r?.error) setOffers(prev => ({ ...prev, [reqId]: r.offers || [] }))
+  }
+
+  // Load borrow request for an accepted offer — used to show inline lifecycle
+  async function loadBorrowReq(reqId, borrowRequestId) {
+    if (!borrowRequestId) return
+    const r = await api.getMyRequests()
+    if (!r?.error) {
+      const br = (r.requests || []).find(x => x.id === borrowRequestId)
+      if (br) setBorrowReqs(prev => ({ ...prev, [reqId]: br }))
+    }
+  }
+
+  async function toggleExpand(req) {
+    const reqId = req.id
+    if (expanded === reqId) { setExpanded(null); return }
+    setExpanded(reqId)
+    await loadOffers(reqId)
+    // If accepted, also load the borrow request for inline lifecycle
+    if (req.status === 'closed' && req.accepted_offer_id) {
+      await loadBorrowReq(reqId, req.linked_borrow_request_id)
+    }
+  }
+
+  async function submitOffer() {
+    setOfferErr(''); setOfferSaving(true)
+    const isPaid = ['rent', 'sell'].includes(offerTxType)
+    const price = offerPrice
+    if (isPaid && (!price || parseFloat(price) <= 0)) {
+      setOfferErr('Please enter a price.'); setOfferSaving(false); return
+    }
+    const note = offerNoteRef.current
+    const r = await api.makeOffer(showOffer, { transactionType: offerTxType, note, price })
+    setOfferSaving(false)
+    if (r?.error) { setOfferErr(r.error); return }
+    showToast('Offer sent! Requester will review.')
+    delete _offerNoteDraftCache[showOffer]
+    setShowOffer(null)
+    setOfferTxType('lend'); setOfferPrice(''); setOfferErr('')
+    await loadOffers(showOffer)
+    load()
+  }
+
+  async function acceptOffer(reqId, offerId, req) {
+    if (!window.confirm('Accept this offer? The lifecycle will continue here — no need to go to marketplace.')) return
+    const r = await api.acceptOffer(reqId, offerId)
+    if (r?.error) { showToast(r.error); return }
+    showToast('✅ Offer accepted! Continue the handover below.')
+    load()
+    await loadOffers(reqId)
+    if (r.borrowRequestId) {
+      await loadBorrowReq(reqId, r.borrowRequestId)
+    }
+    if (reloadActivity) reloadActivity()
+  }
+
+  async function declineOffer(reqId, offerId) {
+    const r = await api.declineOffer(reqId, offerId)
+    if (r?.error) { showToast(r.error); return }
+    showToast('Offer declined.')
+    await loadOffers(reqId)
+  }
+
+  async function closeRequest(reqId) {
+    if (!window.confirm('Close this request?')) return
+    const r = await api.closeItemRequest(reqId)
+    if (r?.error) { showToast(r.error); return }
+    showToast('Request closed.')
+    load()
+  }
+
+  const URGENCY_COLOR = { low: T.success, medium: T.warn, high: T.error }
+  const TX_ICONS = { rent: '🔄', sell: '💰', donate: '🎁', lend: '🤝' }
+  const TX_LABELS = { rent: 'Rent', sell: 'Sell', donate: 'Donate', lend: 'Lend' }
+
+  return (
+    <div>
+      {/* Search */}
+      <div style={{ position: 'relative', marginBottom: 14 }}>
+        <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 13 }}>🔎</span>
+        <input style={{ ...INP, paddingLeft: 36, borderRadius: 40, fontSize: 13 }}
+          placeholder="Search requests…"
+          value={search} onChange={e => { setSearch(e.target.value); load(e.target.value) }} />
+      </div>
+
+      {loading && [1, 2].map(i => <div key={i} className="skeleton" style={{ height: 70, marginBottom: 10, borderRadius: 12 }} />)}
+      {!loading && requests.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '2rem 0', color: T.textSoft }}>
+          <div style={{ fontSize: 40, marginBottom: 8 }}>🙋</div>
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>No open requests yet</div>
+          <div style={{ fontSize: 13 }}>Be the first to post one above!</div>
+        </div>
+      )}
+
+      {requests.map(req => {
+        const isOwn = req.requester_id === currentUserId
+        const isOpen = req.status === 'open'
+        const reqOffers = offers[req.id] || []
+        const isExp = expanded === req.id
+        const inlineBR = borrowReqs[req.id]   // borrow request for inline lifecycle
+        const accepted = reqOffers.find(o => o.status === 'accepted')
+
+        return (
+          <div key={req.id} style={{ borderRadius: 'var(--radius-sm)', marginBottom: 10, background: '#fff', boxShadow: 'var(--shadow)', overflow: 'hidden', borderLeft: `4px solid ${URGENCY_COLOR[req.urgency] || T.textSoft}` }}>
+            {/* Header row */}
+            <div style={{ padding: '12px 14px', cursor: 'pointer' }} onClick={() => toggleExpand(req)}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                <Av user={{ name: req.requester_name, avatar: req.requester_avatar, color: req.requester_color }} size={34} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: T.navy }}>{req.title}</div>
+                  <div style={{ fontSize: 12, color: T.textMid, marginTop: 2 }}>
+                    {req.requester_name} · {req.category}
+                    {req.description ? ` · "${req.description.slice(0, 40)}${req.description.length > 40 ? '…' : ''}"` : ''}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, background: `${URGENCY_COLOR[req.urgency]}20`, color: URGENCY_COLOR[req.urgency], padding: '2px 8px', borderRadius: 20 }}>
+                    {req.urgency === 'high' ? '🔴 URGENT' : req.urgency === 'medium' ? '🟡 Medium' : '🟢 Low'}
+                  </span>
+                  {req.status === 'closed' && accepted
+                    ? <span style={{ fontSize: 10, background: `${T.success}20`, color: T.success, padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>✅ Matched</span>
+                    : req.offer_count > 0 && <span style={{ fontSize: 10, background: `${T.info}20`, color: T.info, padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>{req.offer_count} offer{req.offer_count > 1 ? 's' : ''}</span>
+                  }
+                </div>
+              </div>
+            </div>
+
+            {/* Expanded body */}
+            {isExp && (
+              <div style={{ borderTop: `1px solid var(--border-soft)`, padding: '12px 14px' }}>
+
+                {/* ── INLINE LIFECYCLE for accepted offers ── */}
+                {req.status === 'closed' && accepted && (
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: T.success, marginBottom: 8 }}>
+                      ✅ Matched with {accepted.offerer_name} · {TX_ICONS[accepted.transaction_type]} {TX_LABELS[accepted.transaction_type]}
+                      {accepted.price > 0 && <span style={{ color: T.coral }}> · ₹{accepted.price}</span>}
+                    </div>
+                    <div style={{ padding: '10px', background: 'rgba(16,185,129,0.06)', borderRadius: 'var(--radius-xs)', fontSize: 12, color: T.textMid, border: '1px solid rgba(16,185,129,0.2)' }}>
+                      <strong>Handover active!</strong> Check the "Active Handovers" section below or in your Activity tab to coordinate the exchange and payment.
+                    </div>
+                  </div>
+                )}
+
+                {/* Offers list */}
+                {isOpen && reqOffers.length === 0 && (
+                  <div style={{ fontSize: 13, color: T.textSoft, marginBottom: 10, textAlign: 'center' }}>No offers yet. Be the first!</div>
+                )}
+                {reqOffers.map(offer => (
+                  <div key={offer.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', background: 'rgba(15,23,42,0.03)', borderRadius: 'var(--radius-xs)', marginBottom: 6 }}>
+                    <Av user={{ name: offer.offerer_name, color: offer.offerer_color }} size={28} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: T.navy }}>
+                        {TX_ICONS[offer.transaction_type]} {offer.offerer_name} offers to {TX_LABELS[offer.transaction_type].toLowerCase()}
+                        {offer.price > 0 && <span style={{ color: T.coral }}> · ₹{offer.price}</span>}
+                      </div>
+                      {offer.note && <div style={{ fontSize: 12, color: T.textMid, marginTop: 1 }}>"{offer.note}"</div>}
+                    </div>
+                    {offer.status === 'accepted' && <span style={{ fontSize: 11, color: T.success, fontWeight: 700 }}>✓ Accepted</span>}
+                    {offer.status === 'declined' && <span style={{ fontSize: 11, color: T.error }}>Declined</span>}
+                    {isOwn && isOpen && offer.status === 'pending' && (
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        <button className="btn-press" style={{ ...btn(true, true), fontSize: 11, padding: '4px 10px' }} onClick={() => acceptOffer(req.id, offer.id, req)}>Accept</button>
+                        <button className="btn-press" style={{ ...btn(false, true), fontSize: 11, padding: '4px 10px', color: T.error }} onClick={() => declineOffer(req.id, offer.id)}>Decline</button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {/* Action buttons */}
+                <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+                  {!isOwn && isOpen && (
+                    <button className="btn-press" style={{ ...btn(true, true), background: '#7C3AED', flex: 1 }} onClick={() => { setShowOffer(req.id); setOfferErr('') }}>
+                      Make an Offer
+                    </button>
+                  )}
+                  {isOwn && isOpen && (
+                    <button className="btn-press" style={{ ...btn(false, true), color: T.error, border: `1px solid ${T.error}33` }} onClick={() => closeRequest(req.id)}>
+                      Close Request
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })}
+
+      {/* Offer bottom sheet */}
+      {showOffer && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(8px)', zIndex: 300, display: 'flex', justifyContent: 'center', alignItems: 'flex-end' }}
+          onMouseDown={e => { if (e.target === e.currentTarget) setShowOffer(null) }}>
+          <div className="slide-up" style={{ background: '#fff', borderRadius: '24px 24px 0 0', width: '100%', maxWidth: 480, padding: '20px 24px 32px' }}>
+            <div style={{ width: 40, height: 4, background: 'rgba(15,23,42,0.12)', borderRadius: 4, margin: '-8px auto 20px' }} />
+            <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 800, marginBottom: 16 }}>Make an Offer</div>
+            {offerErr && <div style={ERR}>{offerErr}</div>}
+
+            <label style={LBL}>How do you want to share it?</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 14 }}>
+              {[{ val: 'lend', icon: '🤝', l: 'Lend (free)' }, { val: 'donate', icon: '🎁', l: 'Donate' }, { val: 'rent', icon: '🔄', l: 'Rent (paid)' }, { val: 'sell', icon: '💰', l: 'Sell' }].map(o => (
+                <button key={o.val} onClick={() => setOfferTxType(o.val)} style={{ padding: '10px', borderRadius: 'var(--radius-xs)', border: `2px solid ${offerTxType === o.val ? T.coral : 'var(--border-soft)'}`, background: offerTxType === o.val ? `${T.coral}08` : 'transparent', cursor: 'pointer', fontWeight: 600, fontSize: 13, color: offerTxType === o.val ? T.coral : T.navy }}>
+                  {o.icon} {o.l}
+                </button>
+              ))}
+            </div>
+            {['rent', 'sell'].includes(offerTxType) && (
+              <div style={{ marginBottom: 14 }}>
+                <label style={LBL}>{offerTxType === 'sell' ? 'Selling price (₹)' : 'Price per day (₹)'}</label>
+                <input style={INP} type="number" min="1" placeholder="Enter amount" value={offerPrice} onChange={e => setOfferPrice(e.target.value)} />
+              </div>
+            )}
+            <div style={{ marginBottom: 14 }}>
+              <label style={LBL}>Note (optional)</label>
+              <input style={INP} placeholder="Condition, availability, any details…"
+                defaultValue={_offerNoteDraftCache[showOffer] || ''}
+                onChange={e => { _offerNoteDraftCache[showOffer] = e.target.value; offerNoteRef.current = e.target.value }} />
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn-press" style={btn(false)} onClick={() => setShowOffer(null)}>Cancel</button>
+              <button className="btn-press" style={{ ...btn(true), flex: 1, background: '#7C3AED' }} onClick={submitOffer} disabled={offerSaving}>
+                {offerSaving ? 'Sending…' : 'Send Offer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── INLINE LIFECYCLE PANEL ────────────────────────────────────────────────────
+// Removed as it is now handled by ReqCard inside the Activity tab.
+
+function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJourney, lifecycleOpenMap }) {
+  const isPaid = r.is_paid
+  const isLF = r.listing_type === 'lost_found'
+  const showLifecycle = !!lifecycleOpenMap[r.id]
+
+  const statusColors = { pending: '#F59E0B', selected: T.coral, active: T.navy, returned: T.success, declined: T.error, overdue: T.error }
+  const accentColor = statusColors[r.status] || T.navy
+
   async function act(fn, ...args) {
     try {
       const res = await fn(...args)
-      if (res?.error) return res
+      if (res?.error) { showToast(res.error); return res }
       await reload()
       return res
-    } catch (err) { console.error(err); return { error:'Something went wrong' } }
+    } catch (err) { console.error(err); return { error: 'Something went wrong' } }
   }
 
-  const borrowing = reqs.filter(r=>r.borrower_id===user?.id)
-  const lending   = reqs.filter(r=>r.owner_id===user?.id)
-  const tier = TRUST_TIERS[user?.trust_tier]||TRUST_TIERS.newcomer
-  const activeCount = borrowing.filter(r=>['active','selected'].includes(r.status)).length
-
-  const tabs = [
-    { id:'borrowing', label:'Borrowing', count:borrowing.length, icon:'📥' },
-    { id:'lending',   label:'Lending',   count:lending.length,   icon:'📤' },
-    { id:'profile',   label:'Profile',   icon:'👤' },
-  ]
-
-  function ReqCard({ r, isBorrowing }) {
-    const isPaid = r.is_paid
-    const isLF   = r.listing_type === 'lost_found'
-
-    const statusColors = { pending:'#F59E0B', selected:T.coral, active:T.navy, returned:T.success, declined:T.error, overdue:T.error }
-    const accentColor = statusColors[r.status] || T.navy
-
-    return (
-      <div className="fade-in" style={{ borderRadius:'var(--radius-sm)', marginBottom:12, background:'#fff', boxShadow:'var(--shadow)', overflow:'hidden', border:`1px solid ${accentColor}22`, borderLeft:`4px solid ${accentColor}` }}>
-        {/* Card header with navy background */}
-        <div style={{ background:`linear-gradient(135deg, ${T.navy} 0%, #1E293B 100%)`, padding:'12px 14px', ...row(10) }}>
-          <Av user={isBorrowing ? {name:r.owner_name} : {avatar:r.borrower_avatar, color:r.borrower_color}} size={36} />
-          <div style={{ flex:1, minWidth:0 }}>
-            <div style={{ fontSize:14, fontWeight:700, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', color:'#fff', fontFamily:'var(--font-head)' }}>{r.item_title}</div>
-            <div style={{ fontSize:12, color:'rgba(255,255,255,0.6)', marginTop:2 }}>
-              {isBorrowing ? `from ${r.owner_name}` : r.borrower_name}
-              {!isLF && ` · ${r.requested_days}d`}
-              {isPaid && <span style={{ color:T.coral, fontWeight:600 }}> · ₹{r.total_amount}</span>}
-              {r.message ? ` · "${r.message}"` : ''}
-            </div>
+  return (
+    <div className="fade-in" style={{ borderRadius: 'var(--radius-sm)', marginBottom: 12, background: '#fff', boxShadow: 'var(--shadow)', overflow: 'hidden', border: `1px solid ${accentColor}22`, borderLeft: `4px solid ${accentColor}` }}>
+      {/* Card header with navy background */}
+      <div style={{ background: `linear-gradient(135deg, ${T.navy} 0%, #1E293B 100%)`, padding: '12px 14px', ...row(10) }}>
+        <Av user={isBorrowing ? { name: r.owner_name } : { avatar: r.borrower_avatar, color: r.borrower_color }} size={36} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#fff', fontFamily: 'var(--font-head)' }}>{r.item_title}</div>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>
+            {isBorrowing ? `from ${r.owner_name}` : r.borrower_name}
+            {!isLF && ` · ${r.requested_days}d`}
+            {isPaid && <span style={{ color: T.coral, fontWeight: 600 }}> · ₹{r.total_amount}</span>}
+            {r.message ? ` · "${r.message}"` : ''}
           </div>
+        </div>
+        <div style={{ flexShrink: 0 }}>
           <SBadge status={r.status} inline />
         </div>
+      </div>
 
-        <div style={{ padding:'10px 10px 12px' }}>
-        {r.status==='active' && r.due_at && (
-          <div style={{ fontSize:12, color:T.textMid, marginBottom:8, ...row(6) }}>
+      {/* Journey strip — always visible below header, very prominent */}
+      <div
+        onClick={() => openJourney(r.id)}
+        style={{ background: 'linear-gradient(90deg, #7C3AED 0%, #E8445A 100%)', padding: '12px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'transform 0.15s', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 20, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' }}>
+            {r.status === 'pending' ? '📝' : r.status === 'selected' ? '✅' : r.status === 'active' ? '🤝' : r.status === 'returned' ? '📦' : r.status === 'declined' ? '❌' : '⚠️'}
+          </span>
+          <div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)', letterSpacing: '0.04em', fontWeight: 700, textTransform: 'uppercase' }}>Current Stage</div>
+            <div style={{ fontSize: 14, color: '#fff', fontWeight: 800, textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>
+              {r.status === 'pending' ? 'Waiting for approval' : r.status === 'selected' ? 'Approved — action needed' : r.status === 'active' ? 'Active — handover in progress' : r.status === 'returned' ? 'Complete ✓' : r.status === 'declined' ? 'Declined' : 'Overdue'}
+            </div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', borderRadius: 20, padding: '6px 14px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', color: T.navy }}>
+          <span style={{ fontSize: 14 }}>📍</span>
+          <span style={{ fontSize: 13, fontWeight: 800 }}>Track Journey</span>
+        </div>
+      </div>
+
+      {showLifecycle && <LifecycleVisualizer r={r} isBorrowing={isBorrowing} onClose={() => closeJourney(r.id)} />}
+
+      <div style={{ padding: '10px 10px 12px' }}>
+
+        {/* ── CONTEXTUAL GUIDE: what to do right now ── */}
+        {(() => {
+          const txType = r.transaction_type || (isPaid ? 'rent' : 'lend')
+          const noReturn = ['sell', 'donate'].includes(txType)
+          let guide = null
+
+          if (isBorrowing) {
+            if (r.status === 'pending')
+              guide = { icon: '⏳', color: '#F59E0B', title: 'Waiting for approval', body: `The lender will review and approve or decline your request. You will see it update here automatically.` }
+            else if (r.status === 'selected' && isPaid && !r.payment_confirmed)
+              guide = { icon: '💳', color: T.coral, title: 'Action needed: Pay now', body: `Tap "Pay ₹${r.total_amount} via UPI" below to confirm. Lender is waiting.` }
+            else if (r.status === 'selected' && (!isPaid || r.payment_confirmed))
+              guide = { icon: '📍', color: T.info, title: 'Approved! Awaiting pickup details', body: `Lender will share when and where to collect. Check back soon — it will appear here.` }
+            else if (r.status === 'active' && !r.pickup_details)
+              guide = { icon: '📍', color: T.info, title: 'Waiting for pickup details', body: `Lender is about to share where to collect. Stay tuned.` }
+            else if (r.status === 'active' && r.pickup_details && !r.item_given)
+              guide = { icon: '🏃', color: T.navy, title: 'Go collect the item!', body: `Collect from: "${r.pickup_details}". Once lender marks it given, tap "I Got It".` }
+            else if (r.status === 'active' && r.item_given && !r.borrower_received)
+              guide = { icon: '✋', color: T.coral, title: 'Action needed: Confirm receipt', body: `Lender has handed over the item. Tap "I've Received Item" below to confirm.` }
+            else if (r.status === 'active' && r.borrower_received && !noReturn)
+              guide = { icon: '📦', color: T.success, title: 'Return it when done', body: `Return the item before ${r.due_at ? new Date(r.due_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'due date'}. Lender will confirm return.` }
+            else if (r.status === 'returned')
+              guide = { icon: '🎉', color: T.success, title: 'All done!', body: noReturn ? 'Transaction complete. Thanks for using CampusShare!' : 'Item returned successfully. Slot freed up.' }
+          } else {
+            if (r.status === 'pending')
+              guide = { icon: '👀', color: '#F59E0B', title: 'New request — review it', body: `Tap Approve to accept or Decline. For paid items, make sure UPI ID is set in Profile.` }
+            else if (r.status === 'selected' && !isPaid)
+              guide = { icon: '📍', color: T.coral, title: 'Action needed: Send pickup details', body: `Tap "Confirm & Proceed" below, then share pickup details in the box that appears.` }
+            else if (r.status === 'active' && !r.pickup_details)
+              guide = { icon: '📍', color: T.coral, title: 'Action needed: Send pickup details', body: `Type where and when to hand over the item. Borrower is waiting.` }
+            else if (r.status === 'active' && r.pickup_details && !r.item_given)
+              guide = { icon: '🤝', color: T.navy, title: 'Meet the borrower & hand it over', body: `Once physically handed over, tap "Item Given ✓" to let borrower confirm.` }
+            else if (r.status === 'active' && r.item_given && !r.borrower_received)
+              guide = { icon: '⏳', color: T.info, title: 'Waiting for borrower to confirm', body: `Borrower needs to tap "I Got It" to confirm. Then payout details will appear.` }
+            else if (r.status === 'active' && r.borrower_received && isPaid && r.payout_status === 'na')
+              guide = { icon: '💸', color: T.success, title: 'Item delivered! Payout coming', body: `Admin will process your payout shortly. You will be notified when it is sent.` }
+            else if (r.payout_status === 'admin_paid')
+              guide = { icon: '💰', color: T.success, title: 'Action needed: Confirm payment', body: `Check your UPI for the payment. Tap "Payment Received ✓" or raise a dispute if not received.` }
+            else if (r.status === 'active' && r.borrower_received && !isPaid && !noReturn)
+              guide = { icon: '📦', color: T.info, title: 'Waiting for return', body: `Borrower has the item. When returned, tap "Confirm Return" to free their slot.` }
+            else if (r.status === 'returned')
+              guide = { icon: '🎉', color: T.success, title: 'All done!', body: noReturn ? 'Transaction complete!' : 'Item returned. Thank you for sharing!' }
+          }
+
+          if (!guide) return null
+          return (
+            <div style={{ display: 'flex', gap: 10, padding: '10px 12px', background: `${guide.color}10`, borderRadius: 'var(--radius-xs)', border: `1.5px solid ${guide.color}33`, marginBottom: 10 }}>
+              <span style={{ fontSize: 20, flexShrink: 0 }}>{guide.icon}</span>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: guide.color, marginBottom: 2 }}>{guide.title}</div>
+                <div style={{ fontSize: 12, color: T.textMid, lineHeight: 1.5 }}>{guide.body}</div>
+              </div>
+            </div>
+          )
+        })()}
+
+        {r.status === 'active' && r.due_at && (
+          <div style={{ fontSize: 12, color: T.textMid, marginBottom: 8, ...row(6) }}>
             <span>📅</span>
-            <span>Due: {new Date(r.due_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</span>
-            {new Date()>new Date(r.due_at) && <span style={{ color:T.error, fontWeight:600 }}>⚠ Overdue</span>}
+            <span>Due: {new Date(r.due_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+            {new Date() > new Date(r.due_at) && <span style={{ color: T.error, fontWeight: 600 }}>⚠ Overdue</span>}
           </div>
         )}
 
         {/* LF flow */}
-        {isLF && isBorrowing && r.status==='selected' && <LFPickupPanel r={r} reload={reload} showToast={showToast} />}
-        {isLF && !isBorrowing && r.status==='selected' && (
+        {isLF && isBorrowing && r.status === 'selected' && <LFPickupPanel r={r} reload={reload} showToast={showToast} />}
+        {isLF && !isBorrowing && r.status === 'selected' && (
           <InfoBanner type="info">
             {r.pickup_message ? <>📍 Claimer says: <strong>"{r.pickup_message}"</strong></> : '⏳ Waiting for claimer to send pickup location…'}
           </InfoBanner>
         )}
-        {isLF && isBorrowing && r.status==='active' && <InfoBanner type="success">✅ Lender handed over the item. Confirm receipt below.</InfoBanner>}
+        {isLF && isBorrowing && r.status === 'active' && <InfoBanner type="success">✅ Lender handed over the item. Confirm receipt below.</InfoBanner>}
 
         {/* Marketplace handover */}
-        {!isLF && !isBorrowing && r.status==='active' && <PickupDetailsPanel r={r} reload={reload} showToast={showToast} />}
-        {!isLF && isBorrowing && r.status==='active' && r.pickup_details && !r.borrower_received && (
+        {!isLF && !isBorrowing && r.status === 'active' && <PickupDetailsPanel r={r} reload={reload} showToast={showToast} />}
+        {!isLF && isBorrowing && r.status === 'active' && r.pickup_details && !r.borrower_received && (
           <InfoBanner type="info">
             📍 Pickup: <strong>"{r.pickup_details}"</strong>
-            {r.item_given && <div style={{marginTop:4, fontWeight:600}}>✅ Lender says given — confirm below.</div>}
+            {r.item_given && <div style={{ marginTop: 4, fontWeight: 600 }}>✅ Lender says given — confirm below.</div>}
           </InfoBanner>
         )}
-        {!isLF && isBorrowing && r.status==='active' && !r.pickup_details && <InfoBanner type="warn">⏳ Waiting for lender to send pickup details…</InfoBanner>}
-        {!isLF && isBorrowing && r.status==='active' && r.borrower_received && (
+        {!isLF && isBorrowing && r.status === 'active' && !r.pickup_details && <InfoBanner type="warn">⏳ Waiting for lender to send pickup details…</InfoBanner>}
+        {!isLF && isBorrowing && r.status === 'active' && r.borrower_received && (
           <InfoBanner type="success">✅ Receipt confirmed. {isPaid ? 'Admin will process payout soon.' : 'Lender will confirm return when done.'}</InfoBanner>
         )}
-        {isBorrowing && r.status==='selected' && !isPaid && !isLF && <InfoBanner type="success">🎉 Selected! Lender will send pickup details soon.</InfoBanner>}
+        {isBorrowing && r.status === 'selected' && !isPaid && !isLF && <InfoBanner type="success">🎉 Selected! Lender will send pickup details soon.</InfoBanner>}
 
         {/* Paid info */}
-        {isBorrowing && r.status==='selected' && isPaid && !r.payment_confirmed && (
+        {isBorrowing && r.status === 'selected' && isPaid && !r.payment_confirmed && (
           <InfoBanner type="warn">💳 Pay <strong>₹{r.total_amount}</strong> via UPI to confirm rental.</InfoBanner>
         )}
-        {isBorrowing && r.status==='selected' && isPaid && r.payment_confirmed && (
+        {isBorrowing && r.status === 'selected' && isPaid && r.payment_confirmed && (
           <InfoBanner type="success">✅ Payment of ₹{r.total_amount} confirmed. Waiting for lender to send pickup details.</InfoBanner>
         )}
         {/* Lender: shown as soon as status flips to active after borrower pays */}
-        {!isBorrowing && r.status==='active' && isPaid && r.payment_confirmed && !r.pickup_details && (
+        {!isBorrowing && r.status === 'active' && isPaid && r.payment_confirmed && !r.pickup_details && (
           <InfoBanner type="success">
             💰 <strong>Borrower has paid ₹{r.total_amount} — admin has received it.</strong>
-            <div style={{marginTop:6, opacity:0.9}}>Send your meetup/pickup details to the borrower below so they can collect the item.</div>
+            <div style={{ marginTop: 6, opacity: 0.9 }}>Send your meetup/pickup details to the borrower below so they can collect the item.</div>
           </InfoBanner>
         )}
 
         {/* Payout banners */}
-        {!isBorrowing && isPaid && r.payout_status==='admin_paid' && (
+        {!isBorrowing && isPaid && r.payout_status === 'admin_paid' && (
           <InfoBanner type="warn">💸 Admin sent your payment. Check UPI and confirm below.</InfoBanner>
         )}
-        {!isBorrowing && isPaid && r.payout_status==='disputed' && (
+        {!isBorrowing && isPaid && r.payout_status === 'disputed' && (
           <InfoBanner type="error">⚠️ Dispute raised — admin notified and will resolve shortly.</InfoBanner>
         )}
-        {!isBorrowing && isPaid && r.payout_status==='done' && r.status!=='returned' && (
+        {!isBorrowing && isPaid && r.payout_status === 'done' && r.status !== 'returned' && (
           <InfoBanner type="success">✅ Payment received. Confirm return when item is back.</InfoBanner>
         )}
 
         {/* ACTION BUTTONS */}
-        <div className="req-actions" style={{ ...row(8), flexWrap:'wrap', marginTop:8 }}>
+        <div className="req-actions" style={{ ...row(8), flexWrap: 'wrap', marginTop: 8 }}>
 
           {/* Pay button */}
-          {isBorrowing && r.status==='selected' && isPaid && !r.payment_confirmed && (
-            <button className="btn-press" style={{ ...btn(true,true), flex:1 }} onClick={async () => {
+          {isBorrowing && r.status === 'selected' && isPaid && !r.payment_confirmed && (
+            <button className="btn-press" style={{ ...btn(true, true), flex: 1 }} onClick={async () => {
               const orderRes = await api.createPaymentOrder(r.id)
               if (orderRes?.error) { showToast(orderRes.error); return }
               if (!window.Razorpay) {
-                await new Promise((resolve,reject) => {
+                await new Promise((resolve, reject) => {
                   const s = document.createElement('script')
                   s.src = 'https://checkout.razorpay.com/v1/checkout.js'
                   s.onload = resolve; s.onerror = reject
@@ -1002,13 +1620,11 @@ function ActivityModal({ open, onClose, refresh, showToast }) {
                 handler: async (response) => {
                   const verifyRes = await api.verifyPayment({
                     requestId: r.id,
-                    razorpay_order_id:   response.razorpay_order_id,
+                    razorpay_order_id: response.razorpay_order_id,
                     razorpay_payment_id: response.razorpay_payment_id,
-                    razorpay_signature:  response.razorpay_signature,
+                    razorpay_signature: response.razorpay_signature,
                   })
                   if (verifyRes?.error) { showToast('Verification failed. Contact support.'); return }
-                  // Move request to active — borrower calls this because lender doesn't need
-                  // to manually confirm a Razorpay-verified payment.
                   const activateRes = await api.activateAfterPayment(r.id)
                   if (activateRes?.error) {
                     console.warn('Activate warning:', activateRes.error)
@@ -1025,12 +1641,12 @@ function ActivityModal({ open, onClose, refresh, showToast }) {
           )}
 
           {/* Approve/Decline */}
-          {!isBorrowing && r.status==='pending' && (
+          {!isBorrowing && r.status === 'pending' && (
             <>
               {isPaid && !user?.upi_id && (
                 <InfoBanner type="error">⚠️ Add UPI ID in Profile tab before approving paid requests.</InfoBanner>
               )}
-              <button className="btn-press" style={{ ...btn(true,true) }} onClick={async () => {
+              <button className="btn-press" style={{ ...btn(true, true) }} onClick={async () => {
                 if (isPaid && !user?.upi_id) { showToast('Add UPI ID in Profile first.'); return }
                 try {
                   const res = await api.approveRequest(r.id)
@@ -1039,215 +1655,392 @@ function ActivityModal({ open, onClose, refresh, showToast }) {
                   await reload()
                 } catch (err) { console.error(err); showToast('Approval failed') }
               }}>Approve</button>
-              <button className="btn-press" style={btn(false,true)} onClick={async()=>{ await act(api.declineRequest,r.id); showToast('Declined.') }}>Decline</button>
+              <button className="btn-press" style={btn(false, true)} onClick={async () => { await act(api.declineRequest, r.id); showToast('Declined.') }}>Decline</button>
             </>
           )}
 
-          {/* No "Confirm Payment" button for lender — finalize is called automatically after borrower pays via Razorpay */}
-
           {/* Confirm & proceed (non-paid) */}
-          {!isBorrowing && r.status==='selected' && !isPaid && !isLF && (
-            <button className="btn-press" style={btn(true,true)} onClick={async()=>{
+          {!isBorrowing && r.status === 'selected' && !isPaid && !isLF && (
+            <button className="btn-press" style={btn(true, true)} onClick={async () => {
               const res = await act(api.finalizeBorrow, r.id)
-              if(res&&!res.error){ showToast('Confirmed! Send pickup details.'); await reload() }
+              if (res && !res.error) { showToast('Confirmed! Send pickup details.'); await reload() }
             }}>Confirm &amp; Proceed</button>
           )}
 
           {/* Revoke */}
-          {isBorrowing && r.status==='pending' && (
-            <button className="btn-press" style={{ ...btn(false,true), color:T.error, border:`1px solid ${T.error}44` }} onClick={async()=>{
-              if(!window.confirm('Revoke this request?')) return
+          {isBorrowing && r.status === 'pending' && (
+            <button className="btn-press" style={{ ...btn(false, true), color: T.error, border: `1px solid ${T.error}44` }} onClick={async () => {
+              if (!window.confirm('Revoke this request?')) return
               const res = await api.revokeRequest(r.id)
-              if(res?.error){ showToast(res.error); return }
+              if (res?.error) { showToast(res.error); return }
               showToast('Request revoked.')
               await reload()
             }}>Revoke</button>
           )}
 
           {/* Item given */}
-          {!isLF && !isBorrowing && r.status==='active' && r.pickup_details && !r.item_given && (
-            <button className="btn-press" style={btn(true,true)} onClick={async()=>{
-              if(!window.confirm('Confirm item physically given?')) return
+          {!isLF && !isBorrowing && r.status === 'active' && r.pickup_details && !r.item_given && (
+            <button className="btn-press" style={btn(true, true)} onClick={async () => {
+              if (!window.confirm('Confirm item physically given?')) return
               const res = await api.confirmItemGiven(r.id)
-              if(res?.error){ showToast(res.error); return }
+              if (res?.error) { showToast(res.error); return }
               showToast('Marked as given!')
               await reload()
             }}>Item Given ✓</button>
           )}
 
           {/* Borrower received */}
-          {!isLF && isBorrowing && r.status==='active' && r.item_given && !r.borrower_received && (
-            <button className="btn-press" style={btn(true,true)} onClick={async()=>{
-              if(!window.confirm('Confirm you received the item?')) return
+          {!isLF && isBorrowing && r.status === 'active' && r.item_given && !r.borrower_received && (
+            <button className="btn-press" style={btn(true, true)} onClick={async () => {
+              if (!window.confirm('Confirm you received the item?')) return
               const res = await api.confirmBorrowerReceived(r.id)
-              if(res?.error){ showToast(res.error); return }
+              if (res?.error) { showToast(res.error); return }
               showToast(isPaid ? 'Receipt confirmed! Payout incoming.' : 'Item received!')
               await reload()
             }}>I've Received Item ✓</button>
           )}
 
           {/* LF handover buttons */}
-          {isLF && !isBorrowing && r.status==='selected' && r.pickup_message && (
-            <button className="btn-press" style={btn(true,true)} onClick={async()=>{
+          {isLF && !isBorrowing && r.status === 'selected' && r.pickup_message && (
+            <button className="btn-press" style={btn(true, true)} onClick={async () => {
               const res = await api.confirmHandover(r.id)
-              if(res?.error){ showToast(res.error); return }
+              if (res?.error) { showToast(res.error); return }
               showToast('Handed over! Waiting for claimer.')
               await reload()
             }}>Handed Over ✓</button>
           )}
-          {isLF && isBorrowing && r.status==='active' && (
-            <button className="btn-press" style={btn(true,true)} onClick={async()=>{
-              if(!window.confirm('Confirm you received this item?')) return
+          {isLF && isBorrowing && r.status === 'active' && (
+            <button className="btn-press" style={btn(true, true)} onClick={async () => {
+              if (!window.confirm('Confirm you received this item?')) return
               const res = await api.confirmLFReceived(r.id)
-              if(!res||res.error){ showToast(res?.error||'Something went wrong.'); return }
+              if (!res || res.error) { showToast(res?.error || 'Something went wrong.'); return }
               showToast('Item received! Lost & found case closed.')
               await reload()
             }}>I've Received It ✓</button>
           )}
 
           {/* Payout confirm/dispute */}
-          {!isBorrowing && isPaid && r.payout_status==='admin_paid' && (
+          {!isBorrowing && isPaid && r.payout_status === 'admin_paid' && (
             <>
-              <button className="btn-press" style={{ ...btn(true,true), flex:1, background:T.success }} onClick={async()=>{
+              <button className="btn-press" style={{ ...btn(true, true), flex: 1, background: T.success }} onClick={async () => {
                 const res = await api.confirmPaymentReceived(r.id)
-                if(res?.error){ showToast(res.error); return }
+                if (res?.error) { showToast(res.error); return }
                 showToast('Payment confirmed!')
                 await reload()
               }}>Payment Received ✓</button>
-              <button className="btn-press" style={{ ...btn(false,true), flex:1, color:T.error, border:`1px solid ${T.error}44` }} onClick={async()=>{
-                if(!window.confirm('Raise dispute? Admin will be notified.')) return
+              <button className="btn-press" style={{ ...btn(false, true), flex: 1, color: T.error, border: `1px solid ${T.error}44` }} onClick={async () => {
+                if (!window.confirm('Raise dispute? Admin will be notified.')) return
                 const res = await api.raiseDispute(r.id)
-                if(res?.error){ showToast(res.error); return }
+                if (res?.error) { showToast(res.error); return }
                 showToast('Dispute raised. Admin notified.')
                 await reload()
               }}>Raise Dispute ⚠️</button>
             </>
           )}
 
-          {/* Confirm return — only available AFTER borrower confirms receipt */}
-          {!isBorrowing && r.listing_type!=='lost_found' && ['active','overdue'].includes(r.status) && r.borrower_received && (
-            <button className="btn-press" style={btn(true,true)} onClick={async()=>{
+          {/* Confirm return */}
+          {!isBorrowing && r.listing_type !== 'lost_found' && ['active', 'overdue'].includes(r.status) && r.borrower_received && (
+            <button className="btn-press" style={btn(true, true)} onClick={async () => {
               const res = await act(api.confirmReturn, r.id)
-              if(!res||res.error){ showToast("Return failed"); return }
-              showToast(res.onTime===false ? 'Return confirmed (late).' : 'Return confirmed!')
+              if (!res || res.error) { showToast("Return failed"); return }
+              showToast(res.onTime === false ? 'Return confirmed (late).' : 'Return confirmed!')
             }}>Confirm Return</button>
           )}
-          {/* Waiting banner: item given but borrower hasn't confirmed receipt yet */}
-          {!isBorrowing && r.listing_type!=='lost_found' && ['active','overdue'].includes(r.status) && r.item_given && !r.borrower_received && (
+          {/* Waiting banner */}
+          {!isBorrowing && r.listing_type !== 'lost_found' && ['active', 'overdue'].includes(r.status) && r.item_given && !r.borrower_received && (
             <InfoBanner type="info">⏳ Waiting for borrower to confirm item received — then you can confirm return.</InfoBanner>
           )}
         </div>
-        </div>{/* end card body */}
-      </div>
-    )
+      </div>{/* end card body */}
+    </div>
+  )
+}
+
+function getActionRequired(r, isBorrowing) {
+  if (!r) return false;
+  if (['returned', 'declined', 'closed'].includes(r.status)) return false;
+  const isPaid = r.is_paid;
+  const txType = r.transaction_type || (isPaid ? 'rent' : 'lend');
+  const noReturn = ['sell', 'donate'].includes(txType);
+  if (isBorrowing) {
+    if (r.status === 'selected' && isPaid && !r.payment_confirmed) return true;
+    if (r.status === 'active' && r.item_given && !r.borrower_received) return true;
+    return false;
+  } else {
+    if (r.status === 'pending') return true;
+    if (r.status === 'selected' && !isPaid) return true;
+    if (r.status === 'active' && !r.pickup_details) return true;
+    if (r.status === 'active' && r.pickup_details && !r.item_given) return true;
+    if (r.status === 'active' && r.borrower_received && !noReturn && !isPaid) return true;
+    if (r.payout_status === 'admin_paid') return true;
+    return false;
   }
+}
+
+function ActivityModal({ open, onClose, refresh, showToast, newRequestCount = 0, myOffersCount = 0, markRequestsSeen }) {
+  const { user, setUser } = useApp()
+  const [tab, setTab] = useState('borrowing')
+  const [reqs, setReqs] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [lastUpdated, setLastUpdated] = useState(null)
+  const pollRef = useRef(null)
+  const reqsRef = useRef([])   // holds latest data without triggering remounts
+
+  // Smart merge: only update state if something actually changed.
+  // This prevents React from remounting child components (which resets text inputs)
+  // when the poll returns identical data.
+  function mergeReqs(newReqs) {
+    const prev = JSON.stringify(reqsRef.current.map(r => ({
+      id: r.id, status: r.status, pickup_details: r.pickup_details,
+      pickup_message: r.pickup_message, item_given: r.item_given,
+      borrower_received: r.borrower_received, payout_status: r.payout_status,
+      payment_confirmed: r.payment_confirmed,
+    })))
+    const next = JSON.stringify(newReqs.map(r => ({
+      id: r.id, status: r.status, pickup_details: r.pickup_details,
+      pickup_message: r.pickup_message, item_given: r.item_given,
+      borrower_received: r.borrower_received, payout_status: r.payout_status,
+      payment_confirmed: r.payment_confirmed,
+    })))
+    if (prev !== next) {
+      reqsRef.current = newReqs
+      setReqs(newReqs)
+    }
+    setLastUpdated(new Date())
+  }
+
+  async function fetchReqs(silent = false) {
+    if (!silent) setLoading(true)
+    const r = await api.getMyRequests()
+    if (!silent) setLoading(false)
+    if (!r.error) mergeReqs(r.requests || [])
+  }
+
+  // Track whether an input is focused — pause poll during typing
+  const pausePollRef = useRef(false)
+  useEffect(() => {
+    function onFocusIn(e) { if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') pausePollRef.current = true }
+    function onFocusOut(e) { if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') setTimeout(() => { pausePollRef.current = false }, 2000) }
+    document.addEventListener('focusin', onFocusIn)
+    document.addEventListener('focusout', onFocusOut)
+    return () => { document.removeEventListener('focusin', onFocusIn); document.removeEventListener('focusout', onFocusOut) }
+  }, [])
+
+  useEffect(() => {
+    if (!open) {
+      clearInterval(pollRef.current)
+      return
+    }
+    fetchReqs(false)
+    // Only poll when no input is focused (pause ref). Also skip if Journey modal open.
+    pollRef.current = setInterval(() => {
+      if (!pausePollRef.current) fetchReqs(true)
+    }, 5000)
+    return () => clearInterval(pollRef.current)
+  }, [open]) // eslint-disable-line
+
+  async function reload() { await fetchReqs(true); refresh() }
+  async function act(fn, ...args) {
+    try {
+      const res = await fn(...args)
+      if (res?.error) return res
+      await reload()
+      return res
+    } catch (err) { console.error(err); return { error: 'Something went wrong' } }
+  }
+
+  const isHistory = (r) => ['returned', 'declined', 'closed'].includes(r.status)
+
+  const borrowing = reqs.filter(r => r.borrower_id === user?.id && !r.from_item_request)
+  const activeBorrowing = borrowing.filter(r => !isHistory(r))
+  const historyBorrowing = borrowing.filter(r => isHistory(r))
+
+  const lending = reqs.filter(r => r.owner_id === user?.id && !r.from_item_request)
+  const activeLending = lending.filter(r => !isHistory(r))
+  const historyLending = lending.filter(r => isHistory(r))
+
+  const requestHandovers = reqs.filter(r => r.from_item_request)
+  const activeHandovers = requestHandovers.filter(r => !isHistory(r))
+  const historyHandovers = requestHandovers.filter(r => isHistory(r))
+
+  const bCount = activeBorrowing.filter(r => getActionRequired(r, true)).length
+  const lCount = activeLending.filter(r => getActionRequired(r, false)).length
+  const rCount = activeHandovers.filter(r => getActionRequired(r, r.borrower_id === user?.id)).length
+
+  const tier = TRUST_TIERS[user?.trust_tier] || TRUST_TIERS.newcomer
+  const activeCount = activeBorrowing.filter(r => ['active', 'selected'].includes(r.status)).length
+
+  const tabs = [
+    { id: 'borrowing', label: 'Borrowing', count: activeBorrowing.length, icon: '📥', actionBadge: bCount },
+    { id: 'lending', label: 'Lending', count: activeLending.length, icon: '📤', actionBadge: lCount },
+    { id: 'requests', label: 'Requests', icon: '🙋', badge: newRequestCount, actionBadge: rCount + myOffersCount },
+    { id: 'profile', label: 'Profile', icon: '👤' },
+  ]
+
+  // lifecycleOpen keyed by request id — lives outside ReqCard so poll can't reset it
+  const [lifecycleOpenMap, setLifecycleOpenMap] = useState({})
+  function openJourney(id) { pausePollRef.current = true; setLifecycleOpenMap(m => ({ ...m, [id]: true })) }
+  function closeJourney(id) { pausePollRef.current = false; setLifecycleOpenMap(m => ({ ...m, [id]: false })) }
+
 
   return (
     <Modal open={open} onClose={onClose} wide>
       {/* Navy header */}
-      <div style={{ margin:'-8px -24px 20px', padding:'20px 24px 16px', background:`linear-gradient(135deg, ${T.navy} 0%, #1E293B 100%)`, borderRadius:'16px 16px 0 0' }}>
-        <div style={{ ...row(0), justifyContent:'space-between', marginBottom:2 }}>
-          <div style={{ fontFamily:'var(--font-head)', fontSize:22, fontWeight:700, color:'#fff', letterSpacing:'-0.5px' }}>My Activity</div>
+      <div style={{ margin: '-8px -24px 20px', padding: '20px 24px 16px', background: `linear-gradient(135deg, ${T.navy} 0%, #1E293B 100%)`, borderRadius: '16px 16px 0 0' }}>
+        <div style={{ ...row(0), justifyContent: 'space-between', marginBottom: 2 }}>
+          <div style={{ fontFamily: 'var(--font-head)', fontSize: 22, fontWeight: 700, color: '#fff', letterSpacing: '-0.5px' }}>My Activity</div>
           <div style={{ ...row(6) }}>
-            <div style={{ width:7, height:7, borderRadius:'50%', background:'#10B981', animation:'pulse 2s infinite' }} />
-            <span style={{ fontSize:11, color:'rgba(255,255,255,0.5)' }}>
-              {lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}` : 'Loading…'}
+            <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#10B981', animation: 'pulse 2s infinite' }} />
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
+              {lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}` : 'Loading…'}
             </span>
           </div>
         </div>
-        <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)', marginBottom:16 }}>Updates every 8 seconds</div>
+        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 16 }}>Updates every 8 seconds</div>
 
         {/* Tabs on navy */}
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:4 }}>
-          {tabs.map(t=>(
-            <button key={t.id} onClick={()=>setTab(t.id)} style={{
-              padding:'9px 4px', borderRadius:'var(--radius-xs)', border:`1.5px solid ${tab===t.id?T.coral:'rgba(255,255,255,0.12)'}`,
-              cursor:'pointer', fontSize:12, fontWeight:600,
-              background: tab===t.id ? T.coral : 'rgba(255,255,255,0.06)',
-              color: tab===t.id ? '#fff' : 'rgba(255,255,255,0.6)',
-              transition:'all 0.18s',
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 4 }}>
+          {tabs.map(t => (
+            <button key={t.id} onClick={() => { setTab(t.id); if (t.id === 'requests') markRequestsSeen() }} style={{
+              padding: '9px 4px', borderRadius: 'var(--radius-xs)', border: `1.5px solid ${tab === t.id ? T.coral : 'rgba(255,255,255,0.12)'}`,
+              cursor: 'pointer', fontSize: 12, fontWeight: 600,
+              background: tab === t.id ? T.coral : 'rgba(255,255,255,0.06)',
+              color: tab === t.id ? '#fff' : 'rgba(255,255,255,0.6)',
+              transition: 'all 0.18s',
             }}>
-              {t.icon} {t.label}{t.count!==undefined ? ` (${t.count})` : ''}
+              <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                {t.icon} {t.label}{t.count !== undefined ? ` (${t.count})` : ''}
+                {t.badge > 0 && <span style={{ background: T.coral, color: '#fff', fontSize: 8, fontWeight: 800, borderRadius: 20, minWidth: 14, height: 14, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px' }}>{t.badge > 9 ? '9+' : t.badge}</span>}
+                {t.actionBadge > 0 && <span style={{ position: 'absolute', top: -12, right: -16, background: T.coral, color: '#fff', fontSize: 10, fontWeight: 800, borderRadius: '50%', width: 18, height: 18, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #fff' }}>{t.actionBadge}</span>}
+              </span>
             </button>
           ))}
         </div>
       </div>
 
       {loading && (
-        <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-          {[1,2,3].map(i=><div key={i} className="skeleton" style={{ height:80 }} />)}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {[1, 2, 3].map(i => <div key={i} className="skeleton" style={{ height: 80 }} />)}
         </div>
       )}
 
-      {!loading && tab==='borrowing' && (
+      {!loading && tab === 'borrowing' && (
         <>
-          <div style={{ ...row(8), marginBottom:12 }}>
-            <TierBadge tier={user?.trust_tier}/>
-            <span style={{ fontSize:13, color:T.textMid }}>{activeCount}/{tier.limit} slots used</span>
+          <div style={{ ...row(8), marginBottom: 12 }}>
+            <TierBadge tier={user?.trust_tier} />
+            <span style={{ fontSize: 13, color: T.textMid }}>{activeCount}/{tier.limit} slots used</span>
           </div>
-          {borrowing.length===0
-            ? <div style={{ textAlign:'center', padding:'2rem 0', color:T.textSoft }}>
-                <div style={{ fontSize:36, marginBottom:8 }}>📭</div>
-                <div>Nothing borrowed yet.</div>
-              </div>
-            : borrowing.map(r=><ReqCard key={r.id} r={r} isBorrowing />)
+          {activeBorrowing.length === 0
+            ? <div style={{ textAlign: 'center', padding: '2rem 0', color: T.textSoft }}>
+              <div style={{ fontSize: 36, marginBottom: 8 }}>📭</div>
+              <div>Nothing active right now.</div>
+            </div>
+            : activeBorrowing.map(r => <ReqCard key={r.id} r={r} isBorrowing user={user} showToast={showToast} reload={reload} openJourney={openJourney} closeJourney={closeJourney} lifecycleOpenMap={lifecycleOpenMap} />)
           }
+
+          {historyBorrowing.length > 0 && (
+            <details style={{ marginTop: 24 }}>
+              <summary style={{ fontSize: 15, fontWeight: 600, color: T.navy, cursor: 'pointer', padding: '10px 0', borderTop: `1px solid var(--border-soft)`, outline: 'none', userSelect: 'none' }}>
+                History ({historyBorrowing.length > 10 ? '10+' : historyBorrowing.length})
+              </summary>
+              <div style={{ paddingTop: 12 }}>
+                {historyBorrowing.slice(0, 10).map(r => <ReqCard key={r.id} r={r} isBorrowing user={user} showToast={showToast} reload={reload} openJourney={openJourney} closeJourney={closeJourney} lifecycleOpenMap={lifecycleOpenMap} />)}
+              </div>
+            </details>
+          )}
         </>
       )}
 
-      {!loading && tab==='lending' && (
+      {!loading && tab === 'lending' && (
         <>
-          {lending.length===0
-            ? <div style={{ textAlign:'center', padding:'2rem 0', color:T.textSoft }}>
-                <div style={{ fontSize:36, marginBottom:8 }}>📤</div>
-                <div>No lending activity. <span style={{ color:T.coral, cursor:'pointer', fontWeight:600 }} onClick={onClose}>List an item!</span></div>
-              </div>
-            : lending.map(r=><ReqCard key={r.id} r={r} isBorrowing={false} />)
+          {activeLending.length === 0
+            ? <div style={{ textAlign: 'center', padding: '2rem 0', color: T.textSoft }}>
+              <div style={{ fontSize: 36, marginBottom: 8 }}>📤</div>
+              <div>No active lending right now. <span style={{ color: T.coral, cursor: 'pointer', fontWeight: 600 }} onClick={onClose}>List an item!</span></div>
+            </div>
+            : activeLending.map(r => <ReqCard key={r.id} r={r} isBorrowing={false} user={user} showToast={showToast} reload={reload} openJourney={openJourney} closeJourney={closeJourney} lifecycleOpenMap={lifecycleOpenMap} />)
           }
+
+          {historyLending.length > 0 && (
+            <details style={{ marginTop: 24 }}>
+              <summary style={{ fontSize: 15, fontWeight: 600, color: T.navy, cursor: 'pointer', padding: '10px 0', borderTop: `1px solid var(--border-soft)`, outline: 'none', userSelect: 'none' }}>
+                History ({historyLending.length > 10 ? '10+' : historyLending.length})
+              </summary>
+              <div style={{ paddingTop: 12 }}>
+                {historyLending.slice(0, 10).map(r => <ReqCard key={r.id} r={r} isBorrowing={false} user={user} showToast={showToast} reload={reload} openJourney={openJourney} closeJourney={closeJourney} lifecycleOpenMap={lifecycleOpenMap} />)}
+              </div>
+            </details>
+          )}
         </>
       )}
 
-      {!loading && tab==='profile' && (
+      {tab === 'requests' && (
+        <div>
+          <InfoBanner type="info">
+            🙋 <strong>Need something that's not listed?</strong> Post a request — classmates can offer to lend, rent, sell, or donate it to you.
+          </InfoBanner>
+          <ItemRequestsSection showToast={showToast} currentUserId={user?.id} onMarkSeen={markRequestsSeen} reload={reload} />
+          {activeHandovers.length > 0 && (
+            <div style={{ marginTop: 24, borderTop: '1px solid var(--border-soft)', paddingTop: 16 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: T.navy, marginBottom: 12 }}>Active Handovers</div>
+              {activeHandovers.map(r => <ReqCard key={r.id} r={r} isBorrowing={r.borrower_id === user?.id} user={user} showToast={showToast} reload={reload} openJourney={openJourney} closeJourney={closeJourney} lifecycleOpenMap={lifecycleOpenMap} />)}
+            </div>
+          )}
+
+          {historyHandovers.length > 0 && (
+            <details style={{ marginTop: 24 }}>
+              <summary style={{ fontSize: 15, fontWeight: 600, color: T.navy, cursor: 'pointer', padding: '10px 0', borderTop: `1px solid var(--border-soft)`, outline: 'none', userSelect: 'none' }}>
+                History ({historyHandovers.length > 10 ? '10+' : historyHandovers.length})
+              </summary>
+              <div style={{ paddingTop: 12 }}>
+                {historyHandovers.slice(0, 10).map(r => <ReqCard key={r.id} r={r} isBorrowing={r.borrower_id === user?.id} user={user} showToast={showToast} reload={reload} openJourney={openJourney} closeJourney={closeJourney} lifecycleOpenMap={lifecycleOpenMap} />)}
+              </div>
+            </details>
+          )}
+        </div>
+      )}
+
+      {!loading && tab === 'profile' && (
         <>
-          <div style={{ ...row(12), marginBottom:20, padding:'16px', background:`${T.coral}08`, borderRadius:'var(--radius-sm)', border:`1px solid ${T.coral}20` }}>
+          <div style={{ ...row(12), marginBottom: 20, padding: '16px', background: `${T.coral}08`, borderRadius: 'var(--radius-sm)', border: `1px solid ${T.coral}20` }}>
             <Av user={user} size={52} />
             <div>
-              <div style={{ fontFamily:'var(--font-head)', fontSize:18, fontWeight:800 }}>{user?.name}</div>
-              <div style={{ fontSize:13, color:T.textMid }}>{user?.email}</div>
-              <div style={{ fontSize:12, color:T.textSoft, marginTop:2 }}>{user?.college_name}</div>
+              <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 800 }}>{user?.name}</div>
+              <div style={{ fontSize: 13, color: T.textMid }}>{user?.email}</div>
+              <div style={{ fontSize: 12, color: T.textSoft, marginTop: 2 }}>{user?.college_name}</div>
             </div>
           </div>
 
-          <div className="profile-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:16 }}>
+          <div className="profile-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
             {[
-              ['Trust tier', <TierBadge tier={user?.trust_tier}/>],
+              ['Trust tier', <TierBadge tier={user?.trust_tier} />],
               ['Borrow limit', `${tier.limit} items`],
               ['On-time returns', user?.return_count ?? 0],
               ['Roll number', user?.roll_number],
-            ].map(([l,v])=>(
-              <div key={l} style={{ background:'rgba(15,23,42,0.03)', borderRadius:'var(--radius-sm)', padding:'12px 14px', border:'1px solid var(--border-soft)' }}>
-                <div style={{ fontSize:11, color:T.textSoft, marginBottom:4, fontWeight:500 }}>{l}</div>
-                <div style={{ fontSize:15, fontWeight:600 }}>{v}</div>
+            ].map(([l, v]) => (
+              <div key={l} style={{ background: 'rgba(15,23,42,0.03)', borderRadius: 'var(--radius-sm)', padding: '12px 14px', border: '1px solid var(--border-soft)' }}>
+                <div style={{ fontSize: 11, color: T.textSoft, marginBottom: 4, fontWeight: 500 }}>{l}</div>
+                <div style={{ fontSize: 15, fontWeight: 600 }}>{v}</div>
               </div>
             ))}
           </div>
 
           <UpiField user={user} setUser={setUser} showToast={showToast} />
 
-          {user?.trust_tier!=='rep' && (()=>{
-            const next={newcomer:'regular',regular:'trusted',trusted:'rep'}[user.trust_tier]
-            const thresholds={newcomer:0,regular:3,trusted:10,rep:25}
-            const need=thresholds[next]-(user?.return_count||0)
+          {user?.trust_tier !== 'rep' && (() => {
+            const next = { newcomer: 'regular', regular: 'trusted', trusted: 'rep' }[user.trust_tier]
+            const thresholds = { newcomer: 0, regular: 3, trusted: 10, rep: 25 }
+            const need = thresholds[next] - (user?.return_count || 0)
             return (
-              <div style={{ fontSize:13, color:T.textMid, borderTop:'1px solid var(--border-soft)', paddingTop:14 }}>
-                {need} more on-time return{need!==1?'s':''} to reach <TierBadge tier={next}/>
+              <div style={{ fontSize: 13, color: T.textMid, borderTop: '1px solid var(--border-soft)', paddingTop: 14 }}>
+                {need} more on-time return{need !== 1 ? 's' : ''} to reach <TierBadge tier={next} />
               </div>
             )
           })()}
         </>
       )}
 
-      <div style={{ ...row(8), justifyContent:'flex-end', marginTop:16 }}>
+      <div style={{ ...row(8), justifyContent: 'flex-end', marginTop: 16 }}>
         <button className="btn-press" style={btn(true)} onClick={onClose}>Done</button>
       </div>
     </Modal>
@@ -1255,48 +2048,48 @@ function ActivityModal({ open, onClose, refresh, showToast }) {
 }
 
 // ── ITEM CARD ─────────────────────────────────────────────────────────────────
-function ItemCard({ item, currentUserId, onRequest, myRequests=[] }) {
-  const isYours  = item.owner_id === currentUserId
-  const isLF     = item.listing_type === 'lost_found'
-  const alreadyRequested = myRequests.some(r=>r.item_id===item.id&&['pending','selected','active'].includes(r.status))
-  const canAct   = !isYours && !alreadyRequested && (isLF || item.status==='available')
+function ItemCard({ item, currentUserId, onRequest, myRequests = [] }) {
+  const isYours = item.owner_id === currentUserId
+  const isLF = item.listing_type === 'lost_found'
+  const alreadyRequested = myRequests.some(r => r.item_id === item.id && ['pending', 'selected', 'active'].includes(r.status))
+  const canAct = !isYours && !alreadyRequested && (isLF || item.status === 'available')
   const firstPhoto = item.images?.[0]
 
   return (
-    <div className="item-card" style={{ ...card, cursor:canAct?'pointer':'default', minWidth:0, overflow:'hidden', width:'100%' }} onClick={()=>canAct&&onRequest(item)}>
+    <div className="item-card" style={{ ...card, cursor: canAct ? 'pointer' : 'default', minWidth: 0, overflow: 'hidden', width: '100%' }} onClick={() => canAct && onRequest(item)}>
       {/* Image / thumbnail */}
-      <div style={{ height:120, display:'flex', alignItems:'center', justifyContent:'center', background:firstPhoto?'#000':`linear-gradient(135deg, ${T.coral}10, ${T.navy}08)`, position:'relative', overflow:'hidden', flexShrink:0 }}>
+      <div style={{ height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', background: firstPhoto ? '#000' : `linear-gradient(135deg, ${T.coral}10, ${T.navy}08)`, position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
         {firstPhoto
-          ? <img src={firstPhoto} alt={item.title} style={{ width:'100%', height:'100%', objectFit:'cover', opacity:0.9 }} />
-          : <span style={{ fontSize:44, filter:'drop-shadow(0 2px 8px rgba(0,0,0,0.08))' }}>{isLF?'🔍':EMOJIS[item.category]||'📦'}</span>
+          ? <img src={firstPhoto} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9 }} />
+          : <span style={{ fontSize: 44, filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.08))' }}>{isLF ? '🔍' : EMOJIS[item.category] || '📦'}</span>
         }
         {/* Badges */}
         {isYours
-          ? <span style={{ background:`${T.coral}22`, color:T.coral, fontSize:10, fontWeight:700, padding:'3px 10px', borderRadius:20, position:'absolute', top:10, right:10, backdropFilter:'blur(4px)' }}>Yours</span>
+          ? <span style={{ background: `${T.coral}22`, color: T.coral, fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20, position: 'absolute', top: 10, right: 10, backdropFilter: 'blur(4px)' }}>Yours</span>
           : isLF
-            ? <span style={{ background:'#EDE9FE', color:'#5B21B6', fontSize:10, fontWeight:700, padding:'3px 10px', borderRadius:20, position:'absolute', top:10, right:10 }}>Lost & Found</span>
+            ? <span style={{ background: '#EDE9FE', color: '#5B21B6', fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20, position: 'absolute', top: 10, right: 10 }}>Lost & Found</span>
             : <SBadge status={item.status} />
         }
         {item.is_paid && !isLF && (
-          <div style={{ position:'absolute', bottom:10, left:10, background:'rgba(15,23,42,0.85)', color:'#fff', fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:20, backdropFilter:'blur(4px)' }}>
+          <div style={{ position: 'absolute', bottom: 10, left: 10, background: 'rgba(15,23,42,0.85)', color: '#fff', fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 20, backdropFilter: 'blur(4px)' }}>
             ₹{item.price_per_day}/day
           </div>
         )}
       </div>
 
-      <div style={{ padding:'12px 14px 14px' }}>
-        <div style={{ fontFamily:'var(--font-head)', fontSize:13, fontWeight:700, marginBottom:3, overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>{item.title}</div>
-        <div style={{ fontSize:11, color:T.textSoft, marginBottom:10, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.category}{!isLF?` · max ${item.max_borrow_days}d`:''}</div>
-        <div style={{ ...row(0), justifyContent:'space-between', alignItems:'center' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, color:T.textMid, minWidth:0, overflow:'hidden' }}>
-            <Av user={{ avatar:item.owner_avatar, color:item.owner_color, name:item.owner_name }} size={18} />
-            <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.owner_name?.split(' ')[0]}</span>
+      <div style={{ padding: '12px 14px 14px' }}>
+        <div style={{ fontFamily: 'var(--font-head)', fontSize: 13, fontWeight: 700, marginBottom: 3, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{item.title}</div>
+        <div style={{ fontSize: 11, color: T.textSoft, marginBottom: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.category}{!isLF ? ` · max ${item.max_borrow_days}d` : ''}</div>
+        <div style={{ ...row(0), justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: T.textMid, minWidth: 0, overflow: 'hidden' }}>
+            <Av user={{ avatar: item.owner_avatar, color: item.owner_color, name: item.owner_name }} size={18} />
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.owner_name?.split(' ')[0]}</span>
           </div>
           {isYours
-            ? <span style={{ fontSize:11, color:T.textSoft }}>listed</span>
+            ? <span style={{ fontSize: 11, color: T.textSoft }}>listed</span>
             : !canAct
-              ? <span style={{ fontSize:11, color:T.textSoft }}>Unavailable</span>
-              : <span style={{ ...btn(true,true), display:'inline-block', pointerEvents:'none', fontSize:12, padding:'5px 12px' }}>{isLF?'Claim':'Request'}</span>
+              ? <span style={{ fontSize: 11, color: T.textSoft }}>Unavailable</span>
+              : <span style={{ ...btn(true, true), display: 'inline-block', pointerEvents: 'none', fontSize: 12, padding: '5px 12px' }}>{isLF ? 'Claim' : 'Request'}</span>
           }
         </div>
       </div>
@@ -1304,53 +2097,120 @@ function ItemCard({ item, currentUserId, onRequest, myRequests=[] }) {
   )
 }
 
+function UserGuideModal({ open, onClose }) {
+  if (!open) return null;
+  const [step, setStep] = useState(1);
+  return (
+    <Modal open={open} onClose={onClose}>
+      <div style={{ margin: '-8px -24px 20px', padding: '20px 24px 16px', background: `linear-gradient(135deg, ${T.info} 0%, #1E3A8A 100%)`, borderRadius: '16px 16px 0 0' }}>
+        <div style={{ fontFamily: 'var(--font-head)', fontSize: 22, fontWeight: 700, color: '#fff', letterSpacing: '-0.5px', marginBottom: 4 }}>How CampusShare Works 📖</div>
+        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>Your quick guide to borrowing and lending</div>
+      </div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+        {[1, 2, 3].map(s => (
+          <button key={s} onClick={() => setStep(s)} style={{ flex: 1, padding: '8px', borderRadius: 'var(--radius-sm)', border: `1.5px solid ${step === s ? T.info : 'var(--border-soft)'}`, background: step === s ? `${T.info}15` : 'transparent', color: step === s ? T.info : T.textMid, fontWeight: 600, fontSize: 13, transition: 'all 0.2s', cursor: 'pointer' }}>
+            {s === 1 ? 'Borrowing' : s === 2 ? 'Lending' : 'Requests'}
+          </button>
+        ))}
+      </div>
+      {step === 1 && (
+        <div style={{ fontSize: 14, lineHeight: 1.6, color: T.textMid, minHeight: 250 }}>
+          <h3 style={{ color: T.navy, marginBottom: 8 }}>Borrowing an Item</h3>
+          <ol style={{ paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 10, margin: 0 }}>
+            <li><strong>Find an item</strong> on the Marketplace and tap "Request".</li>
+            <li><strong>Wait for approval.</strong> The lender will review your request. You can check the status in the <b>Activity</b> tab.</li>
+            <li><strong>Pay (if applicable).</strong> For paid items, pay via Razorpay to confirm the rental.</li>
+            <li><strong>Arrange Pickup.</strong> The lender will send pickup details. Go meet them!</li>
+            <li><strong>Confirm Receipt.</strong> Once they hand it to you, tap "I Got It ✓" in the Activity tab.</li>
+            <li><strong>Return.</strong> When done, return the item and the lender will mark it returned.</li>
+          </ol>
+        </div>
+      )}
+      {step === 2 && (
+        <div style={{ fontSize: 14, lineHeight: 1.6, color: T.textMid, minHeight: 250 }}>
+          <h3 style={{ color: T.navy, marginBottom: 8 }}>Lending an Item</h3>
+          <ol style={{ paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 10, margin: 0 }}>
+            <li><strong>List it.</strong> Tap "+ List Item" and add details.</li>
+            <li><strong>Review Requests.</strong> When someone requests it, you'll see it in the <b>Activity</b> tab. Tap "Approve" if you agree.</li>
+            <li><strong>Send Pickup Details.</strong> Tell the borrower where and when to meet.</li>
+            <li><strong>Hand It Over.</strong> Meet the borrower, give the item, and tap "Item Given ✓".</li>
+            <li><strong>Get Paid.</strong> For paid items, admin will transfer your earnings via UPI.</li>
+            <li><strong>Confirm Return.</strong> When they return it, tap "Confirm Return" to free up their slot.</li>
+          </ol>
+        </div>
+      )}
+      {step === 3 && (
+        <div style={{ fontSize: 14, lineHeight: 1.6, color: T.textMid, minHeight: 250 }}>
+          <h3 style={{ color: T.navy, marginBottom: 8 }}>Using Requests</h3>
+          <p style={{ marginBottom: 10 }}>Can't find what you need? Post a Request!</p>
+          <ul style={{ paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 10, margin: 0 }}>
+            <li><strong>Post a Need:</strong> Tap "🙋 Request" and tell classmates what you're looking for.</li>
+            <li><strong>Receive Offers:</strong> Others can offer to lend, rent, sell, or donate the item to you.</li>
+            <li><strong>Accept an Offer:</strong> Review offers in the Requests tab. When you accept one, the entire handover (and payment) happens right there in the Requests tab!</li>
+          </ul>
+        </div>
+      )}
+      <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end' }}>
+        <button className="btn-press" style={btn(true)} onClick={onClose}>Got it</button>
+      </div>
+    </Modal>
+  )
+}
+
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
 export default function App() {
-  const [isAdmin,    setIsAdmin]    = useState(false)
-  const [user,       setUser]       = useState(()=>api.getSavedUser())
-  const [tab,        setTab]        = useState('marketplace')
-  const [items,      setItems]      = useState([])
-  const [stats,      setStats]      = useState({})
-  const [cat,        setCat]        = useState('all')
-  const [avail,      setAvail]      = useState('all')
-  const [search,     setSearch]     = useState('')
-  const [listOpen,   setList]       = useState(false)
-  const [actOpen,    setAct]        = useState(false)
-  const [borrowItem, setBorrow]     = useState(null)
-  const [tick,       setTick]       = useState(0)
-  const [toast,      showToast]     = useToast()
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [user, setUser] = useState(() => api.getSavedUser())
+  const [tab, setTab] = useState('marketplace')
+  const [items, setItems] = useState([])
+  const [stats, setStats] = useState({})
+  const [cat, setCat] = useState('all')
+  const [avail, setAvail] = useState('all')
+  const [search, setSearch] = useState('')
+  const [listOpen, setList] = useState(false)
+  const [requestOpen, setRequest] = useState(false)
+  const [newRequestCount, setNewRequestCount] = useState(0)
+  const [myOffersCount, setMyOffersCount] = useState(0)
+  const notifPollRef = useRef(null)
+  const prevMyTotalOffersRef = useRef(0)
+  const lastSeenRequestRef = useRef(localStorage.getItem('cs_last_seen_req') || new Date().toISOString())
+  const [actOpen, setAct] = useState(false)
+  const [borrowItem, setBorrow] = useState(null)
+  const [guideOpen, setGuideOpen] = useState(false)
+  const [tick, setTick] = useState(0)
+  const [toast, showToast] = useToast()
   const [myRequests, setMyRequests] = useState([])
-  const refresh = useCallback(()=>setTick(t=>t+1),[])
+  const refresh = useCallback(() => setTick(t => t + 1), [])
   // fetchId prevents stale responses from overwriting fresh ones
   const fetchIdRef = useRef(0)
   const statsKey = `cs_stats_${user?.id}`
-const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
 
-useEffect(() => {
-  const handler = (e) => {
-    e.preventDefault();
-    setDeferredPrompt(e);
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener("beforeinstallprompt", handler);
+
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const installApp = async () => {
+    if (!deferredPrompt) return;
+
+    deferredPrompt.prompt();
+    const choice = await deferredPrompt.userChoice;
+
+    if (choice.outcome === "accepted") {
+      console.log("App installed");
+    }
+
+    setDeferredPrompt(null);
   };
 
-  window.addEventListener("beforeinstallprompt", handler);
-
-  return () => window.removeEventListener("beforeinstallprompt", handler);
-}, []);
-
-const installApp = async () => {
-  if (!deferredPrompt) return;
-
-  deferredPrompt.prompt();
-  const choice = await deferredPrompt.userChoice;
-
-  if (choice.outcome === "accepted") {
-    console.log("App installed");
-  }
-
-  setDeferredPrompt(null);
-};
-
-  useEffect(()=>{
+  useEffect(() => {
     if (!user) return
     api.getMe().then(r => {
       if (r?.user) { setUser(r.user); api.persistUser(r.user) }
@@ -1359,7 +2219,7 @@ const installApp = async () => {
     try {
       const cachedStats = localStorage.getItem(statsKey)
       if (cachedStats) setStats(JSON.parse(cachedStats))
-    } catch (_) {}
+    } catch (_) { }
   }, []) // eslint-disable-line
 
   // Single effect that owns ALL data fetching — no race conditions
@@ -1376,11 +2236,11 @@ const installApp = async () => {
     try {
       const cached = localStorage.getItem(cacheKey)
       if (cached) setItems(JSON.parse(cached))
-    } catch (_) {}
+    } catch (_) { }
 
     const itemParams = tab === 'marketplace'
-      ? { listingType:'borrow', category:cat!=='all'?cat:undefined, status:avail==='available'?'available':undefined, search:search||undefined }
-      : { listingType:'lost_found', search:search||undefined }
+      ? { listingType: 'borrow', category: cat !== 'all' ? cat : undefined, status: avail === 'available' ? 'available' : undefined, search: search || undefined }
+      : { listingType: 'lost_found', search: search || undefined }
 
     // Fire all in parallel
     Promise.all([
@@ -1393,15 +2253,66 @@ const installApp = async () => {
 
       if (!itemsRes?.error) {
         setItems(itemsRes.items || [])
-        try { localStorage.setItem(cacheKey, JSON.stringify(itemsRes.items || [])) } catch (_) {}
+        try { localStorage.setItem(cacheKey, JSON.stringify(itemsRes.items || [])) } catch (_) { }
       }
       if (!statsRes?.error) {
         setStats(statsRes)
-        try { localStorage.setItem(statsKey, JSON.stringify(statsRes)) } catch (_) {}
+        try { localStorage.setItem(statsKey, JSON.stringify(statsRes)) } catch (_) { }
       }
       if (!reqsRes?.error) setMyRequests(reqsRes.requests || [])
     })
   }, [user, tab, cat, avail, search, tick]) // eslint-disable-line
+
+  // Notification polling — check for new item requests every 20s
+  // Also fires immediately so badge appears without waiting for first interval
+  useEffect(() => {
+    if (!user) return
+
+    async function checkNewRequests() {
+      try {
+        const r = await api.getItemRequests('')
+        if (r?.error || !r?.requests) return
+        const lastSeen = lastSeenRequestRef.current
+        // Compare ISO strings — both come from DB timestamptz so this is safe
+        const newOnes = r.requests.filter(req =>
+          req.requester_id !== user.id &&
+          new Date(req.created_at).getTime() > new Date(lastSeen).getTime()
+        )
+        if (newOnes.length > 0) {
+          setNewRequestCount(n => n + newOnes.length)
+          // Update lastSeen to the newest request so we don't double-count
+          const newest = newOnes.reduce((a, b) => a.created_at > b.created_at ? a : b)
+          lastSeenRequestRef.current = newest.created_at
+          localStorage.setItem('cs_last_seen_req', newest.created_at)
+          showToast(`🙋 ${newOnes[0].requester_name} needs: ${newOnes[0].title}`)
+        }
+
+        // Check for new offers on my requests
+        const myTotalOffers = r.requests
+          .filter(req => req.requester_id === user.id)
+          .reduce((sum, req) => sum + parseInt(req.offer_count || 0), 0)
+
+        if (myTotalOffers > prevMyTotalOffersRef.current) {
+          showToast(`🎉 You received a new offer for your item request!`)
+        }
+        prevMyTotalOffersRef.current = myTotalOffers
+        setMyOffersCount(myTotalOffers)
+
+      } catch (e) { }
+    }
+
+    // Fire once immediately, then every 20s
+    checkNewRequests()
+    notifPollRef.current = setInterval(checkNewRequests, 20000)
+    return () => clearInterval(notifPollRef.current)
+  }, [user]) // eslint-disable-line
+
+  function markRequestsSeen() {
+    const now = new Date().toISOString()
+    lastSeenRequestRef.current = now
+    localStorage.setItem('cs_last_seen_req', now)
+    setNewRequestCount(0)
+  }
 
   // Separate polling effect — fires silently, also uses fetchId
   useEffect(() => {
@@ -1410,8 +2321,8 @@ const installApp = async () => {
       const myId = ++fetchIdRef.current
       const cacheKey = `cs_items_${tab}_${cat}_${avail}_${user.id}`
       const itemParams = tab === 'marketplace'
-        ? { listingType:'borrow', category:cat!=='all'?cat:undefined, status:avail==='available'?'available':undefined, search:search||undefined }
-        : { listingType:'lost_found', search:search||undefined }
+        ? { listingType: 'borrow', category: cat !== 'all' ? cat : undefined, status: avail === 'available' ? 'available' : undefined, search: search || undefined }
+        : { listingType: 'lost_found', search: search || undefined }
 
       Promise.all([
         api.getItems(itemParams),
@@ -1421,10 +2332,10 @@ const installApp = async () => {
         if (fetchIdRef.current !== myId) return
         if (!itemsRes?.error) {
           setItems(itemsRes.items || [])
-          try { localStorage.setItem(cacheKey, JSON.stringify(itemsRes.items || [])) } catch (_) {}
+          try { localStorage.setItem(cacheKey, JSON.stringify(itemsRes.items || [])) } catch (_) { }
         }
         if (!statsRes?.error) setStats(statsRes)
-        if (!reqsRes?.error)  setMyRequests(reqsRes.requests || [])
+        if (!reqsRes?.error) setMyRequests(reqsRes.requests || [])
       })
     }, 15000)
     return () => clearInterval(interval)
@@ -1432,183 +2343,193 @@ const installApp = async () => {
 
   function handleLogout() { api.clearSession(); setUser(null) }
 
-  if (!user) return <AuthScreen onLogin={u=>setUser(u)} />
-  if (isAdmin) return <Admin goBack={()=>setIsAdmin(false)} />
+  if (!user) return <AuthScreen onLogin={u => setUser(u)} />
+  if (isAdmin) return <Admin goBack={() => setIsAdmin(false)} />
 
-  const CAT_COUNTS = CATEGORIES.reduce((a,c)=>{ a[c]=items.filter(i=>i.category===c).length; return a },{})
+  const CAT_COUNTS = CATEGORIES.reduce((a, c) => { a[c] = items.filter(i => i.category === c).length; return a }, {})
   const tier = TRUST_TIERS[user.trust_tier] || TRUST_TIERS.newcomer
-  const activeCount = myRequests.filter(r=>['active','selected'].includes(r.status)).length
+  const activeCount = myRequests.filter(r => ['active', 'selected'].includes(r.status)).length
+  const totalActionCount = myRequests.filter(r => getActionRequired(r, r.borrower_id === user?.id)).length + newRequestCount + myOffersCount
 
   return (
     <Ctx.Provider value={{ user, setUser }}>
       <style>{FONTS}</style>
 
-      <div style={{ fontFamily:'var(--font-body)', color:T.navy, minHeight:'100vh', background:T.cream, position:'relative', overflowX:'hidden', maxWidth:'100vw' }}>
+      <div style={{ fontFamily: 'var(--font-body)', color: T.navy, minHeight: '100vh', background: T.cream, position: 'relative', overflowX: 'hidden', maxWidth: '100vw' }}>
 
         {/* MODALS */}
-        {listOpen   && <ListItemModal  open={listOpen}    onClose={()=>setList(false)}  onSuccess={refresh} />}
-        {borrowItem && <BorrowModal    open={!!borrowItem} item={borrowItem}             onClose={()=>setBorrow(null)} onSuccess={refresh} showToast={showToast} />}
-        {actOpen    && <ActivityModal  open={actOpen}     onClose={()=>setAct(false)}   refresh={refresh}   showToast={showToast} />}
+        {requestOpen && <ItemRequestModal open={requestOpen} onClose={() => setRequest(false)} onSuccess={refresh} showToast={showToast} />}
+        {listOpen && <ListItemModal open={listOpen} onClose={() => setList(false)} onSuccess={refresh} />}
+        {borrowItem && <BorrowModal open={!!borrowItem} item={borrowItem} onClose={() => setBorrow(null)} onSuccess={refresh} showToast={showToast} />}
+        {actOpen && <ActivityModal open={actOpen} onClose={() => setAct(false)} refresh={refresh} showToast={showToast} newRequestCount={newRequestCount} myOffersCount={myOffersCount} markRequestsSeen={markRequestsSeen} />}
+        {guideOpen && <UserGuideModal open={guideOpen} onClose={() => setGuideOpen(false)} />}
 
         {/* DESKTOP HEADER */}
-        <header className="desktop-only" style={{ ...row(0), justifyContent:'space-between', padding:'0 24px', height:60, background:'rgba(255,248,240,0.9)', backdropFilter:'blur(12px)', borderBottom:`1px solid var(--border-soft)`, position:'sticky', top:0, zIndex:100 }}>
+        <header className="desktop-only" style={{ ...row(0), justifyContent: 'space-between', padding: '0 24px', height: 60, background: 'rgba(255,248,240,0.9)', backdropFilter: 'blur(12px)', borderBottom: `1px solid var(--border-soft)`, position: 'sticky', top: 0, zIndex: 100 }}>
           <Logo />
           <div style={row(8)}>
-            <div style={{ ...row(6), fontSize:13, color:T.textMid }}>
+            <div style={{ ...row(6), fontSize: 13, color: T.textMid }}>
               <Av user={user} size={28} />
-              <span style={{ fontWeight:500 }}>{user.name?.split(' ')[0]}</span>
-              <TierBadge tier={user.trust_tier}/>
-              <span style={{ color:T.textSoft, fontSize:12 }}>· {user.college_name}</span>
+              <span style={{ fontWeight: 500 }}>{user.name?.split(' ')[0]}</span>
+              <TierBadge tier={user.trust_tier} />
+              <span style={{ color: T.textSoft, fontSize: 12 }}>· {user.college_name}</span>
             </div>
-            <button className="btn-press" style={btn(false)} onClick={()=>setAct(true)}>Activity</button>
-            <button className="btn-press" style={btn(true)}  onClick={()=>setList(true)}>+ List Item</button>
-            <button className="btn-press" style={{ ...btn(false), fontSize:12 }} onClick={()=>setIsAdmin(true)}>Admin</button>
-            <button className="btn-press" style={{ ...btn(false), fontSize:12 }} onClick={handleLogout}>Sign out</button>
+            <button className="btn-press" style={btn(false)} onClick={() => setGuideOpen(true)}>📖 Guide</button>
+            <button className="btn-press" style={btn(false)} onClick={() => setAct(true)}>
+              Activity {totalActionCount > 0 && <span style={{ background: T.coral, color: '#fff', padding: '2px 6px', borderRadius: 20, fontSize: 10, marginLeft: 4, fontWeight: 700 }}>{totalActionCount}</span>}
+            </button>
+            <button className="btn-press" style={{ ...btn(false), background: '#7C3AED22', color: '#7C3AED', border: '1px solid #7C3AED44' }} onClick={() => setRequest(true)}>🙋 Request</button>
+            <button className="btn-press" style={btn(true)} onClick={() => setList(true)}>+ List Item</button>
+            <button className="btn-press" style={{ ...btn(false), fontSize: 12 }} onClick={() => setIsAdmin(true)}>Admin</button>
+            <button className="btn-press" style={{ ...btn(false), fontSize: 12 }} onClick={handleLogout}>Sign out</button>
           </div>
         </header>
 
         {/* MOBILE HEADER */}
-        <header className="mobile-only" style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 12px', height:50, background:'rgba(255,248,240,0.97)', backdropFilter:'blur(12px)', borderBottom:`1px solid var(--border-soft)`, position:'sticky', top:0, zIndex:100, width:'100%', boxSizing:'border-box' }}>
-          <div style={{ flexShrink:1, minWidth:0, overflow:'hidden' }}>
+        <header className="mobile-only" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px', height: 50, background: 'rgba(255,248,240,0.97)', backdropFilter: 'blur(12px)', borderBottom: `1px solid var(--border-soft)`, position: 'sticky', top: 0, zIndex: 100, width: '100%', boxSizing: 'border-box' }}>
+          <div style={{ flexShrink: 1, minWidth: 0, overflow: 'hidden' }}>
             <Logo />
           </div>
-          <div style={{ display:'flex', alignItems:'center', gap:5, flexShrink:0, paddingLeft:8 }}>
-            <TierBadge tier={user.trust_tier}/>
-            <button onClick={handleLogout} style={{ background:'rgba(15,23,42,0.07)', border:'none', borderRadius:7, padding:'4px 8px', fontSize:11, fontWeight:600, color:T.textMid, cursor:'pointer', whiteSpace:'nowrap', flexShrink:0 }}>↪ Out</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0, paddingLeft: 8 }}>
+            <TierBadge tier={user.trust_tier} />
+            <button onClick={() => setGuideOpen(true)} style={{ background: 'rgba(15,23,42,0.07)', border: 'none', borderRadius: 7, padding: '4px 8px', fontSize: 11, fontWeight: 600, color: T.textMid, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>📖 Guide</button>
+            <button onClick={handleLogout} style={{ background: 'rgba(15,23,42,0.07)', border: 'none', borderRadius: 7, padding: '4px 8px', fontSize: 11, fontWeight: 600, color: T.textMid, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>↪ Out</button>
           </div>
         </header>
 
         {/* HERO — compact navy+coral split bar */}
-        <div style={{ background:`linear-gradient(135deg, ${T.navy} 0%, #1E293B 60%, #0F172A 100%)`, borderBottom:`1px solid rgba(232,68,90,0.2)`, overflow:'hidden', width:'100%', boxSizing:'border-box' }}>
+        <div style={{ background: `linear-gradient(135deg, ${T.navy} 0%, #1E293B 60%, #0F172A 100%)`, borderBottom: `1px solid rgba(232,68,90,0.2)`, overflow: 'hidden', width: '100%', boxSizing: 'border-box' }}>
           {/* Top row: tagline + stats chips */}
-          <div className="hero-pad" style={{ padding:'16px 24px 12px', display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexWrap:'wrap', gap:10, width:'100%', boxSizing:'border-box' }}>
+          <div className="hero-pad" style={{ padding: '16px 24px 12px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, width: '100%', boxSizing: 'border-box' }}>
             <div>
-              <div style={{ fontFamily:'var(--font-head)', fontSize:'clamp(20px,5vw,28px)', fontWeight:800, color:'#fff', letterSpacing:'-0.5px', lineHeight:1.1 }}>
-                Share more, <span style={{ color:T.coral }}>spend less.</span>
+              <div style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(20px,5vw,28px)', fontWeight: 800, color: '#fff', letterSpacing: '-0.5px', lineHeight: 1.1 }}>
+                Share more, <span style={{ color: T.coral }}>spend less.</span>
               </div>
-              <div style={{ fontSize:12, color:'rgba(255,255,255,0.5)', marginTop:4 }}>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>
                 {user.college_name} · peer lending
               </div>
             </div>
             {/* Live stats chips */}
-            <div className="stats-chips" style={{ display:'flex', gap:6, flexWrap:'wrap', alignItems:'center', maxWidth:'100%' }}>
+            <div className="stats-chips" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', maxWidth: '100%' }}>
               {/* Live */}
-              <div style={{ display:'flex', alignItems:'center', gap:4, padding:'4px 8px', background:'rgba(16,185,129,0.15)', borderRadius:20, border:'1px solid rgba(16,185,129,0.3)', flexShrink:0 }}>
-                <div style={{ width:5, height:5, borderRadius:'50%', background:'#10B981', animation:'pulse 2s infinite' }} />
-                <span style={{ fontSize:10, color:'#10B981', fontWeight:600 }}>Live</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px', background: 'rgba(16,185,129,0.15)', borderRadius: 20, border: '1px solid rgba(16,185,129,0.3)', flexShrink: 0 }}>
+                <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#10B981', animation: 'pulse 2s infinite' }} />
+                <span style={{ fontSize: 10, color: '#10B981', fontWeight: 600 }}>Live</span>
               </div>
-              {[[stats.available,'📦','avail'],[stats.students,'🎓','users']].map(([n,ic,l])=>(
-                <div key={l} style={{ background:'rgba(255,255,255,0.08)', borderRadius:20, padding:'4px 10px', display:'flex', alignItems:'center', gap:4, flexShrink:0 }}>
-                  <span style={{ fontSize:12 }}>{ic}</span>
-                  <span style={{ fontFamily:'var(--font-head)', fontSize:13, fontWeight:700, color:'#fff' }}>
-                    {n !== undefined && n !== null ? n : <span style={{ opacity:0.4 }}>·</span>}
+              {[[stats.available, '📦', 'avail'], [stats.students, '🎓', 'users']].map(([n, ic, l]) => (
+                <div key={l} style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 20, padding: '4px 10px', display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                  <span style={{ fontSize: 12 }}>{ic}</span>
+                  <span style={{ fontFamily: 'var(--font-head)', fontSize: 13, fontWeight: 700, color: '#fff' }}>
+                    {n !== undefined && n !== null ? n : <span style={{ opacity: 0.4 }}>·</span>}
                   </span>
-                  <span style={{ fontSize:10, color:'rgba(255,255,255,0.45)' }}>{l}</span>
+                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>{l}</span>
                 </div>
               ))}
-              <div style={{ background:`${T.coral}22`, borderRadius:20, padding:'4px 10px', display:'flex', alignItems:'center', gap:5, flexShrink:0, border:`1px solid ${T.coral}44` }}>
-                <span style={{ fontSize:11, color:T.coral, fontWeight:700 }}>{Math.max(0,tier.limit-activeCount)}/{tier.limit}</span>
-                <TierBadge tier={user.trust_tier}/>
+              <div style={{ background: `${T.coral}22`, borderRadius: 20, padding: '4px 10px', display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0, border: `1px solid ${T.coral}44` }}>
+                <span style={{ fontSize: 11, color: T.coral, fontWeight: 700 }}>{Math.max(0, tier.limit - activeCount)}/{tier.limit}</span>
+                <TierBadge tier={user.trust_tier} />
               </div>
             </div>
           </div>
 
           {/* Bottom row: tab pills + search — stacks on mobile */}
-          <div className="hero-bottom" style={{ padding:'0 24px 14px', display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', width:'100%', boxSizing:'border-box' }}>
-            <div className="hero-tabs" style={{ display:'flex', gap:6, flexShrink:0 }}>
-              {[['marketplace','📦 Market'],['lostfound','🔍 L&F']].map(([id,label])=>(
-                <button key={id} className="btn-press" onClick={()=>{
-                  if(id!==tab){ fetchIdRef.current++; setItems([]); setSearch(''); setCat('all') }
+          <div className="hero-bottom" style={{ padding: '0 24px 14px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', width: '100%', boxSizing: 'border-box' }}>
+            <div className="hero-tabs" style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+              {[['marketplace', '📦 Market'], ['lostfound', '🔍 L&F']].map(([id, label]) => (
+                <button key={id} className="btn-press" onClick={() => {
+                  if (id !== tab) { fetchIdRef.current++; setItems([]); setSearch(''); setCat('all') }
                   setTab(id)
                 }} style={{
-                  padding:'7px 14px', borderRadius:40, border:`1.5px solid ${tab===id?T.coral:'rgba(255,255,255,0.15)'}`,
-                  background:tab===id?T.coral:'rgba(255,255,255,0.06)', color:tab===id?'#fff':'rgba(255,255,255,0.65)',
-                  fontWeight:600, cursor:'pointer', fontSize:12, transition:'all 0.18s',
-                  boxShadow:tab===id?'var(--shadow-coral)':'none', whiteSpace:'nowrap',
+                  padding: '7px 14px', borderRadius: 40, border: `1.5px solid ${tab === id ? T.coral : 'rgba(255,255,255,0.15)'}`,
+                  background: tab === id ? T.coral : 'rgba(255,255,255,0.06)', color: tab === id ? '#fff' : 'rgba(255,255,255,0.65)',
+                  fontWeight: 600, cursor: 'pointer', fontSize: 12, transition: 'all 0.18s',
+                  boxShadow: tab === id ? 'var(--shadow-coral)' : 'none', whiteSpace: 'nowrap',
                 }}>{label}</button>
               ))}
             </div>
-            <div className="search-bar" style={{ position:'relative', flex:1, minWidth:140 }}>
-              <span style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', fontSize:13, pointerEvents:'none' }}>🔎</span>
-              <input className="dark-search" style={{ ...INP, paddingLeft:36, borderRadius:40, background:'rgba(255,255,255,0.1)', border:'1.5px solid rgba(255,255,255,0.12)', color:'#fff', fontSize:13, width:'100%' }}
+            <div className="search-bar" style={{ position: 'relative', flex: 1, minWidth: 140 }}>
+              <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 13, pointerEvents: 'none' }}>🔎</span>
+              <input className="dark-search" style={{ ...INP, paddingLeft: 36, borderRadius: 40, background: 'rgba(255,255,255,0.1)', border: '1.5px solid rgba(255,255,255,0.12)', color: '#fff', fontSize: 13, width: '100%' }}
                 placeholder="Search…"
-                value={search} onChange={e=>setSearch(e.target.value)} />
+                value={search} onChange={e => setSearch(e.target.value)} />
             </div>
           </div>
         </div>
 
         {/* BODY — desktop: sidebar + grid, mobile: grid only full width */}
-        <div style={{ display:'flex', minHeight:'calc(100vh - 200px)' }}>
+        <div style={{ display: 'flex', minHeight: 'calc(100vh - 200px)' }}>
 
           {/* SIDEBAR — desktop only, never rendered on mobile */}
-          {tab==='marketplace' && (
-            <div className="desktop-only" style={{ width:200, flexShrink:0, borderRight:`1px solid var(--border-soft)`, background:'rgba(255,255,255,0.4)', display:'flex', flexDirection:'column' }}>
-              <div style={{ background:`linear-gradient(180deg, ${T.navy} 0%, #1E293B 100%)`, padding:'20px 14px 14px' }}>
-                <div style={{ fontFamily:'var(--font-head)', fontSize:14, fontWeight:700, color:'#fff', marginBottom:2 }}>Browse</div>
-                <div style={{ fontSize:11, color:'rgba(255,255,255,0.45)' }}>Filter by category</div>
+          {tab === 'marketplace' && (
+            <div className="desktop-only" style={{ width: 200, flexShrink: 0, borderRight: `1px solid var(--border-soft)`, background: 'rgba(255,255,255,0.4)', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ background: `linear-gradient(180deg, ${T.navy} 0%, #1E293B 100%)`, padding: '20px 14px 14px' }}>
+                <div style={{ fontFamily: 'var(--font-head)', fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 2 }}>Browse</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>Filter by category</div>
               </div>
-              <div style={{ padding:'14px 14px 0' }}>
-                <div style={{ fontSize:11, fontWeight:700, letterSpacing:'0.08em', color:T.textSoft, textTransform:'uppercase', marginBottom:10 }}>Category</div>
-                {[['all','All items',items.length],...CATEGORIES.map(c=>[c,c,CAT_COUNTS[c]])].map(([val,label,count])=>(
-                  <button key={val} onClick={()=>setCat(val)} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 10px', borderRadius:'var(--radius-xs)', fontSize:13, cursor:'pointer', color:cat===val?T.coral:T.text, fontWeight:cat===val?600:400, background:cat===val?`${T.coral}10`:'transparent', border:'none', width:'100%', textAlign:'left', marginBottom:2, transition:'all 0.15s' }}>
+              <div style={{ padding: '14px 14px 0' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: T.textSoft, textTransform: 'uppercase', marginBottom: 10 }}>Category</div>
+                {[['all', 'All items', items.length], ...CATEGORIES.map(c => [c, c, CAT_COUNTS[c]])].map(([val, label, count]) => (
+                  <button key={val} onClick={() => setCat(val)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', borderRadius: 'var(--radius-xs)', fontSize: 13, cursor: 'pointer', color: cat === val ? T.coral : T.text, fontWeight: cat === val ? 600 : 400, background: cat === val ? `${T.coral}10` : 'transparent', border: 'none', width: '100%', textAlign: 'left', marginBottom: 2, transition: 'all 0.15s' }}>
                     <span>{label}</span>
-                    <span style={{ fontSize:11, background:cat===val?`${T.coral}20`:'rgba(15,23,42,0.06)', color:cat===val?T.coral:T.textSoft, padding:'2px 7px', borderRadius:20 }}>{count}</span>
+                    <span style={{ fontSize: 11, background: cat === val ? `${T.coral}20` : 'rgba(15,23,42,0.06)', color: cat === val ? T.coral : T.textSoft, padding: '2px 7px', borderRadius: 20 }}>{count}</span>
                   </button>
                 ))}
                 <Divider />
-                <div style={{ fontSize:11, fontWeight:700, letterSpacing:'0.08em', color:T.textSoft, textTransform:'uppercase', marginBottom:10 }}>Availability</div>
-                {[['all','Show all'],['available','Available now']].map(([val,label])=>(
-                  <button key={val} onClick={()=>setAvail(val)} style={{ display:'flex', padding:'8px 10px', borderRadius:'var(--radius-xs)', fontSize:13, cursor:'pointer', color:avail===val?T.coral:T.text, fontWeight:avail===val?600:400, background:avail===val?`${T.coral}10`:'transparent', border:'none', width:'100%', textAlign:'left', marginBottom:2, transition:'all 0.15s' }}>{label}</button>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: T.textSoft, textTransform: 'uppercase', marginBottom: 10 }}>Availability</div>
+                {[['all', 'Show all'], ['available', 'Available now']].map(([val, label]) => (
+                  <button key={val} onClick={() => setAvail(val)} style={{ display: 'flex', padding: '8px 10px', borderRadius: 'var(--radius-xs)', fontSize: 13, cursor: 'pointer', color: avail === val ? T.coral : T.text, fontWeight: avail === val ? 600 : 400, background: avail === val ? `${T.coral}10` : 'transparent', border: 'none', width: '100%', textAlign: 'left', marginBottom: 2, transition: 'all 0.15s' }}>{label}</button>
                 ))}
               </div>
             </div>
           )}
 
           {/* GRID — takes full width on mobile since sidebar is hidden */}
-          <div className="main-content" style={{ flex:1, minWidth:0, padding:'20px 20px', overflowX:'hidden', boxSizing:'border-box' }}>
-            <div style={{ ...row(0), justifyContent:'space-between', marginBottom:16, flexWrap:'wrap', gap:8 }}>
-              <span style={{ fontSize:14, color:T.textMid, fontWeight:500 }}>
-                {tab==='lostfound' ? `${items.length} found item${items.length!==1?'s':''}` : `${items.length} item${items.length!==1?'s':''}`}
+          <div className="main-content" style={{ flex: 1, minWidth: 0, padding: '20px 20px', overflowX: 'hidden', boxSizing: 'border-box' }}>
+            <div style={{ ...row(0), justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
+              <span style={{ fontSize: 14, color: T.textMid, fontWeight: 500 }}>
+                {tab === 'lostfound' ? `${items.length} found item${items.length !== 1 ? 's' : ''}` : `${items.length} item${items.length !== 1 ? 's' : ''}`}
               </span>
-              <span style={{ fontSize:12, color:T.textSoft }}>Most recent first</span>
+              <span style={{ fontSize: 12, color: T.textSoft }}>Most recent first</span>
             </div>
 
-            {tab==='lostfound' && items.length===0 && (
-              <div style={{ textAlign:'center', padding:'4rem 0' }}>
-                <div style={{ fontSize:56, marginBottom:12 }}>🔍</div>
-                <div style={{ fontSize:16, color:T.textMid, marginBottom:6, fontWeight:600 }}>No lost & found items yet.</div>
-                <div style={{ fontSize:14, color:T.textSoft, marginBottom:20 }}>Found something? Let others know.</div>
-                <button className="btn-press" style={btn(true)} onClick={()=>setList(true)}>Report a found item</button>
+            {tab === 'lostfound' && items.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '4rem 0' }}>
+                <div style={{ fontSize: 56, marginBottom: 12 }}>🔍</div>
+                <div style={{ fontSize: 16, color: T.textMid, marginBottom: 6, fontWeight: 600 }}>No lost & found items yet.</div>
+                <div style={{ fontSize: 14, color: T.textSoft, marginBottom: 20 }}>Found something? Let others know.</div>
+                <button className="btn-press" style={btn(true)} onClick={() => setList(true)}>Report a found item</button>
               </div>
             )}
 
-            {items.length===0 && tab==='marketplace' && (
-              <div style={{ textAlign:'center', padding:'4rem 0', color:T.textSoft, fontSize:14 }}>
-                <div style={{ fontSize:48, marginBottom:12 }}>📭</div>
+            {items.length === 0 && tab === 'marketplace' && (
+              <div style={{ textAlign: 'center', padding: '4rem 0', color: T.textSoft, fontSize: 14 }}>
+                <div style={{ fontSize: 48, marginBottom: 12 }}>📭</div>
                 No items match your filter.
               </div>
             )}
 
-            <div className="item-grid" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(min(160px,45vw),1fr))', gap:12 }}>
-              {items.filter(item=>item.status!=='closed').map(item=>(
-                <ItemCard key={item.id+'-'+tick} item={item} currentUserId={user.id} onRequest={i=>setBorrow(i)} myRequests={myRequests} />
+            <div className="item-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(min(160px,45vw),1fr))', gap: 12 }}>
+              {items.filter(item => item.status !== 'closed').map(item => (
+                <ItemCard key={item.id + '-' + tick} item={item} currentUserId={user.id} onRequest={i => setBorrow(i)} myRequests={myRequests} />
               ))}
             </div>
           </div>
         </div>
 
         {/* MOBILE BOTTOM NAV */}
-        <nav className="mobile-only" style={{ position:'fixed', bottom:0, left:0, right:0, height:68, background:'rgba(255,248,240,0.96)', backdropFilter:'blur(16px)', borderTop:`1px solid var(--border-soft)`, display:'flex', alignItems:'center', justifyContent:'space-around', padding:'0 8px 8px', zIndex:150 }}>
+        <nav className="mobile-only" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, height: 68, background: 'rgba(255,248,240,0.96)', backdropFilter: 'blur(16px)', borderTop: `1px solid var(--border-soft)`, display: 'flex', alignItems: 'center', justifyContent: 'space-around', padding: '0 8px 8px', zIndex: 150 }}>
           {[
-            { icon:'📦', label:'Market',  action:()=>{ if(tab!=='marketplace'){ fetchIdRef.current++; setItems([]) } setTab('marketplace') }, active:tab==='marketplace' },
-            { icon:'🔍', label:'L&F',     action:()=>{ if(tab!=='lostfound'){ fetchIdRef.current++; setItems([]) } setTab('lostfound') }, active:tab==='lostfound' },
-            { icon:'➕', label:'List',    action:()=>setList(true),         active:false, primary:true  },
-            { icon:'📋', label:'Activity',action:()=>setAct(true),          active:false               },
-            { icon:'⚙️', label:'Admin',   action:()=>setIsAdmin(true),      active:false               },
-          ].map(({ icon, label, action, active, primary })=>(
-            <button key={label} onClick={action} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, background: primary?T.coral:'transparent', color:primary?'#fff':active?T.coral:T.textSoft, border:'none', cursor:'pointer', padding: primary?'10px 16px':'6px 12px', borderRadius: primary?40:'var(--radius-xs)', fontWeight:600, transition:'all 0.18s', boxShadow:primary?'var(--shadow-coral)':'none' }}>
-              <span style={{ fontSize: primary?22:18 }}>{icon}</span>
-              <span style={{ fontSize:10 }}>{label}</span>
+            { icon: '📦', label: 'Market', action: () => { if (tab !== 'marketplace') { fetchIdRef.current++; setItems([]) } setTab('marketplace') }, active: tab === 'marketplace' },
+            { icon: '🔍', label: 'L&F', action: () => { if (tab !== 'lostfound') { fetchIdRef.current++; setItems([]) } setTab('lostfound') }, active: tab === 'lostfound' },
+            { icon: '➕', label: 'List', action: () => setList(true), active: false, primary: true },
+            { icon: '🙋', label: 'Request', action: () => setRequest(true), active: false },
+            { icon: '📋', label: 'Activity', action: () => setAct(true), active: false, badge: totalActionCount },
+            { icon: '⚙️', label: 'Admin', action: () => setIsAdmin(true), active: false },
+          ].map(({ icon, label, action, active, primary, badge }) => (
+            <button key={label} onClick={action} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, background: primary ? T.coral : 'transparent', color: primary ? '#fff' : active ? T.coral : T.textSoft, border: 'none', cursor: 'pointer', padding: primary ? '10px 16px' : '6px 12px', borderRadius: primary ? 40 : 'var(--radius-xs)', fontWeight: 600, transition: 'all 0.18s', boxShadow: primary ? 'var(--shadow-coral)' : 'none' }}>
+              {badge > 0 && <span style={{ position: 'absolute', top: 0, right: 4, background: T.coral, color: '#fff', fontSize: 9, fontWeight: 800, borderRadius: 20, minWidth: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>{badge > 9 ? '9+' : badge}</span>}
+              <span style={{ fontSize: primary ? 22 : 18 }}>{icon}</span>
+              <span style={{ fontSize: 10 }}>{label}</span>
             </button>
           ))}
         </nav>

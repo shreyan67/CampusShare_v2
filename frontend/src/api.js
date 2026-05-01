@@ -120,3 +120,13 @@ function clean(obj) {
   Object.entries(obj || {}).forEach(([k,v]) => { if (v !== undefined && v !== null && v !== '') out[k] = v })
   return out
 }
+
+// Item Requests (borrower "I need X")
+export const getItemRequests     = (search)          => get(`/item-requests${search?`?search=${encodeURIComponent(search)}`:''}`)
+export const getMyItemRequests   = ()                 => get('/item-requests/mine')
+export const postItemRequest     = (data)             => post('/item-requests', data)
+export const closeItemRequest    = (id)               => patch(`/item-requests/${id}/close`)
+export const getItemRequestOffers= (reqId)            => get(`/item-requests/${reqId}/offers`)
+export const makeOffer           = (reqId, data)      => post(`/item-requests/${reqId}/offers`, data)
+export const acceptOffer         = (reqId, offerId)   => patch(`/item-requests/${reqId}/offers/${offerId}/accept`)
+export const declineOffer        = (reqId, offerId)   => patch(`/item-requests/${reqId}/offers/${offerId}/decline`)

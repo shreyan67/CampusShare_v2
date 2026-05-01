@@ -8,10 +8,13 @@ const router = express.Router()
 const REQUEST_JOIN = `
   SELECT
     br.*,
-    i.title AS item_title, i.category AS item_category,i.listing_type,
+    i.title AS item_title, i.category AS item_category, i.listing_type,
     i.is_paid, i.price_per_day, i.images AS item_images,
+    i.transaction_type,
     borrower.name AS borrower_name, borrower.avatar AS borrower_avatar, borrower.color AS borrower_color,
-    owner.name AS owner_name
+    owner.name AS owner_name,
+    -- flag borrow_requests that came from item_request offers (keep in Requests tab only)
+    (i.listing_type = 'request_offer') AS from_item_request
   FROM borrow_requests br
   JOIN items   i        ON br.item_id    = i.id
   JOIN users   borrower ON br.borrower_id= borrower.id
@@ -217,6 +220,7 @@ router.patch('/:id/decline', requireAuth, async (req, res) => {
 })
 
 // PATCH /api/requests/:id/return  — owner confirms return
+// For sell/donate items: this route is not used (lifecycle ends at borrower-received)
 router.patch('/:id/return', requireAuth, async (req, res) => {
   try {
     const r    = await queryOne('SELECT * FROM borrow_requests WHERE id=$1', [req.params.id])
@@ -224,6 +228,11 @@ router.patch('/:id/return', requireAuth, async (req, res) => {
     if (!r || !item) return res.status(404).json({ error: 'Not found.' })
     if (item.owner_id !== req.userId) return res.status(403).json({ error: 'Not your item.' })
     if (!['active','overdue'].includes(r.status)) return res.status(409).json({ error: 'Item not currently borrowed.' })
+
+    // Sell/donate items don't expect return — only lend/rent do
+    if (['sell','donate'].includes(item.transaction_type)) {
+      return res.status(400).json({ error: 'This item was sold/donated — no return expected.' })
+    }
 
     const onTime = new Date() <= new Date(r.due_at)
     await query("UPDATE borrow_requests SET status='returned',returned_at=NOW() WHERE id=$1", [r.id])
@@ -388,14 +397,26 @@ router.patch('/:id/item-given', requireAuth, async (req, res) => {
 // PATCH /api/requests/:id/borrower-received — borrower confirms they collected the item
 router.patch('/:id/borrower-received', requireAuth, async (req, res) => {
   try {
-    const r = await queryOne('SELECT * FROM borrow_requests WHERE id=$1', [req.params.id])
-    if (!r) return res.status(404).json({ error: 'Not found.' })
+    const r    = await queryOne('SELECT * FROM borrow_requests WHERE id=$1', [req.params.id])
+    const item = await queryOne('SELECT * FROM items WHERE id=$1', [r?.item_id])
+    if (!r || !item) return res.status(404).json({ error: 'Not found.' })
     if (r.borrower_id !== req.userId) return res.status(403).json({ error: 'Not your request.' })
     if (r.status !== 'active') return res.status(409).json({ error: 'Item must be active.' })
     if (!r.item_given) return res.status(409).json({ error: 'Lender has not confirmed handover yet.' })
 
     await query('UPDATE borrow_requests SET borrower_received=TRUE WHERE id=$1', [req.params.id])
-    res.json({ success: true })
+
+    // For sell/donate: lifecycle ends here — mark returned immediately, free borrower slot
+    const noReturn = ['sell','donate'].includes(item.transaction_type)
+    if (noReturn) {
+      await query("UPDATE borrow_requests SET status='returned', returned_at=NOW() WHERE id=$1", [req.params.id])
+      await query("UPDATE items SET status='available', is_deleted=TRUE WHERE id=$1", [item.id])
+      // increment return_count to free trust slot
+      await query('UPDATE users SET return_count=return_count+1 WHERE id=$1', [r.borrower_id])
+      await promoteIfEligible(r.borrower_id)
+    }
+
+    res.json({ success: true, lifecycleComplete: noReturn })
   } catch (err) { console.error(err); res.status(500).json({ error: 'Failed.' }) }
 })
 

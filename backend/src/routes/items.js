@@ -81,7 +81,7 @@ router.get('/', requireAuth, async (req, res) => {
 // POST /api/items  (with optional image upload)
 router.post('/', requireAuth, upload.array('photos', 3), async (req, res) => {
   try {
-    const { title, category, conditionNotes, maxBorrowDays, isPaid, pricePerDay, allowMultiple } = req.body
+    const { title, category, conditionNotes, maxBorrowDays, isPaid, pricePerDay, allowMultiple, transactionType } = req.body
     if (!title?.trim()) return res.status(400).json({ error: 'Title is required.' })
 
     const validCats = ['Books','Lab Equipment','Electronics','Notes & Guides','Accessories','Other']
@@ -99,13 +99,18 @@ router.post('/', requireAuth, upload.array('photos', 3), async (req, res) => {
     const paid  = isPaid === 'true' || isPaid === true
     const price = paid ? parseFloat(pricePerDay || 0) : 0
 
+    // Derive transaction_type from explicit param, or fall back to paid/free detection
+    const validTxTypes = ['rent','sell','donate','lend']
+    const txType = validTxTypes.includes(transactionType) ? transactionType
+                 : paid ? 'rent' : 'lend'
+
     const item = await queryOne(`
       INSERT INTO items(
   college_id,owner_id,title,category,
   condition_notes,max_borrow_days,
-  is_paid,price_per_day,images,listing_type,allow_multiple
+  is_paid,price_per_day,images,listing_type,allow_multiple,transaction_type
 )
-VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *
+VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *
     `, [
   req.collegeId,
   req.userId,
@@ -117,7 +122,8 @@ VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *
   price,
   images,
   req.body.listingType || 'borrow',
-  allowMultiple === 'true' || allowMultiple === true
+  allowMultiple === 'true' || allowMultiple === true,
+  txType,
 ])
 
     res.status(201).json({ item })

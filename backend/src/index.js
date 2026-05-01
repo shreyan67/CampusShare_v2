@@ -50,12 +50,13 @@ const adminAuth = (req, res, next) => {
 }
 
 // ===== ROUTES =====
-app.use('/api/auth', require('./routes/auth'))
-app.use('/api/items', require('./routes/items'))
-app.use('/api/requests', require('./routes/requests'))
-app.use('/api/payments', require('./routes/payments'))
-app.use('/api/users', require('./routes/users'))
-app.use('/api/lostfound', require('./routes/lostfound'))
+app.use('/api/auth',          require('./routes/auth'))
+app.use('/api/items',         require('./routes/items'))
+app.use('/api/requests',      require('./routes/requests'))
+app.use('/api/payments',      require('./routes/payments'))
+app.use('/api/users',         require('./routes/users'))
+app.use('/api/lostfound',     require('./routes/lostfound'))
+app.use('/api/item-requests', require('./routes/item_requests'))
 
 // ===== HEALTH =====
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
