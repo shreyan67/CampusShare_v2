@@ -227,10 +227,10 @@ const useApp = () => useContext(Ctx)
 // ── TOAST ─────────────────────────────────────────────────────────────────────
 function useToast() {
   const [msg, setMsg] = useState('')
-  const show = useCallback(m => { 
+  const show = useCallback((m, native = false) => { 
     setMsg(m); 
     setTimeout(() => setMsg(''), 3200);
-    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+    if (native && typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
       try {
         if (navigator.serviceWorker) {
           navigator.serviceWorker.ready.then(reg => {
@@ -238,12 +238,13 @@ function useToast() {
               body: m,
               icon: '/android-chrome-192x192.png',
               badge: '/favicon-32x32.png',
-              vibrate: [200, 100, 200]
-            }).catch(() => new Notification('CampusShare', { body: m }))
+              vibrate: [200, 100, 200, 100, 200]
+            }).catch(() => new Notification('CampusShare', { body: m, vibrate: [200, 100, 200] }))
           })
         } else {
-          new Notification('CampusShare', { body: m })
+          new Notification('CampusShare', { body: m, vibrate: [200, 100, 200] })
         }
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
       } catch (e) {
         new Notification('CampusShare', { body: m })
       }
@@ -2255,6 +2256,37 @@ export default function App() {
     return () => document.removeEventListener('click', requestNotif)
   }, []) // eslint-disable-line
 
+  // Watch for state changes in myRequests to trigger native push notifications
+  const prevReqsRef = useRef(null)
+  useEffect(() => {
+    if (!prevReqsRef.current || myRequests.length === 0) {
+      prevReqsRef.current = myRequests
+      return
+    }
+
+    myRequests.forEach(nr => {
+      const old = prevReqsRef.current.find(o => o.id === nr.id)
+      const isBorrower = nr.borrower_id === user?.id
+      const isLender = nr.owner_id === user?.id
+
+      if (!old) {
+        if (isLender && nr.status === 'pending') showToast(`📦 New request for ${nr.item_title}!`, true)
+        return
+      }
+      
+      if (isBorrower && nr.status === 'selected' && old.status === 'pending') showToast(`✅ Request for ${nr.item_title} approved!`, true)
+      if (isBorrower && nr.status === 'declined' && old.status === 'pending') showToast(`❌ Request for ${nr.item_title} declined.`, true)
+      if (isBorrower && nr.pickup_details && !old.pickup_details) showToast(`📍 Pickup details sent for ${nr.item_title}!`, true)
+      if (isBorrower && nr.item_given && !old.item_given) showToast(`🤝 Lender handed over ${nr.item_title}. Confirm receipt!`, true)
+      
+      if (isLender && nr.borrower_received && !old.borrower_received) showToast(`📦 Borrower received ${nr.item_title}.`, true)
+      if (isLender && nr.payment_confirmed && !old.payment_confirmed) showToast(`💳 Payment confirmed for ${nr.item_title}!`, true)
+      if (isLender && nr.pickup_message && !old.pickup_message) showToast(`📍 Claimer sent pickup message for ${nr.item_title}.`, true)
+      if (isLender && nr.status === 'declined' && old.status === 'pending') showToast(`❌ Request for ${nr.item_title} was revoked.`, true)
+    })
+    prevReqsRef.current = myRequests
+  }, [myRequests, user, showToast])
+
   // Single effect that owns ALL data fetching — no race conditions
   useEffect(() => {
     if (!user) return
@@ -2317,7 +2349,7 @@ export default function App() {
           const newest = newOnes.reduce((a, b) => a.created_at > b.created_at ? a : b)
           lastSeenRequestRef.current = newest.created_at
           localStorage.setItem('cs_last_seen_req', newest.created_at)
-          showToast(`🙋 ${newOnes[0].requester_name} needs: ${newOnes[0].title}`)
+          showToast(`🙋 ${newOnes[0].requester_name} needs: ${newOnes[0].title}`, true)
         }
 
         // Check for new offers on my requests
@@ -2326,7 +2358,7 @@ export default function App() {
           .reduce((sum, req) => sum + parseInt(req.offer_count || 0), 0)
 
         if (myTotalOffers > prevMyTotalOffersRef.current) {
-          showToast(`🎉 You received a new offer for your item request!`)
+          showToast(`🎉 You received a new offer for your item request!`, true)
         }
         prevMyTotalOffersRef.current = myTotalOffers
         setMyOffersCount(myTotalOffers)
