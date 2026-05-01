@@ -233,8 +233,8 @@ function useToast() {
 function Toast({ msg }) {
   if (!msg) return null
   return (
-    <div style={{ position: 'fixed', bottom: 84, left: '50%', transform: 'translateX(-50%)', zIndex: 9999, pointerEvents: 'none', animation: 'toastIn 0.3s cubic-bezier(0.22,1,0.36,1) both' }}>
-      <div style={{ background: T.navy, color: '#fff', padding: '12px 24px', borderRadius: 40, fontSize: 14, fontWeight: 500, maxWidth: 340, textAlign: 'center', boxShadow: '0 8px 32px rgba(15,23,42,0.24)', whiteSpace: 'nowrap' }}>{msg}</div>
+    <div style={{ position: 'fixed', bottom: 84, left: 0, right: 0, zIndex: 9999, pointerEvents: 'none', animation: 'toastIn 0.3s cubic-bezier(0.22,1,0.36,1) both', display: 'flex', justifyContent: 'center', padding: '0 16px' }}>
+      <div style={{ background: T.navy, color: '#fff', padding: '12px 24px', borderRadius: 40, fontSize: 14, fontWeight: 500, maxWidth: 340, textAlign: 'center', boxShadow: '0 8px 32px rgba(15,23,42,0.24)', wordBreak: 'break-word' }}>{msg}</div>
     </div>
   )
 }
@@ -508,6 +508,7 @@ function ListItemModal({ open, onClose, onSuccess }) {
 
   const isPaid = ['rent', 'sell'].includes(txType)
   const isSell = txType === 'sell'
+  const noReturn = ['sell', 'donate'].includes(txType)
 
   function onPhotoPick(e) {
     const files = Array.from(e.target.files).slice(0, 4)
@@ -530,12 +531,12 @@ function ListItemModal({ open, onClose, onSuccess }) {
     const r = await api.listItem({
       title: titleRef.current, category,
       conditionNotes: notesRef.current,
-      maxBorrowDays: isSell ? '1' : maxDays,
+      maxBorrowDays: noReturn ? '1' : maxDays,
       listingType: ltype,
       isPaid: isPaid ? 'true' : 'false',
       pricePerDay: isPaid ? ppd : '',
       transactionType: txType,
-      allowMultiple: (!isSell && ltype === 'borrow') ? String(allowMulti) : 'false',
+      allowMultiple: (!noReturn && ltype === 'borrow') ? String(allowMulti) : 'false',
       photos,
     })
     setLoading(false)
@@ -607,7 +608,7 @@ function ListItemModal({ open, onClose, onSuccess }) {
           </div>
         </div>
 
-        {!isSell && (
+        {!noReturn && (
           <div style={{ marginBottom: 14 }}>
             <label style={LBL}>Max duration</label>
             <select style={INP} value={maxDays} onChange={e => setMaxDays(e.target.value)}>
