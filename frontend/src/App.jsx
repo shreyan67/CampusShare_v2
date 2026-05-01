@@ -227,7 +227,28 @@ const useApp = () => useContext(Ctx)
 // ── TOAST ─────────────────────────────────────────────────────────────────────
 function useToast() {
   const [msg, setMsg] = useState('')
-  const show = useCallback(m => { setMsg(m); setTimeout(() => setMsg(''), 3200) }, [])
+  const show = useCallback(m => { 
+    setMsg(m); 
+    setTimeout(() => setMsg(''), 3200);
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      try {
+        if (navigator.serviceWorker) {
+          navigator.serviceWorker.ready.then(reg => {
+            reg.showNotification('CampusShare', {
+              body: m,
+              icon: '/android-chrome-192x192.png',
+              badge: '/favicon-32x32.png',
+              vibrate: [200, 100, 200]
+            }).catch(() => new Notification('CampusShare', { body: m }))
+          })
+        } else {
+          new Notification('CampusShare', { body: m })
+        }
+      } catch (e) {
+        new Notification('CampusShare', { body: m })
+      }
+    }
+  }, [])
   return [msg, show]
 }
 function Toast({ msg }) {
@@ -2216,11 +2237,22 @@ export default function App() {
     api.getMe().then(r => {
       if (r?.user) { setUser(r.user); api.persistUser(r.user) }
     })
+
+    const requestNotif = () => {
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission()
+      }
+      document.removeEventListener('click', requestNotif)
+    }
+    document.addEventListener('click', requestNotif)
+
     // Load cached stats immediately on mount
     try {
       const cachedStats = localStorage.getItem(statsKey)
       if (cachedStats) setStats(JSON.parse(cachedStats))
     } catch (_) { }
+
+    return () => document.removeEventListener('click', requestNotif)
   }, []) // eslint-disable-line
 
   // Single effect that owns ALL data fetching — no race conditions

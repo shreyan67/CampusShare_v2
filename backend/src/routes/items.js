@@ -19,8 +19,8 @@ const upload = multer({
 router.get('/stats', requireAuth, async (req, res) => {
   try {
     const cid = req.collegeId
-    const [avail]   = await query("SELECT COUNT(*) n FROM items WHERE college_id=$1 AND status='available'", [cid])
-    const [total]   = await query('SELECT COUNT(*) n FROM items WHERE college_id=$1', [cid])
+    const [avail]   = await query("SELECT COUNT(*) n FROM items WHERE college_id=$1 AND status='available' AND is_deleted=FALSE", [cid])
+    const [total]   = await query('SELECT COUNT(*) n FROM items WHERE college_id=$1 AND is_deleted=FALSE', [cid])
     const [students]= await query('SELECT COUNT(*) n FROM users WHERE college_id=$1 AND is_verified=TRUE', [cid])
     const [borrows] = await query("SELECT COUNT(*) n FROM borrow_requests br JOIN items i ON br.item_id=i.id WHERE i.college_id=$1 AND br.status='returned'", [cid])
     const [pending] = await query("SELECT COUNT(*) n FROM borrow_requests br JOIN items i ON br.item_id=i.id WHERE i.college_id=$1 AND br.status='pending'", [cid])
