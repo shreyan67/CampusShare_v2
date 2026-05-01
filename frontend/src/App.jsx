@@ -261,6 +261,39 @@ function Toast({ msg }) {
   )
 }
 
+let deferredPromptGlobal = null;
+let promptListeners = [];
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPromptGlobal = e;
+    promptListeners.forEach(listener => listener(e));
+  });
+}
+
+function usePwaInstall() {
+  const [prompt, setPrompt] = useState(deferredPromptGlobal);
+
+  useEffect(() => {
+    setPrompt(deferredPromptGlobal);
+    const listener = (p) => setPrompt(p);
+    promptListeners.push(listener);
+    return () => { promptListeners = promptListeners.filter(l => l !== listener); };
+  }, []);
+
+  const installApp = async () => {
+    if (!deferredPromptGlobal) return;
+    deferredPromptGlobal.prompt();
+    const { outcome } = await deferredPromptGlobal.userChoice;
+    if (outcome === 'accepted') {
+      deferredPromptGlobal = null;
+      promptListeners.forEach(listener => listener(null));
+    }
+  };
+
+  return { showInstall: !!prompt, installApp };
+}
+
 // ── MODAL ─────────────────────────────────────────────────────────────────────
 function Modal({ open, onClose, children, wide = false }) {
   useEffect(() => {
@@ -320,7 +353,7 @@ function InfoBanner({ type = 'info', children }) {
 
 // ── AUTH SCREEN ───────────────────────────────────────────────────────────────
 function AuthScreen({ onLogin }) {
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const { showInstall, installApp } = usePwaInstall();
 
   const [mode, setMode] = useState('login')
   const [pending, setPending] = useState(null)
@@ -329,24 +362,7 @@ function AuthScreen({ onLogin }) {
   const [consoleOtp, setConsoleOtp] = useState('')
   const [fields, setFields] = useState({ name: '', email: '', roll: '', otp: '' })
   const set = key => e => setFields(prev => ({ ...prev, [key]: e.target.value }))
-  useEffect(() => {
-    const handler = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
 
-    window.addEventListener("beforeinstallprompt", handler);
-
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
-  const installApp = async () => {
-    if (!deferredPrompt) return;
-
-    deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-
-    setDeferredPrompt(null);
-  };
   async function doLogin() {
     setErr('')
     if (!fields.email.trim()) return setErr('Please enter your college email.')
@@ -404,7 +420,7 @@ function AuthScreen({ onLogin }) {
         <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>College-verified peer sharing</div>
 
       </div>
-      {deferredPrompt && (
+      {showInstall && (
         <div style={{ padding: '0 32px', marginTop: '8px' }}>
           <button
             onClick={installApp}
@@ -2219,31 +2235,7 @@ export default function App() {
   // fetchId prevents stale responses from overwriting fresh ones
   const fetchIdRef = useRef(0)
   const statsKey = `cs_stats_${user?.id}`
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-
-  useEffect(() => {
-    const handler = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-
-    window.addEventListener("beforeinstallprompt", handler);
-
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
-
-  const installApp = async () => {
-    if (!deferredPrompt) return;
-
-    deferredPrompt.prompt();
-    const choice = await deferredPrompt.userChoice;
-
-    if (choice.outcome === "accepted") {
-      console.log("App installed");
-    }
-
-    setDeferredPrompt(null);
-  };
+  const { showInstall, installApp } = usePwaInstall();
 
   useEffect(() => {
     if (!user) return
@@ -2503,6 +2495,11 @@ export default function App() {
               <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>
                 {user.college_name} · peer lending
               </div>
+              {showInstall && (
+                <button onClick={installApp} className="mobile-only" style={{ marginTop: 12, background: 'rgba(232, 68, 90, 0.2)', border: '1px solid rgba(232, 68, 90, 0.5)', borderRadius: 20, padding: '6px 14px', fontSize: 12, fontWeight: 700, color: '#fff', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, backdropFilter: 'blur(4px)' }}>
+                  <span>📲</span> Install App
+                </button>
+              )}
             </div>
             {/* Live stats chips */}
             <div className="stats-chips" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', maxWidth: '100%' }}>
