@@ -2071,12 +2071,18 @@ function ActivityModal({ open, onClose, refresh, showToast, newRequestCount = 0,
 }
 
 // ── ITEM CARD ─────────────────────────────────────────────────────────────────
-function ItemCard({ item, currentUserId, onRequest, myRequests = [] }) {
+function ItemCard({ item, currentUserId, onRequest, myRequests = [], onDelete }) {
   const isYours = item.owner_id === currentUserId
   const isLF = item.listing_type === 'lost_found'
   const alreadyRequested = myRequests.some(r => r.item_id === item.id && ['pending', 'selected', 'active'].includes(r.status))
   const canAct = !isYours && !alreadyRequested && (isLF || item.status === 'available')
   const firstPhoto = item.images?.[0]
+
+  const isLocked = myRequests.some(r => r.item_id === item.id && (
+    ['active', 'overdue'].includes(r.status) || 
+    (r.status === 'selected' && r.payment_confirmed)
+  ))
+  const canDelete = isYours && !isLocked && item.status !== 'borrowed'
 
   return (
     <div className="item-card" style={{ ...card, cursor: canAct ? 'pointer' : 'default', minWidth: 0, overflow: 'hidden', width: '100%' }} onClick={() => canAct && onRequest(item)}>
@@ -2087,12 +2093,18 @@ function ItemCard({ item, currentUserId, onRequest, myRequests = [] }) {
           : <span style={{ fontSize: 44, filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.08))' }}>{isLF ? '🔍' : EMOJIS[item.category] || '📦'}</span>
         }
         {/* Badges */}
-        {isYours
-          ? <span style={{ background: `${T.coral}22`, color: T.coral, fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20, position: 'absolute', top: 10, right: 10, backdropFilter: 'blur(4px)' }}>Yours</span>
-          : isLF
-            ? <span style={{ background: '#EDE9FE', color: '#5B21B6', fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20, position: 'absolute', top: 10, right: 10 }}>Lost & Found</span>
-            : <SBadge status={item.status} />
-        }
+        {isYours && (
+          <span style={{ background: `${T.coral}22`, color: T.coral, fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20, position: 'absolute', top: 10, right: 10, backdropFilter: 'blur(4px)' }}>Yours</span>
+        )}
+        {canDelete && (
+          <button 
+            onClick={(e) => { e.stopPropagation(); if (window.confirm('Remove this item from the marketplace?')) onDelete && onDelete(item.id) }}
+            style={{ position: 'absolute', top: 10, left: 10, background: 'rgba(255,255,255,0.95)', color: '#c0392b', border: '1px solid rgba(192,57,43,0.2)', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', zIndex: 10 }}>
+            <span style={{ fontSize: 14 }}>🗑️</span>
+          </button>
+        )}
+        {!isYours && isLF && <span style={{ background: '#EDE9FE', color: '#5B21B6', fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20, position: 'absolute', top: 10, right: 10 }}>Lost & Found</span>}
+        {!isYours && !isLF && <SBadge status={item.status} />}
         {item.is_paid && !isLF && (
           <div style={{ position: 'absolute', bottom: 10, left: 10, background: 'rgba(15,23,42,0.85)', color: '#fff', fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 20, backdropFilter: 'blur(4px)' }}>
             ₹{item.price_per_day}/day
@@ -2251,6 +2263,8 @@ export default function App() {
     try {
       const cachedStats = localStorage.getItem(statsKey)
       if (cachedStats) setStats(JSON.parse(cachedStats))
+      const cachedReqs = localStorage.getItem(`cs_reqs_${user.id}`)
+      if (cachedReqs) setMyRequests(JSON.parse(cachedReqs))
     } catch (_) { }
 
     return () => document.removeEventListener('click', requestNotif)
@@ -2324,7 +2338,10 @@ export default function App() {
         setStats(statsRes)
         try { localStorage.setItem(statsKey, JSON.stringify(statsRes)) } catch (_) { }
       }
-      if (!reqsRes?.error) setMyRequests(reqsRes.requests || [])
+      if (!reqsRes?.error) {
+        setMyRequests(reqsRes.requests || [])
+        try { localStorage.setItem(`cs_reqs_${user.id}`, JSON.stringify(reqsRes.requests || [])) } catch (_) { }
+      }
     })
   }, [user, tab, cat, avail, search, tick]) // eslint-disable-line
 
@@ -2379,6 +2396,16 @@ export default function App() {
     setNewRequestCount(0)
   }
 
+  async function handleDeleteItem(itemId) {
+    const res = await api.deleteItem(itemId)
+    if (res.error) showToast(res.error)
+    else {
+      showToast('Item removed from marketplace.')
+      setTick(t => t + 1)
+      setItems(items.filter(i => i.id !== itemId))
+    }
+  }
+
   // Separate polling effect — fires silently, also uses fetchId
   useEffect(() => {
     if (!user) return
@@ -2400,7 +2427,10 @@ export default function App() {
           try { localStorage.setItem(cacheKey, JSON.stringify(itemsRes.items || [])) } catch (_) { }
         }
         if (!statsRes?.error) setStats(statsRes)
-        if (!reqsRes?.error) setMyRequests(reqsRes.requests || [])
+        if (!reqsRes?.error) {
+          setMyRequests(reqsRes.requests || [])
+          try { localStorage.setItem(`cs_reqs_${user.id}`, JSON.stringify(reqsRes.requests || [])) } catch (_) { }
+        }
       })
     }, 15000)
     return () => clearInterval(interval)
@@ -2575,7 +2605,7 @@ export default function App() {
 
             <div className="item-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(min(160px,45vw),1fr))', gap: 12 }}>
               {items.filter(item => item.status !== 'closed').map(item => (
-                <ItemCard key={item.id + '-' + tick} item={item} currentUserId={user.id} onRequest={i => setBorrow(i)} myRequests={myRequests} />
+                <ItemCard key={item.id + '-' + tick} item={item} currentUserId={user.id} onRequest={i => setBorrow(i)} myRequests={myRequests} onDelete={handleDeleteItem} />
               ))}
             </div>
           </div>
