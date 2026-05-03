@@ -87,7 +87,27 @@ body { background: var(--cream); font-family: var(--font-body); color: var(--nav
 .item-card:nth-child(n+9){ animation-delay: 0.35s }
 
 /* Button press */
-.btn-press:active { transform: scale(0.96); }
+.btn-press { 
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); 
+  -webkit-tap-highlight-color: transparent; 
+  touch-action: manipulation; 
+  user-select: none; 
+}
+@media (hover: hover) and (pointer: fine) {
+  .btn-press:hover { 
+    transform: scale(1.05) translateY(-1px); 
+    filter: brightness(1.03); 
+    box-shadow: 0 4px 12px rgba(15,23,42,0.12); 
+    z-index: 10; 
+    position: relative; 
+  }
+}
+.btn-press:active { 
+  transform: scale(0.85) !important; 
+  box-shadow: 0 1px 2px rgba(15,23,42,0.08) !important; 
+  filter: brightness(0.85) !important; 
+  transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1) !important; 
+}
 
 /* ── RESPONSIVE MOBILE ── */
 @media (max-width: 768px) {
@@ -227,8 +247,8 @@ const useApp = () => useContext(Ctx)
 // ── TOAST ─────────────────────────────────────────────────────────────────────
 function useToast() {
   const [msg, setMsg] = useState('')
-  const show = useCallback((m, native = false) => { 
-    setMsg(m); 
+  const show = useCallback((m, native = false) => {
+    setMsg(m);
     setTimeout(() => setMsg(''), 3200);
     if (native && typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
       try {
@@ -662,7 +682,7 @@ function ListItemModal({ open, onClose, onSuccess }) {
               <span style={{ fontSize: 20, fontWeight: 700, color: T.coral }}>₹</span>
               <input style={{ ...INP, flex: 1 }} type="number" min="1" placeholder={isSell ? 'Total selling price' : 'Amount per day'} value={ppd} onChange={e => setPpd(e.target.value)} />
             </div>
-            <div style={{ fontSize: 11, color: T.textMid, marginBottom: 12 }}>{isSell ? 'Buyer pays this + 3% fee. You keep 97%.' : 'Borrower pays per day + 3% fee. You keep 97%.'}</div>
+            <div style={{ fontSize: 11, color: T.textMid, marginBottom: 12 }}>{isSell ? 'Buyer pays this amount.' : 'Borrower pays this per day.'}</div>
             <label style={LBL}>Your UPI ID *</label>
             <input style={{ ...INP, borderColor: upiId ? 'var(--border-soft)' : T.coral }} placeholder="name@okicici" value={upiId} onChange={e => setUpiId(e.target.value)} />
           </div>
@@ -744,8 +764,7 @@ function BorrowModal({ open, item, onClose, onSuccess, showToast }) {
       {item.is_paid && !isLostFound && (
         <div style={{ marginBottom: 14, padding: '14px', background: `${T.warn}15`, borderRadius: 'var(--radius-sm)', border: `1px solid ${T.warn}44` }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: '#92400E', marginBottom: 6 }}>💰 Paid rental breakdown</div>
-          <div style={{ fontSize: 13, color: '#92400E' }}>₹{item.price_per_day}/day × {days} days = ₹{rentalCost}</div>
-          <div style={{ fontSize: 12, color: '#92400E', marginTop: 3 }}>Platform fee (3%): ₹{platformFee}</div>
+          <div style={{ fontSize: 13, color: '#92400E' }}>₹{item.price_per_day}/day × {days} days</div>
           <div style={{ fontSize: 15, color: '#92400E', fontWeight: 700, marginTop: 6 }}>Total: ₹{totalCost}</div>
           <div style={{ fontSize: 11, color: '#92400E', marginTop: 4, opacity: 0.8 }}>Pay securely via UPI after approval.</div>
         </div>
@@ -895,7 +914,6 @@ function UpiField({ user, setUser, showToast }) {
             <input style={{ ...INP, flex: 1 }} placeholder="name@okicici" value={val} onChange={e => setVal(e.target.value)} />
             <button className="btn-press" style={btn(true, true)} onClick={save} disabled={saving}>{saving ? '…' : 'Save'}</button>
           </div>
-          <div style={{ fontSize: 11, color: T.textMid, marginTop: 6 }}>You keep 97% of each rental. Platform fee: 3%.</div>
         </>
       )}
     </div>
@@ -1021,11 +1039,11 @@ function LifecycleVisualizer({ r, isBorrowing, onClose }) {
 
           {/* Progress bar */}
           <div style={{ marginTop: 14, background: 'rgba(255,255,255,0.12)', borderRadius: 8, height: 6, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${Math.round(((currentIdx + 1) / stages.length) * 100)}%`, background: T.coral, borderRadius: 8, transition: 'width 0.6s ease' }} />
+            <div style={{ height: '100%', width: `${Math.round(((currentIdx + 1) / stages.length) * 100)}%`, background: T.success, borderRadius: 8, transition: 'width 0.6s ease' }} />
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
             <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>Start</span>
-            <span style={{ fontSize: 11, color: T.coral, fontWeight: 600 }}>{Math.round(((currentIdx + 1) / stages.length) * 100)}% complete</span>
+            <span style={{ fontSize: 11, color: T.success, fontWeight: 600 }}>{Math.round(((currentIdx + 1) / stages.length) * 100)}% complete</span>
             <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>Done</span>
           </div>
         </div>
@@ -1037,8 +1055,8 @@ function LifecycleVisualizer({ r, isBorrowing, onClose }) {
             const isCurrent = idx === currentIdx
             const isFuture = idx > currentIdx
 
-            const stageColor = isDone ? T.success : isCurrent ? T.coral : 'rgba(15,23,42,0.15)'
-            const textColor = isDone ? T.success : isCurrent ? T.coral : T.textSoft
+            const stageColor = isDone ? T.success : isCurrent ? '#64748B' : 'rgba(15,23,42,0.15)'
+            const textColor = isDone ? T.success : isCurrent ? '#475569' : T.textSoft
 
             return (
               <div key={stage.id} style={{ display: 'flex', gap: 12, marginBottom: idx < stages.length - 1 ? 0 : 0 }}>
@@ -1046,11 +1064,11 @@ function LifecycleVisualizer({ r, isBorrowing, onClose }) {
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 36, flexShrink: 0 }}>
                   <div style={{
                     width: 36, height: 36, borderRadius: '50%',
-                    background: isDone ? T.success : isCurrent ? T.coral : 'rgba(15,23,42,0.06)',
+                    background: isDone ? T.success : isCurrent ? '#F1F5F9' : 'rgba(15,23,42,0.06)',
                     border: `2px solid ${stageColor}`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 16,
-                    boxShadow: isCurrent ? `0 0 0 4px ${T.coral}22` : 'none',
+                    boxShadow: isCurrent ? `0 0 0 4px rgba(100,116,139,0.15)` : 'none',
                     transition: 'all 0.3s',
                     flexShrink: 0,
                     position: 'relative',
@@ -1070,7 +1088,7 @@ function LifecycleVisualizer({ r, isBorrowing, onClose }) {
                       {stage.label}
                     </div>
                     {isCurrent && (
-                      <div style={{ fontSize: 10, fontWeight: 700, background: `${T.coral}20`, color: T.coral, border: `1px solid ${T.coral}44`, borderRadius: 20, padding: '1px 8px', letterSpacing: '0.04em' }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, background: `#F1F5F9`, color: '#64748B', border: `1px solid #CBD5E1`, borderRadius: 20, padding: '1px 8px', letterSpacing: '0.04em' }}>
                         YOU ARE HERE
                       </div>
                     )}
@@ -1109,7 +1127,6 @@ function ItemRequestModal({ open, onClose, onSuccess, showToast }) {
   const { user } = useApp()
   const [title, setTitle] = useState(() => _itemRequestCache.title || '')
   const [desc, setDesc] = useState(() => _itemRequestCache.desc || '')
-  const [cat, setCat] = useState(() => _itemRequestCache.cat || 'Any')
   const [urgency, setUrgency] = useState(() => _itemRequestCache.urgency || 'medium')
   const [err, setErr] = useState('')
   const [loading, setLoading] = useState(false)
@@ -1118,14 +1135,13 @@ function ItemRequestModal({ open, onClose, onSuccess, showToast }) {
     _itemRequestCache[key] = val
     if (key === 'title') setTitle(val)
     else if (key === 'desc') setDesc(val)
-    else if (key === 'cat') setCat(val)
     else if (key === 'urgency') setUrgency(val)
   }
 
   async function submit() {
     if (!title.trim()) { setErr('Please describe what you need.'); return }
     setLoading(true); setErr('')
-    const r = await api.postItemRequest({ title: title.trim(), description: desc.trim(), category: cat, urgency })
+    const r = await api.postItemRequest({ title: title.trim(), description: desc.trim(), urgency })
     setLoading(false)
     if (r?.error) { setErr(r.error); return }
     // Clear cache
@@ -1156,13 +1172,6 @@ function ItemRequestModal({ open, onClose, onSuccess, showToast }) {
       <div style={{ marginBottom: 14 }}>
         <label style={LBL}>Details (optional)</label>
         <textarea style={{ ...INP, minHeight: 72, resize: 'vertical', lineHeight: 1.5 }} placeholder="Any specifics? Edition, brand, when you need by…" value={desc} onChange={e => save('desc', e.target.value)} />
-      </div>
-
-      <div style={{ marginBottom: 14 }}>
-        <label style={LBL}>Category</label>
-        <select style={INP} value={cat} onChange={e => save('cat', e.target.value)}>
-          {['Any', ...CATEGORIES].map(c => <option key={c}>{c}</option>)}
-        </select>
       </div>
 
       <div style={{ marginBottom: 18 }}>
@@ -1340,7 +1349,7 @@ function ItemRequestsSection({ showToast, currentUserId, reload: reloadActivity,
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: T.navy }}>{req.title}</div>
                   <div style={{ fontSize: 12, color: T.textMid, marginTop: 2 }}>
-                    {req.requester_name} · {req.category}
+                    {req.requester_name}
                     {req.description ? ` · "${req.description.slice(0, 40)}${req.description.length > 40 ? '…' : ''}"` : ''}
                   </div>
                 </div>
@@ -1498,24 +1507,25 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
         </div>
       </div>
 
-      {/* Journey strip — always visible below header, very prominent */}
+      {/* Journey strip — elegant soft blue gradient */}
       <div
         onClick={() => openJourney(r.id)}
-        style={{ background: 'linear-gradient(90deg, #7C3AED 0%, #E8445A 100%)', padding: '12px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'transform 0.15s', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+        className="btn-press"
+        style={{ background: 'linear-gradient(90deg, #EFF6FF 0%, #DBEAFE 100%)', padding: '12px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #BFDBFE', borderBottom: '1px solid #BFDBFE', borderRadius: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 20, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' }}>
+          <span style={{ fontSize: 20 }}>
             {r.status === 'pending' ? '📝' : r.status === 'selected' ? '✅' : r.status === 'active' ? '🤝' : r.status === 'returned' ? '📦' : r.status === 'declined' ? '❌' : '⚠️'}
           </span>
           <div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)', letterSpacing: '0.04em', fontWeight: 700, textTransform: 'uppercase' }}>Current Stage</div>
-            <div style={{ fontSize: 14, color: '#fff', fontWeight: 800, textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>
+            <div style={{ fontSize: 10, color: '#3B82F6', letterSpacing: '0.04em', fontWeight: 800, textTransform: 'uppercase' }}>Current Stage</div>
+            <div style={{ fontSize: 14, color: '#1E3A8A', fontWeight: 800 }}>
               {r.status === 'pending' ? 'Waiting for approval' : r.status === 'selected' ? 'Approved — action needed' : r.status === 'active' ? 'Active — handover in progress' : r.status === 'returned' ? 'Complete ✓' : r.status === 'declined' ? 'Declined' : 'Overdue'}
             </div>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', borderRadius: 20, padding: '6px 14px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', color: T.navy }}>
-          <span style={{ fontSize: 14 }}>📍</span>
-          <span style={{ fontSize: 13, fontWeight: 800 }}>Track Journey</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1D4ED8', borderRadius: 20, padding: '6px 14px', color: '#fff', boxShadow: '0 2px 8px rgba(29,78,216,0.3)' }}>
+          <span style={{ fontSize: 12 }}>📍</span>
+          <span style={{ fontSize: 12, fontWeight: 700 }}>Track Journey</span>
         </div>
       </div>
 
@@ -1531,49 +1541,49 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
 
           if (isBorrowing) {
             if (r.status === 'pending')
-              guide = { icon: '⏳', color: '#F59E0B', title: 'Waiting for approval', body: `The lender will review and approve or decline your request. You will see it update here automatically.` }
+              guide = { icon: '⏳', title: 'Waiting for approval', body: 'Lender will review your request.' }
             else if (r.status === 'selected' && isPaid && !r.payment_confirmed)
-              guide = { icon: '💳', color: T.coral, title: 'Action needed: Pay now', body: `Tap "Pay ₹${r.total_amount} via UPI" below to confirm. Lender is waiting.` }
+              guide = { icon: '💳', title: 'Action needed: Pay now', body: 'Tap "Pay via UPI" below to confirm.' }
             else if (r.status === 'selected' && (!isPaid || r.payment_confirmed))
-              guide = { icon: '📍', color: T.info, title: 'Approved! Awaiting pickup details', body: `Lender will share when and where to collect. Check back soon — it will appear here.` }
+              guide = { icon: '📍', title: 'Awaiting pickup details', body: 'Lender will share where to collect.' }
             else if (r.status === 'active' && !r.pickup_details)
-              guide = { icon: '📍', color: T.info, title: 'Waiting for pickup details', body: `Lender is about to share where to collect. Stay tuned.` }
+              guide = { icon: '📍', title: 'Waiting for pickup details', body: 'Lender will share where to collect.' }
             else if (r.status === 'active' && r.pickup_details && !r.item_given)
-              guide = { icon: '🏃', color: T.navy, title: 'Go collect the item!', body: `Collect from: "${r.pickup_details}". Once lender marks it given, tap "I Got It".` }
+              guide = { icon: '🏃', title: 'Go collect the item!', body: `Collect from: "${r.pickup_details}".` }
             else if (r.status === 'active' && r.item_given && !r.borrower_received)
-              guide = { icon: '✋', color: T.coral, title: 'Action needed: Confirm receipt', body: `Lender has handed over the item. Tap "I've Received Item" below to confirm.` }
+              guide = { icon: '✋', title: 'Action needed: Confirm receipt', body: 'Lender handed over the item. Tap to confirm.' }
             else if (r.status === 'active' && r.borrower_received && !noReturn)
-              guide = { icon: '📦', color: T.success, title: 'Return it when done', body: `Return the item before ${r.due_at ? new Date(r.due_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'due date'}. Lender will confirm return.` }
+              guide = { icon: '📦', title: 'Return it when done', body: 'Return before due date.' }
             else if (r.status === 'returned')
-              guide = { icon: '🎉', color: T.success, title: 'All done!', body: noReturn ? 'Transaction complete. Thanks for using CampusShare!' : 'Item returned successfully. Slot freed up.' }
+              guide = { icon: '🎉', title: 'All done!', body: 'Transaction complete.' }
           } else {
             if (r.status === 'pending')
-              guide = { icon: '👀', color: '#F59E0B', title: 'New request — review it', body: `Tap Approve to accept or Decline. For paid items, make sure UPI ID is set in Profile.` }
+              guide = { icon: '👀', title: 'Review request', body: 'Approve or decline below.' }
             else if (r.status === 'selected' && !isPaid)
-              guide = { icon: '📍', color: T.coral, title: 'Action needed: Send pickup details', body: `Tap "Confirm & Proceed" below, then share pickup details in the box that appears.` }
+              guide = { icon: '📍', title: 'Action needed: Send pickup details', body: 'Tap "Confirm & Proceed".' }
             else if (r.status === 'active' && !r.pickup_details)
-              guide = { icon: '📍', color: T.coral, title: 'Action needed: Send pickup details', body: `Type where and when to hand over the item. Borrower is waiting.` }
+              guide = { icon: '📍', title: 'Action needed: Send pickup details', body: 'Type where and when to hand over.' }
             else if (r.status === 'active' && r.pickup_details && !r.item_given)
-              guide = { icon: '🤝', color: T.navy, title: 'Meet the borrower & hand it over', body: `Once physically handed over, tap "Item Given ✓" to let borrower confirm.` }
+              guide = { icon: '🤝', title: 'Hand it over', body: 'Once physically handed over, tap "Item Given ✓".' }
             else if (r.status === 'active' && r.item_given && !r.borrower_received)
-              guide = { icon: '⏳', color: T.info, title: 'Waiting for borrower to confirm', body: `Borrower needs to tap "I Got It" to confirm. Then payout details will appear.` }
+              guide = { icon: '⏳', title: 'Waiting for borrower', body: 'Borrower needs to confirm receipt.' }
             else if (r.status === 'active' && r.borrower_received && isPaid && r.payout_status === 'na')
-              guide = { icon: '💸', color: T.success, title: 'Item delivered! Payout coming', body: `Admin will process your payout shortly. You will be notified when it is sent.` }
+              guide = { icon: '💸', title: 'Payout coming', body: 'Admin will process payout shortly.' }
             else if (r.payout_status === 'admin_paid')
-              guide = { icon: '💰', color: T.success, title: 'Action needed: Confirm payment', body: `Check your UPI for the payment. Tap "Payment Received ✓" or raise a dispute if not received.` }
+              guide = { icon: '💰', title: 'Confirm payment', body: 'Check UPI and tap "Payment Received ✓".' }
             else if (r.status === 'active' && r.borrower_received && !isPaid && !noReturn)
-              guide = { icon: '📦', color: T.info, title: 'Waiting for return', body: `Borrower has the item. When returned, tap "Confirm Return" to free their slot.` }
+              guide = { icon: '📦', title: 'Waiting for return', body: 'When returned, tap "Confirm Return".' }
             else if (r.status === 'returned')
-              guide = { icon: '🎉', color: T.success, title: 'All done!', body: noReturn ? 'Transaction complete!' : 'Item returned. Thank you for sharing!' }
+              guide = { icon: '🎉', title: 'All done!', body: 'Transaction complete.' }
           }
 
           if (!guide) return null
           return (
-            <div style={{ display: 'flex', gap: 10, padding: '10px 12px', background: `${guide.color}10`, borderRadius: 'var(--radius-xs)', border: `1.5px solid ${guide.color}33`, marginBottom: 10 }}>
-              <span style={{ fontSize: 20, flexShrink: 0 }}>{guide.icon}</span>
+            <div style={{ display: 'flex', gap: 10, padding: '10px 12px', background: '#F8FAFC', borderRadius: 'var(--radius-xs)', border: '1px solid #E2E8F0', marginBottom: 10 }}>
+              <span style={{ fontSize: 18, flexShrink: 0 }}>{guide.icon}</span>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: guide.color, marginBottom: 2 }}>{guide.title}</div>
-                <div style={{ fontSize: 12, color: T.textMid, lineHeight: 1.5 }}>{guide.body}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 2 }}>{guide.title}</div>
+                <div style={{ fontSize: 12, color: '#64748B', lineHeight: 1.4 }}>{guide.body}</div>
               </div>
             </div>
           )
@@ -1598,24 +1608,9 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
 
         {/* Marketplace handover */}
         {!isLF && !isBorrowing && r.status === 'active' && <PickupDetailsPanel r={r} reload={reload} showToast={showToast} />}
-        {!isLF && isBorrowing && r.status === 'active' && r.pickup_details && !r.borrower_received && (
-          <InfoBanner type="info">
-            📍 Pickup: <strong>"{r.pickup_details}"</strong>
-            {r.item_given && <div style={{ marginTop: 4, fontWeight: 600 }}>✅ Lender says given — confirm below.</div>}
-          </InfoBanner>
-        )}
-        {!isLF && isBorrowing && r.status === 'active' && !r.pickup_details && <InfoBanner type="warn">⏳ Waiting for lender to send pickup details…</InfoBanner>}
-        {!isLF && isBorrowing && r.status === 'active' && r.borrower_received && (
-          <InfoBanner type="success">✅ Receipt confirmed. {isPaid ? 'Admin will process payout soon.' : 'Lender will confirm return when done.'}</InfoBanner>
-        )}
-        {isBorrowing && r.status === 'selected' && !isPaid && !isLF && <InfoBanner type="success">🎉 Selected! Lender will send pickup details soon.</InfoBanner>}
-
         {/* Paid info */}
-        {isBorrowing && r.status === 'selected' && isPaid && !r.payment_confirmed && (
-          <InfoBanner type="warn">💳 Pay <strong>₹{r.total_amount}</strong> via UPI to confirm rental.</InfoBanner>
-        )}
         {isBorrowing && r.status === 'selected' && isPaid && r.payment_confirmed && (
-          <InfoBanner type="success">✅ Payment of ₹{r.total_amount} confirmed. Waiting for lender to send pickup details.</InfoBanner>
+          <InfoBanner type="success">✅ Payment of ₹{r.total_amount} confirmed.</InfoBanner>
         )}
         {/* Lender: shown as soon as status flips to active after borrower pays */}
         {!isBorrowing && r.status === 'active' && isPaid && r.payment_confirmed && !r.pickup_details && (
@@ -1785,10 +1780,7 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
               showToast(res.onTime === false ? 'Return confirmed (late).' : 'Return confirmed!')
             }}>Confirm Return</button>
           )}
-          {/* Waiting banner */}
-          {!isBorrowing && r.listing_type !== 'lost_found' && ['active', 'overdue'].includes(r.status) && r.item_given && !r.borrower_received && (
-            <InfoBanner type="info">⏳ Waiting for borrower to confirm item received — then you can confirm return.</InfoBanner>
-          )}
+          {/* Waiting banner removed as guide handles it */}
         </div>
       </div>{/* end card body */}
     </div>
@@ -2095,7 +2087,7 @@ function ItemCard({ item, currentUserId, onRequest, myRequests = [], onDelete })
   const firstPhoto = item.images?.[0]
 
   const isLocked = myRequests.some(r => r.item_id === item.id && (
-    ['active', 'overdue'].includes(r.status) || 
+    ['active', 'overdue'].includes(r.status) ||
     (r.status === 'selected' && r.payment_confirmed)
   ))
   const canDelete = isYours && !isLocked && item.status !== 'borrowed'
@@ -2113,7 +2105,7 @@ function ItemCard({ item, currentUserId, onRequest, myRequests = [], onDelete })
           <span style={{ background: `${T.coral}22`, color: T.coral, fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20, position: 'absolute', top: 10, right: 10, backdropFilter: 'blur(4px)' }}>Yours</span>
         )}
         {canDelete && (
-          <button 
+          <button
             onClick={(e) => { e.stopPropagation(); if (window.confirm('Remove this item from the marketplace?')) onDelete && onDelete(item.id) }}
             style={{ position: 'absolute', top: 10, left: 10, background: 'rgba(255,255,255,0.95)', color: '#c0392b', border: '1px solid rgba(192,57,43,0.2)', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', zIndex: 10 }}>
             <span style={{ fontSize: 14 }}>🗑️</span>
@@ -2279,12 +2271,12 @@ export default function App() {
         if (isLender && nr.status === 'pending') showToast(`📦 New request for ${nr.item_title}!`, true)
         return
       }
-      
+
       if (isBorrower && nr.status === 'selected' && old.status === 'pending') showToast(`✅ Request for ${nr.item_title} approved!`, true)
       if (isBorrower && nr.status === 'declined' && old.status === 'pending') showToast(`❌ Request for ${nr.item_title} declined.`, true)
       if (isBorrower && nr.pickup_details && !old.pickup_details) showToast(`📍 Pickup details sent for ${nr.item_title}!`, true)
       if (isBorrower && nr.item_given && !old.item_given) showToast(`🤝 Lender handed over ${nr.item_title}. Confirm receipt!`, true)
-      
+
       if (isLender && nr.borrower_received && !old.borrower_received) showToast(`📦 Borrower received ${nr.item_title}.`, true)
       if (isLender && nr.payment_confirmed && !old.payment_confirmed) showToast(`💳 Payment confirmed for ${nr.item_title}!`, true)
       if (isLender && nr.pickup_message && !old.pickup_message) showToast(`📍 Claimer sent pickup message for ${nr.item_title}.`, true)
@@ -2378,7 +2370,14 @@ export default function App() {
     // Fire once immediately, then every 20s
     checkNewRequests()
     notifPollRef.current = setInterval(checkNewRequests, 20000)
-    return () => clearInterval(notifPollRef.current)
+
+    const handleVis = () => { if (document.visibilityState === 'visible') checkNewRequests() }
+    document.addEventListener('visibilitychange', handleVis)
+
+    return () => {
+      clearInterval(notifPollRef.current)
+      document.removeEventListener('visibilitychange', handleVis)
+    }
   }, [user]) // eslint-disable-line
 
   function markRequestsSeen() {
@@ -2401,7 +2400,8 @@ export default function App() {
   // Separate polling effect — fires silently, also uses fetchId
   useEffect(() => {
     if (!user) return
-    const interval = setInterval(() => {
+
+    function doPoll() {
       const myId = ++fetchIdRef.current
       const cacheKey = `cs_items_${tab}_${cat}_${avail}_${user.id}`
       const itemParams = tab === 'marketplace'
@@ -2424,8 +2424,17 @@ export default function App() {
           try { localStorage.setItem(`cs_reqs_${user.id}`, JSON.stringify(reqsRes.requests || [])) } catch (_) { }
         }
       })
-    }, 15000)
-    return () => clearInterval(interval)
+    }
+
+    const interval = setInterval(doPoll, 15000)
+
+    const handleVis = () => { if (document.visibilityState === 'visible') doPoll() }
+    document.addEventListener('visibilitychange', handleVis)
+
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', handleVis)
+    }
   }, [user, tab, cat, avail, search]) // eslint-disable-line
 
   function handleLogout() { api.clearSession(); setUser(null) }
@@ -2436,6 +2445,7 @@ export default function App() {
   const CAT_COUNTS = CATEGORIES.reduce((a, c) => { a[c] = items.filter(i => i.category === c).length; return a }, {})
   const tier = TRUST_TIERS[user.trust_tier] || TRUST_TIERS.newcomer
   const activeCount = myRequests.filter(r => ['active', 'selected'].includes(r.status)).length
+  const actionableReq = myRequests.find(r => getActionRequired(r, r.borrower_id === user?.id))
   const totalActionCount = myRequests.filter(r => getActionRequired(r, r.borrower_id === user?.id)).length + newRequestCount + myOffersCount
 
   return (
@@ -2453,12 +2463,14 @@ export default function App() {
 
         {/* DESKTOP HEADER */}
         <header className="desktop-only" style={{ ...row(0), justifyContent: 'space-between', padding: '0 24px', height: 60, background: 'rgba(255,248,240,0.9)', backdropFilter: 'blur(12px)', borderBottom: `1px solid var(--border-soft)`, position: 'sticky', top: 0, zIndex: 100 }}>
-          <Logo />
+          <div style={row(12)}>
+            <Logo />
+            <button className="btn-press" style={{ ...btn(false), fontSize: 12 }} onClick={() => setIsAdmin(true)}>👤 Admin</button>
+          </div>
           <div style={row(8)}>
             <div style={{ ...row(6), fontSize: 13, color: T.textMid }}>
               <Av user={user} size={28} />
               <span style={{ fontWeight: 500 }}>{user.name?.split(' ')[0]}</span>
-              <TierBadge tier={user.trust_tier} />
               <span style={{ color: T.textSoft, fontSize: 12 }}>· {user.college_name}</span>
             </div>
             <button className="btn-press" style={btn(false)} onClick={() => setGuideOpen(true)}>📖 Guide</button>
@@ -2467,20 +2479,19 @@ export default function App() {
             </button>
             <button className="btn-press" style={{ ...btn(false), background: '#7C3AED22', color: '#7C3AED', border: '1px solid #7C3AED44' }} onClick={() => setRequest(true)}>🙋 Request</button>
             <button className="btn-press" style={btn(true)} onClick={() => setList(true)}>+ List Item</button>
-            <button className="btn-press" style={{ ...btn(false), fontSize: 12 }} onClick={() => setIsAdmin(true)}>Admin</button>
             <button className="btn-press" style={{ ...btn(false), fontSize: 12 }} onClick={handleLogout}>Sign out</button>
           </div>
         </header>
 
         {/* MOBILE HEADER */}
         <header className="mobile-only" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px', height: 50, background: 'rgba(255,248,240,0.97)', backdropFilter: 'blur(12px)', borderBottom: `1px solid var(--border-soft)`, position: 'sticky', top: 0, zIndex: 100, width: '100%', boxSizing: 'border-box' }}>
-          <div style={{ flexShrink: 1, minWidth: 0, overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 1, minWidth: 0, overflow: 'hidden' }}>
             <Logo />
+            <button className="btn-press" onClick={() => setIsAdmin(true)} style={{ background: 'rgba(15,23,42,0.07)', border: 'none', borderRadius: 7, padding: '4px 8px', fontSize: 11, fontWeight: 600, color: T.textMid, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>👤 Admin</button>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0, paddingLeft: 8 }}>
-            <TierBadge tier={user.trust_tier} />
-            <button onClick={() => setGuideOpen(true)} style={{ background: 'rgba(15,23,42,0.07)', border: 'none', borderRadius: 7, padding: '4px 8px', fontSize: 11, fontWeight: 600, color: T.textMid, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>📖 Guide</button>
-            <button onClick={handleLogout} style={{ background: 'rgba(15,23,42,0.07)', border: 'none', borderRadius: 7, padding: '4px 8px', fontSize: 11, fontWeight: 600, color: T.textMid, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>↪ Out</button>
+            <button className="btn-press" onClick={() => setGuideOpen(true)} style={{ background: 'rgba(15,23,42,0.07)', border: 'none', borderRadius: 7, padding: '4px 8px', fontSize: 11, fontWeight: 600, color: T.textMid, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>📖 Guide</button>
+            <button className="btn-press" onClick={handleLogout} style={{ background: 'rgba(15,23,42,0.07)', border: 'none', borderRadius: 7, padding: '4px 8px', fontSize: 11, fontWeight: 600, color: T.textMid, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>↪ Out</button>
           </div>
         </header>
 
@@ -2547,6 +2558,20 @@ export default function App() {
             </div>
           </div>
         </div>
+
+        {/* ACTION BANNER */}
+        {actionableReq && (
+          <div onClick={() => setAct(true)} style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'} onMouseOut={e => e.currentTarget.style.background = '#F8FAFC'}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 20 }}>👉</span>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#334155' }}>Action required on "{actionableReq.item_title || actionableReq.title}"</div>
+                <div style={{ fontSize: 12, color: '#64748B' }}>Tap here to view your Activity tab and complete the next step.</div>
+              </div>
+            </div>
+            <button className="btn-press" style={{ background: T.coral, color: '#fff', border: 'none', borderRadius: 20, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 8px rgba(232,68,90,0.25)' }}>View Activity</button>
+          </div>
+        )}
 
         {/* BODY — desktop: sidebar + grid, mobile: grid only full width */}
         <div style={{ display: 'flex', minHeight: 'calc(100vh - 200px)' }}>
@@ -2615,10 +2640,9 @@ export default function App() {
             { icon: '🔍', label: 'L&F', action: () => { if (tab !== 'lostfound') { fetchIdRef.current++; setItems([]) } setTab('lostfound') }, active: tab === 'lostfound' },
             { icon: '➕', label: 'List', action: () => setList(true), active: false, primary: true },
             { icon: '🙋', label: 'Request', action: () => setRequest(true), active: false },
-            { icon: '📋', label: 'Activity', action: () => setAct(true), active: false, badge: totalActionCount },
-            { icon: '⚙️', label: 'Admin', action: () => setIsAdmin(true), active: false },
+            { icon: '📋', label: 'Activity', action: () => setAct(true), active: false, badge: totalActionCount }
           ].map(({ icon, label, action, active, primary, badge }) => (
-            <button key={label} onClick={action} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, background: primary ? T.coral : 'transparent', color: primary ? '#fff' : active ? T.coral : T.textSoft, border: 'none', cursor: 'pointer', padding: primary ? '10px 16px' : '6px 12px', borderRadius: primary ? 40 : 'var(--radius-xs)', fontWeight: 600, transition: 'all 0.18s', boxShadow: primary ? 'var(--shadow-coral)' : 'none' }}>
+            <button key={label} onClick={action} className="btn-press" style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, background: primary ? T.coral : 'transparent', color: primary ? '#fff' : active ? T.coral : T.textSoft, border: 'none', cursor: 'pointer', padding: primary ? '10px 16px' : '6px 12px', borderRadius: primary ? 40 : 'var(--radius-xs)', fontWeight: 600, transition: 'all 0.18s', boxShadow: primary ? 'var(--shadow-coral)' : 'none' }}>
               {badge > 0 && <span style={{ position: 'absolute', top: 0, right: 4, background: T.coral, color: '#fff', fontSize: 9, fontWeight: 800, borderRadius: 20, minWidth: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>{badge > 9 ? '9+' : badge}</span>}
               <span style={{ fontSize: primary ? 22 : 18 }}>{icon}</span>
               <span style={{ fontSize: 10 }}>{label}</span>
