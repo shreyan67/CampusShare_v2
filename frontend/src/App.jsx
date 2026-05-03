@@ -978,30 +978,45 @@ function LifecycleVisualizer({ r, isBorrowing, onClose }) {
 
   const stages = isLF ? STAGES.lost_found : (STAGES[txType] || STAGES.lend)
 
-  // Determine current stage index
+  // Determine current stage index (points to the next pending action)
   function getCurrentStageIndex() {
-    if (r.status === 'returned' || r.status === 'completed') return stages.length - 1
-    if (r.payout_status === 'done') {
+    if (r.status === 'returned' || r.status === 'completed' || r.status === 'declined') return stages.length // all done
+
+    if (r.payout_status === 'admin_paid') {
       const i = stages.findIndex(s => s.id === 'payout_done')
       if (i > -1) return i
     }
-    if (r.payout_status === 'admin_paid') {
-      const i = stages.findIndex(s => s.id === 'admin_paid')
-      if (i > -1) return i
-    }
     if (r.borrower_received) {
-      const i = stages.findIndex(s => s.id === 'received')
-      return i > -1 ? i : stages.findIndex(s => s.id === 'given')
+      if (r.is_paid && r.payout_status === 'na') {
+        const i = stages.findIndex(s => s.id === 'admin_paid')
+        if (i > -1) return i
+      }
+      const i = stages.findIndex(s => s.id === 'returned')
+      return i > -1 ? i : stages.length
     }
     if (r.item_given || r.handed_over) {
-      const i = stages.findIndex(s => s.id === 'given')
-      return i > -1 ? i : stages.findIndex(s => s.id === 'active')
+      const i = stages.findIndex(s => s.id === 'received')
+      return i > -1 ? i : stages.findIndex(s => s.id === 'returned')
     }
-    if (r.status === 'active' && r.pickup_details) return stages.findIndex(s => s.id === 'active')
-    if (r.status === 'active') return stages.findIndex(s => s.id === 'active') - 1
-    if (r.payment_confirmed && r.status === 'selected') return stages.findIndex(s => s.id === 'paid')
-    if (r.status === 'selected') return stages.findIndex(s => s.id === 'selected')
-    return 0 // requested
+    if (r.status === 'active' && r.pickup_details) {
+      const i = stages.findIndex(s => s.id === 'given')
+      return i > -1 ? i : stages.findIndex(s => s.id === 'received')
+    }
+    if (r.status === 'active') {
+      return stages.findIndex(s => s.id === 'active')
+    }
+    if (r.payment_confirmed && r.status === 'selected') {
+      return stages.findIndex(s => s.id === 'active')
+    }
+    if (r.status === 'selected') {
+      if (r.is_paid && !r.payment_confirmed) {
+        const i = stages.findIndex(s => s.id === 'paid')
+        return i > -1 ? i : stages.findIndex(s => s.id === 'active')
+      }
+      return stages.findIndex(s => s.id === 'active')
+    }
+    // r.status === 'pending'
+    return stages.findIndex(s => s.id === 'selected') // wait for approval
   }
 
   const currentIdx = getCurrentStageIndex()
@@ -1026,7 +1041,7 @@ function LifecycleVisualizer({ r, isBorrowing, onClose }) {
         <div style={{ background: `linear-gradient(135deg, ${T.navy} 0%, #1E293B 100%)`, margin: '12px 0 0', padding: '16px 20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
-              <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px' }}>Item Journey 🗺️</div>
+              <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px' }}>Item Journey</div>
               <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>
                 {r.item_title} · {isBorrowing ? 'Your borrowing' : 'Your lending'}
               </div>
@@ -1063,18 +1078,20 @@ function LifecycleVisualizer({ r, isBorrowing, onClose }) {
                 {/* Left: circle + line */}
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 36, flexShrink: 0 }}>
                   <div style={{
-                    width: 36, height: 36, borderRadius: '50%',
-                    background: isDone ? T.success : isCurrent ? '#F1F5F9' : 'rgba(15,23,42,0.06)',
+                    width: 32, height: 32, borderRadius: '50%',
+                    background: isDone ? T.success : isCurrent ? '#F1F5F9' : 'rgba(15,23,42,0.04)',
                     border: `2px solid ${stageColor}`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 16,
-                    boxShadow: isCurrent ? `0 0 0 4px rgba(100,116,139,0.15)` : 'none',
+                    fontSize: 14,
+                    fontWeight: 700,
+                    color: isDone ? '#fff' : isCurrent ? '#64748B' : '#94A3B8',
+                    boxShadow: isCurrent ? `0 0 0 4px rgba(100,116,139,0.12)` : 'none',
                     transition: 'all 0.3s',
                     flexShrink: 0,
                     position: 'relative',
                     zIndex: 1,
                   }}>
-                    {isDone ? '✓' : stage.icon}
+                    {isDone ? '✓' : (idx + 1)}
                   </div>
                   {idx < stages.length - 1 && (
                     <div style={{ width: 2, flex: 1, minHeight: 24, background: isDone ? T.success : 'rgba(15,23,42,0.08)', margin: '2px 0', transition: 'background 0.3s' }} />
