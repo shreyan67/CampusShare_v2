@@ -980,7 +980,7 @@ function LifecycleVisualizer({ r, isBorrowing, onClose }) {
 
   // Determine current stage index (points to the next pending action)
   function getCurrentStageIndex() {
-    if (r.status === 'returned' || r.status === 'completed' || r.status === 'declined') return stages.length // all done
+    if (r.status === 'returned' || r.status === 'completed' || r.status === 'declined' || r.status === 'closed') return stages.length // all done
 
     if (r.payout_status === 'admin_paid') {
       const i = stages.findIndex(s => s.id === 'payout_done')
@@ -1536,7 +1536,7 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
           <div>
             <div style={{ fontSize: 10, color: '#3B82F6', letterSpacing: '0.04em', fontWeight: 800, textTransform: 'uppercase' }}>Current Stage</div>
             <div style={{ fontSize: 14, color: '#1E3A8A', fontWeight: 800 }}>
-              {r.status === 'pending' ? 'Waiting for approval' : r.status === 'selected' ? 'Approved — action needed' : r.status === 'active' ? 'Active — handover in progress' : r.status === 'returned' ? 'Complete ✓' : r.status === 'declined' ? 'Declined' : 'Overdue'}
+              {r.status === 'pending' ? 'Waiting for approval' : r.status === 'selected' ? 'Approved — action needed' : r.status === 'active' ? 'Active — handover in progress' : ['returned', 'completed', 'closed'].includes(r.status) ? 'Complete ✓' : r.status === 'declined' ? 'Declined' : 'Overdue'}
             </div>
           </div>
         </div>
@@ -1652,7 +1652,7 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
         <div className="req-actions" style={{ ...row(8), flexWrap: 'wrap', marginTop: 8 }}>
 
           {/* Chat button */}
-          {['active', 'returned', 'overdue'].includes(r.status) && (
+          {['active', 'overdue'].includes(r.status) && (
             <button className="btn-press" style={{ ...btn(false, true), background: '#E2E8F0', flex: 1, position: 'relative' }} onClick={() => openChat(r)}>
               💬 Chat
               {unreadCount > 0 && <span style={{ position: 'absolute', top: -6, right: -6, background: T.coral, color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 20, boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{unreadCount}</span>}
@@ -1833,7 +1833,7 @@ function getActionRequired(r, isBorrowing) {
   }
 }
 
-function ActivityModal({ open, onClose, refresh, showToast, newRequestCount = 0, myOffersCount = 0, markRequestsSeen, unreadMap = {} }) {
+function ActivityModal({ open, onClose, refresh, showToast, newRequestCount = 0, myOffersCount = 0, markRequestsSeen, unreadMap = {}, onMarkRead }) {
   const { user, setUser } = useApp()
   const [chatRequest, setChatRequest] = useState(null)
   const [tab, setTab] = useState('borrowing')
@@ -2101,7 +2101,7 @@ function ActivityModal({ open, onClose, refresh, showToast, newRequestCount = 0,
         <button className="btn-press" style={btn(true)} onClick={onClose}>Done</button>
       </div>
 
-      <ChatModal open={!!chatRequest} request={chatRequest} onClose={() => setChatRequest(null)} />
+      <ChatModal open={!!chatRequest} request={chatRequest} onClose={() => setChatRequest(null)} onMarkRead={onMarkRead} />
     </Modal>
   )
 }
@@ -2229,7 +2229,7 @@ function UserGuideModal({ open, onClose }) {
 }
 
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
-function ChatModal({ request, open, onClose }) {
+function ChatModal({ request, open, onClose, onMarkRead }) {
   const { user } = useApp()
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
@@ -2244,9 +2244,10 @@ function ChatModal({ request, open, onClose }) {
       setMessages(res.messages)
       if (res.messages.some(m => !m.is_read && m.sender_id !== user.id)) {
         await api.markChatRead(request.id)
+        if (onMarkRead) onMarkRead(request.id)
       }
     }
-  }, [request?.id, user.id])
+  }, [request?.id, user.id, onMarkRead])
 
   useEffect(() => {
     if (open && request) {
@@ -2346,6 +2347,15 @@ export default function App() {
   const [toast, showToast] = useToast()
   const [myRequests, setMyRequests] = useState([])
   const refresh = useCallback(() => setTick(t => t + 1), [])
+  const handleMarkRead = useCallback((reqId) => {
+    setUnreadMap(prev => {
+      const next = { ...prev }
+      const count = next[reqId] || 0
+      delete next[reqId]
+      setTotalUnread(tot => Math.max(0, tot - count))
+      return next
+    })
+  }, [])
   // fetchId prevents stale responses from overwriting fresh ones
   const fetchIdRef = useRef(0)
   const statsKey = `cs_stats_${user?.id}`
@@ -2605,7 +2615,7 @@ export default function App() {
         {requestOpen && <ItemRequestModal open={requestOpen} onClose={() => setRequest(false)} onSuccess={refresh} showToast={showToast} />}
         {listOpen && <ListItemModal open={listOpen} onClose={() => setList(false)} onSuccess={refresh} />}
         {borrowItem && <BorrowModal open={!!borrowItem} item={borrowItem} onClose={() => setBorrow(null)} onSuccess={refresh} showToast={showToast} />}
-        {actOpen && <ActivityModal open={actOpen} onClose={() => setAct(false)} refresh={refresh} showToast={showToast} newRequestCount={newRequestCount} myOffersCount={myOffersCount} markRequestsSeen={markRequestsSeen} unreadMap={unreadMap} />}
+        {actOpen && <ActivityModal open={actOpen} onClose={() => setAct(false)} refresh={refresh} showToast={showToast} newRequestCount={newRequestCount} myOffersCount={myOffersCount} markRequestsSeen={markRequestsSeen} unreadMap={unreadMap} onMarkRead={handleMarkRead} />}
         {guideOpen && <UserGuideModal open={guideOpen} onClose={() => setGuideOpen(false)} />}
 
         {/* DESKTOP HEADER */}

@@ -10,8 +10,8 @@ async function checkChatAccess(requestId, userId) {
   if (r.borrower_id !== userId && r.owner_id !== userId) {
     return { error: 'Not authorized to view this chat.', status: 403 }
   }
-  if (!['active', 'returned', 'overdue'].includes(r.status)) {
-    return { error: 'Chat is only available after payment or finalization.', status: 403 }
+  if (!['active', 'overdue'].includes(r.status)) {
+    return { error: 'Chat is only available for active or overdue transactions.', status: 403 }
   }
   return { request: r }
 }
@@ -26,7 +26,7 @@ router.get('/unread', requireAuth, async (req, res) => {
       JOIN users u ON m.sender_id = u.id
       WHERE m.sender_id != $1 AND m.is_read = false
         AND (br.borrower_id = $1 OR br.owner_id = $1)
-        AND br.status IN ('active', 'returned', 'overdue')
+        AND br.status IN ('active', 'overdue')
       ORDER BY m.created_at ASC
     `, [req.userId])
     
