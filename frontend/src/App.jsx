@@ -1488,7 +1488,7 @@ function ItemRequestsSection({ showToast, currentUserId, reload: reloadActivity,
 // ── INLINE LIFECYCLE PANEL ────────────────────────────────────────────────────
 // Removed as it is now handled by ReqCard inside the Activity tab.
 
-function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJourney, lifecycleOpenMap }) {
+function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJourney, lifecycleOpenMap, openChat, unreadCount = 0 }) {
   const isPaid = r.is_paid
   const isLF = r.listing_type === 'lost_found'
   const showLifecycle = !!lifecycleOpenMap[r.id]
@@ -1650,6 +1650,14 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
 
         {/* ACTION BUTTONS */}
         <div className="req-actions" style={{ ...row(8), flexWrap: 'wrap', marginTop: 8 }}>
+
+          {/* Chat button */}
+          {['active', 'returned', 'overdue'].includes(r.status) && (
+            <button className="btn-press" style={{ ...btn(false, true), background: '#E2E8F0', flex: 1, position: 'relative' }} onClick={() => openChat(r)}>
+              💬 Chat
+              {unreadCount > 0 && <span style={{ position: 'absolute', top: -6, right: -6, background: T.coral, color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 20, boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{unreadCount}</span>}
+            </button>
+          )}
 
           {/* Pay button */}
           {isBorrowing && r.status === 'selected' && isPaid && !r.payment_confirmed && (
@@ -1825,8 +1833,9 @@ function getActionRequired(r, isBorrowing) {
   }
 }
 
-function ActivityModal({ open, onClose, refresh, showToast, newRequestCount = 0, myOffersCount = 0, markRequestsSeen }) {
+function ActivityModal({ open, onClose, refresh, showToast, newRequestCount = 0, myOffersCount = 0, markRequestsSeen, unreadMap = {} }) {
   const { user, setUser } = useApp()
+  const [chatRequest, setChatRequest] = useState(null)
   const [tab, setTab] = useState('borrowing')
   const [reqs, setReqs] = useState([])
   const [loading, setLoading] = useState(false)
@@ -1983,7 +1992,7 @@ function ActivityModal({ open, onClose, refresh, showToast, newRequestCount = 0,
               <div style={{ fontSize: 36, marginBottom: 8 }}>📭</div>
               <div>Nothing active right now.</div>
             </div>
-            : activeBorrowing.map(r => <ReqCard key={r.id} r={r} isBorrowing user={user} showToast={showToast} reload={reload} openJourney={openJourney} closeJourney={closeJourney} lifecycleOpenMap={lifecycleOpenMap} />)
+            : activeBorrowing.map(r => <ReqCard key={r.id} r={r} isBorrowing user={user} showToast={showToast} reload={reload} openJourney={openJourney} closeJourney={closeJourney} lifecycleOpenMap={lifecycleOpenMap} openChat={setChatRequest} unreadCount={unreadMap[r.id] || 0} />)
           }
 
           {historyBorrowing.length > 0 && (
@@ -1992,7 +2001,7 @@ function ActivityModal({ open, onClose, refresh, showToast, newRequestCount = 0,
                 History ({historyBorrowing.length > 10 ? '10+' : historyBorrowing.length})
               </summary>
               <div style={{ paddingTop: 12 }}>
-                {historyBorrowing.slice(0, 10).map(r => <ReqCard key={r.id} r={r} isBorrowing user={user} showToast={showToast} reload={reload} openJourney={openJourney} closeJourney={closeJourney} lifecycleOpenMap={lifecycleOpenMap} />)}
+                {historyBorrowing.slice(0, 10).map(r => <ReqCard key={r.id} r={r} isBorrowing user={user} showToast={showToast} reload={reload} openJourney={openJourney} closeJourney={closeJourney} lifecycleOpenMap={lifecycleOpenMap} openChat={setChatRequest} unreadCount={unreadMap[r.id] || 0} />)}
               </div>
             </details>
           )}
@@ -2006,7 +2015,7 @@ function ActivityModal({ open, onClose, refresh, showToast, newRequestCount = 0,
               <div style={{ fontSize: 36, marginBottom: 8 }}>📤</div>
               <div>No active lending right now. <span style={{ color: T.coral, cursor: 'pointer', fontWeight: 600 }} onClick={onClose}>List an item!</span></div>
             </div>
-            : activeLending.map(r => <ReqCard key={r.id} r={r} isBorrowing={false} user={user} showToast={showToast} reload={reload} openJourney={openJourney} closeJourney={closeJourney} lifecycleOpenMap={lifecycleOpenMap} />)
+            : activeLending.map(r => <ReqCard key={r.id} r={r} isBorrowing={false} user={user} showToast={showToast} reload={reload} openJourney={openJourney} closeJourney={closeJourney} lifecycleOpenMap={lifecycleOpenMap} openChat={setChatRequest} unreadCount={unreadMap[r.id] || 0} />)
           }
 
           {historyLending.length > 0 && (
@@ -2015,7 +2024,7 @@ function ActivityModal({ open, onClose, refresh, showToast, newRequestCount = 0,
                 History ({historyLending.length > 10 ? '10+' : historyLending.length})
               </summary>
               <div style={{ paddingTop: 12 }}>
-                {historyLending.slice(0, 10).map(r => <ReqCard key={r.id} r={r} isBorrowing={false} user={user} showToast={showToast} reload={reload} openJourney={openJourney} closeJourney={closeJourney} lifecycleOpenMap={lifecycleOpenMap} />)}
+                {historyLending.slice(0, 10).map(r => <ReqCard key={r.id} r={r} isBorrowing={false} user={user} showToast={showToast} reload={reload} openJourney={openJourney} closeJourney={closeJourney} lifecycleOpenMap={lifecycleOpenMap} openChat={setChatRequest} unreadCount={unreadMap[r.id] || 0} />)}
               </div>
             </details>
           )}
@@ -2031,7 +2040,7 @@ function ActivityModal({ open, onClose, refresh, showToast, newRequestCount = 0,
           {activeHandovers.length > 0 && (
             <div style={{ marginTop: 24, borderTop: '1px solid var(--border-soft)', paddingTop: 16 }}>
               <div style={{ fontSize: 16, fontWeight: 700, color: T.navy, marginBottom: 12 }}>Active Handovers</div>
-              {activeHandovers.map(r => <ReqCard key={r.id} r={r} isBorrowing={r.borrower_id === user?.id} user={user} showToast={showToast} reload={reload} openJourney={openJourney} closeJourney={closeJourney} lifecycleOpenMap={lifecycleOpenMap} />)}
+              {activeHandovers.map(r => <ReqCard key={r.id} r={r} isBorrowing={r.borrower_id === user?.id} user={user} showToast={showToast} reload={reload} openJourney={openJourney} closeJourney={closeJourney} lifecycleOpenMap={lifecycleOpenMap} openChat={setChatRequest} unreadCount={unreadMap[r.id] || 0} />)}
             </div>
           )}
 
@@ -2041,7 +2050,7 @@ function ActivityModal({ open, onClose, refresh, showToast, newRequestCount = 0,
                 History ({historyHandovers.length > 10 ? '10+' : historyHandovers.length})
               </summary>
               <div style={{ paddingTop: 12 }}>
-                {historyHandovers.slice(0, 10).map(r => <ReqCard key={r.id} r={r} isBorrowing={r.borrower_id === user?.id} user={user} showToast={showToast} reload={reload} openJourney={openJourney} closeJourney={closeJourney} lifecycleOpenMap={lifecycleOpenMap} />)}
+                {historyHandovers.slice(0, 10).map(r => <ReqCard key={r.id} r={r} isBorrowing={r.borrower_id === user?.id} user={user} showToast={showToast} reload={reload} openJourney={openJourney} closeJourney={closeJourney} lifecycleOpenMap={lifecycleOpenMap} openChat={setChatRequest} unreadCount={unreadMap[r.id] || 0} />)}
               </div>
             </details>
           )}
@@ -2091,6 +2100,8 @@ function ActivityModal({ open, onClose, refresh, showToast, newRequestCount = 0,
       <div style={{ ...row(8), justifyContent: 'flex-end', marginTop: 16 }}>
         <button className="btn-press" style={btn(true)} onClick={onClose}>Done</button>
       </div>
+
+      <ChatModal open={!!chatRequest} request={chatRequest} onClose={() => setChatRequest(null)} />
     </Modal>
   )
 }
@@ -2218,6 +2229,97 @@ function UserGuideModal({ open, onClose }) {
 }
 
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
+function ChatModal({ request, open, onClose }) {
+  const { user } = useApp()
+  const [messages, setMessages] = useState([])
+  const [input, setInput] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [err, setErr] = useState('')
+  const msgsEndRef = useRef(null)
+
+  const loadMessages = useCallback(async () => {
+    if (!request?.id) return
+    const res = await api.getChatMessages(request.id)
+    if (!res.error && res.messages) {
+      setMessages(res.messages)
+      if (res.messages.some(m => !m.is_read && m.sender_id !== user.id)) {
+        await api.markChatRead(request.id)
+      }
+    }
+  }, [request?.id, user.id])
+
+  useEffect(() => {
+    if (open && request) {
+      loadMessages()
+      const interval = setInterval(loadMessages, 5000)
+      return () => clearInterval(interval)
+    }
+  }, [open, request, loadMessages])
+
+  useEffect(() => {
+    msgsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  async function sendMsg(e) {
+    e.preventDefault()
+    if (!input.trim() || loading) return
+    setErr('')
+    setLoading(true)
+    const text = input.trim()
+    setInput('')
+    const res = await api.sendChatMessage(request.id, text)
+    setLoading(false)
+    if (res.error) {
+      setErr(res.error)
+      setInput(text)
+    } else if (res.message) {
+      setMessages(m => [...m, res.message])
+    }
+  }
+
+  if (!open || !request) return null
+  const otherName = user?.id === request.borrower_id ? request.owner_name : request.borrower_name
+  
+  return (
+    <Modal open={open} onClose={onClose}>
+      <ModalTitle>💬 Chat with {otherName?.split(' ')[0]}</ModalTitle>
+      <ModalSub>Regarding: {request._item_title || request.item_title}</ModalSub>
+      {err && <div style={ERR}>{err}</div>}
+      
+      <div style={{ background: '#F8FAFC', borderRadius: 'var(--radius-sm)', padding: 12, height: 320, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12, border: '1px solid var(--border-soft)' }}>
+        {messages.length === 0 ? (
+          <div style={{ textAlign: 'center', color: T.textSoft, margin: 'auto' }}>No messages yet.<br/>Say hello!</div>
+        ) : (
+          messages.map(m => {
+            const isMe = m.sender_id === user.id
+            return (
+              <div key={m.id} style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', gap: 8, alignItems: 'flex-end' }}>
+                <Av user={{ avatar: m.sender_avatar, color: m.sender_color, name: m.sender_name }} size={24} />
+                <div style={{ maxWidth: '75%', background: isMe ? T.coral : '#fff', color: isMe ? '#fff' : T.navy, padding: '8px 12px', borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px', fontSize: 14, boxShadow: '0 1px 2px rgba(0,0,0,0.05)', border: isMe ? 'none' : '1px solid var(--border-soft)', wordBreak: 'break-word', display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
+                  <span>{m.content}</span>
+                  {isMe && (
+                    <span style={{ fontSize: 10, marginTop: 4, opacity: 0.8 }}>
+                      {m.is_read ? '✓✓' : '✓'}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )
+          })
+        )}
+        <div ref={msgsEndRef} />
+      </div>
+
+      <form onSubmit={sendMsg} style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+        <input style={{ ...INP, flex: 1, borderRadius: 20 }} placeholder="Type a message..." value={input} onChange={e => setInput(e.target.value)} disabled={loading} />
+        <button type="submit" disabled={!input.trim() || loading} style={{ background: input.trim() ? T.coral : '#CBD5E1', color: '#fff', border: 'none', borderRadius: 20, padding: '0 18px', fontWeight: 600, cursor: input.trim() ? 'pointer' : 'default', transition: 'background 0.2s' }}>
+          Send
+        </button>
+      </form>
+    </Modal>
+  )
+}
+
 export default function App() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [user, setUser] = useState(() => api.getSavedUser())
@@ -2231,6 +2333,9 @@ export default function App() {
   const [requestOpen, setRequest] = useState(false)
   const [newRequestCount, setNewRequestCount] = useState(0)
   const [myOffersCount, setMyOffersCount] = useState(0)
+  const [unreadMap, setUnreadMap] = useState({})
+  const [totalUnread, setTotalUnread] = useState(0)
+  const prevUnreadIdsRef = useRef(new Set())
   const notifPollRef = useRef(null)
   const prevMyTotalOffersRef = useRef(0)
   const lastSeenRequestRef = useRef(localStorage.getItem('cs_last_seen_req') || new Date().toISOString())
@@ -2381,6 +2486,31 @@ export default function App() {
         prevMyTotalOffersRef.current = myTotalOffers
         setMyOffersCount(myTotalOffers)
 
+        // Check for unread chats
+        const chatRes = await api.getUnreadChats()
+        if (!chatRes.error && chatRes.unread) {
+          const map = {}
+          let total = 0
+          const currentIds = new Set()
+          let newMsgs = []
+          
+          chatRes.unread.forEach(m => {
+            currentIds.add(m.id)
+            if (!prevUnreadIdsRef.current.has(m.id)) newMsgs.push(m)
+            map[m.request_id] = (map[m.request_id] || 0) + 1
+            total++
+          })
+          
+          setUnreadMap(map)
+          setTotalUnread(total)
+          
+          if (newMsgs.length > 0) {
+            const latest = newMsgs[newMsgs.length - 1]
+            showToast(`💬 ${latest.sender_name}: ${latest.content}`, true)
+          }
+          prevUnreadIdsRef.current = currentIds
+        }
+
       } catch (e) { }
     }
 
@@ -2463,7 +2593,7 @@ export default function App() {
   const tier = TRUST_TIERS[user.trust_tier] || TRUST_TIERS.newcomer
   const activeCount = myRequests.filter(r => ['active', 'selected'].includes(r.status)).length
   const actionableReq = myRequests.find(r => getActionRequired(r, r.borrower_id === user?.id))
-  const totalActionCount = myRequests.filter(r => getActionRequired(r, r.borrower_id === user?.id)).length + newRequestCount + myOffersCount
+  const totalActionCount = myRequests.filter(r => getActionRequired(r, r.borrower_id === user?.id)).length + newRequestCount + myOffersCount + totalUnread
 
   return (
     <Ctx.Provider value={{ user, setUser }}>
@@ -2475,7 +2605,7 @@ export default function App() {
         {requestOpen && <ItemRequestModal open={requestOpen} onClose={() => setRequest(false)} onSuccess={refresh} showToast={showToast} />}
         {listOpen && <ListItemModal open={listOpen} onClose={() => setList(false)} onSuccess={refresh} />}
         {borrowItem && <BorrowModal open={!!borrowItem} item={borrowItem} onClose={() => setBorrow(null)} onSuccess={refresh} showToast={showToast} />}
-        {actOpen && <ActivityModal open={actOpen} onClose={() => setAct(false)} refresh={refresh} showToast={showToast} newRequestCount={newRequestCount} myOffersCount={myOffersCount} markRequestsSeen={markRequestsSeen} />}
+        {actOpen && <ActivityModal open={actOpen} onClose={() => setAct(false)} refresh={refresh} showToast={showToast} newRequestCount={newRequestCount} myOffersCount={myOffersCount} markRequestsSeen={markRequestsSeen} unreadMap={unreadMap} />}
         {guideOpen && <UserGuideModal open={guideOpen} onClose={() => setGuideOpen(false)} />}
 
         {/* DESKTOP HEADER */}

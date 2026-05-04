@@ -57,6 +57,7 @@ app.use('/api/payments',      require('./routes/payments'))
 app.use('/api/users',         require('./routes/users'))
 app.use('/api/lostfound',     require('./routes/lostfound'))
 app.use('/api/item-requests', require('./routes/item_requests'))
+app.use('/api/chat',          require('./routes/chat'))
 
 // ===== HEALTH =====
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))

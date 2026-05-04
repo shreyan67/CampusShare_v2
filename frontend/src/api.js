@@ -115,6 +115,12 @@ export const sendPickupDetails    = (id, details) => req('PATCH', `/requests/${i
 export const confirmItemGiven     = (id)           => req('PATCH', `/requests/${id}/item-given`)
 export const confirmBorrowerReceived = (id)        => req('PATCH', `/requests/${id}/borrower-received`)
 
+// Chat flow
+export const getChatMessages      = (id)           => get(`/chat/${id}`)
+export const sendChatMessage      = (id, content)  => post(`/chat/${id}`, { content })
+export const getUnreadChats       = ()             => get(`/chat/unread`)
+export const markChatRead         = (id)           => req('PATCH', `/chat/${id}/read`)
+
 function clean(obj) {
   const out = {}
   Object.entries(obj || {}).forEach(([k,v]) => { if (v !== undefined && v !== null && v !== '') out[k] = v })
