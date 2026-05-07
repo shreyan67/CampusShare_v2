@@ -1156,7 +1156,7 @@ function RequestsModal({ open, onClose, onSuccess, showToast, editData = null, i
       }, 400)
     }
   }, [open, targetId, onClearTarget])
-  
+
   // Post/Edit form state
   const [title, setTitle] = useState('')
   const [desc, setDesc] = useState('')
@@ -1192,22 +1192,22 @@ function RequestsModal({ open, onClose, onSuccess, showToast, editData = null, i
   async function submit() {
     if (!title.trim()) { setErr('Please describe what you need.'); return }
     setLoading(true); setErr('')
-    
+
     const payload = { title: title.trim(), description: desc.trim(), urgency, category }
-    const r = editData 
+    const r = editData
       ? await api.editItemRequest(editData.id, payload)
       : await api.postItemRequest(payload)
-      
+
     setLoading(false)
     if (r?.error) { setErr(r.error); return }
-    
+
     if (!editData) {
       Object.keys(_itemRequestCache).forEach(k => delete _itemRequestCache[k])
     }
-    
+
     showToast(editData ? 'Request updated!' : 'Request posted! Others will be notified.')
-    onSuccess(); 
-    if (editData) onClose() 
+    onSuccess();
+    if (editData) onClose()
     else setTab('browse')
   }
 
@@ -1256,12 +1256,12 @@ function RequestsModal({ open, onClose, onSuccess, showToast, editData = null, i
           <InfoBanner type="info">
             🙋 <strong>Need something?</strong> Switch to the "Post" tab to ask the community.
           </InfoBanner>
-          
-          <ItemRequestsSection 
-            showToast={showToast} 
-            currentUserId={user?.id} 
-            onMarkSeen={markRequestsSeen} 
-            reload={reloadActivity} 
+
+          <ItemRequestsSection
+            showToast={showToast}
+            currentUserId={user?.id}
+            onMarkSeen={markRequestsSeen}
+            reload={reloadActivity}
             onEdit={(req) => { setTab('post'); }} // Note: actual editing handled by editData prop from parent
             activeHandovers={activeHandovers}
             historyHandovers={historyHandovers}
@@ -1447,7 +1447,7 @@ function ItemRequestsSection({ showToast, currentUserId, reload: reloadActivity,
           value={search} onChange={e => { setSearch(e.target.value); load(e.target.value) }} />
       </div>
 
-      {loading && [1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height: 190, borderRadius: 12 }} />)}
+      {loading && [1, 2, 3, 4].map(i => <div key={i} className="skeleton" style={{ height: 190, borderRadius: 12 }} />)}
       {!loading && requests.length === 0 && activeHandovers.length === 0 && (
         <div style={{ textAlign: 'center', padding: '2rem 0', color: T.textSoft }}>
           <div style={{ fontSize: 40, marginBottom: 8 }}>🙋</div>
@@ -1458,23 +1458,35 @@ function ItemRequestsSection({ showToast, currentUserId, reload: reloadActivity,
 
       {/* 2-column card grid matching marketplace */}
       <div className="item-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, alignItems: 'start' }}>
-        {requests.map(req => {
-          const isOwn = req.requester_id === currentUserId
-          const isOpen = req.status === 'open'
-          const reqOffers = offers[req.id] || []
-          const isExp = expanded === req.id
-          const accepted = reqOffers.find(o => o.status === 'accepted') || (req.status === 'closed' && req.accepted_offer_id ? { offerer_name: 'Matched User', transaction_type: 'lend' } : null)
-          const urgencyColor = URGENCY_COLOR[req.urgency] || T.textSoft
-          const urgencyLabel = req.urgency === 'high' ? '🔴 Urgent' : req.urgency === 'medium' ? '🟡 Medium' : '🟢 Low'
+        {(() => {
+          const usedHandovers = new Set();
+          return requests.map(req => {
+            const isOwn = req.requester_id === currentUserId
+            const isOpen = req.status === 'open'
+            const reqOffers = offers[req.id] || []
+            const isExp = expanded === req.id
+            const accepted = reqOffers.find(o => o.status === 'accepted') || (req.status === 'closed' && req.accepted_offer_id ? { offerer_name: 'Matched User', transaction_type: 'lend' } : null)
+            const urgencyColor = URGENCY_COLOR[req.urgency] || T.textSoft
+            const urgencyLabel = req.urgency === 'high' ? '🔴 Urgent' : req.urgency === 'medium' ? '🟡 Medium' : '🟢 Low'
 
-          // Find if there's an active handover for this request
-          const inlineBR = activeHandovers.find(ah => ah.item_title === req.title && (ah.borrower_id === req.requester_id || ah.owner_id === req.requester_id))
+            // Only closed requests can have an active handover. Ensure each handover is only used once.
+            let inlineBR = null;
+            if (req.status === 'closed') {
+              inlineBR = activeHandovers.find(ah => 
+                !usedHandovers.has(ah.id) && 
+                ah.item_title === req.title && 
+                (ah.borrower_id === req.requester_id || ah.owner_id === req.requester_id)
+              );
+              if (inlineBR) {
+                usedHandovers.add(inlineBR.id);
+              }
+            }
 
-          // Hide closed requests if they no longer have an active handover
-          if (req.status === 'closed' && !inlineBR) return null
+            // Hide closed requests if they no longer have an active handover
+            if (req.status === 'closed' && !inlineBR) return null
 
-          return (
-            <div key={req.id} className="item-card" style={{ ...card, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden', cursor: 'pointer' }}>
+            return (
+              <div key={req.id} className="item-card" style={{ ...card, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden', cursor: 'pointer', gridColumn: inlineBR ? '1 / -1' : 'auto' }}>
               {/* Top colour strip — replaces image */}
               <div style={{ height: 100, background: `linear-gradient(135deg, ${urgencyColor}18 0%, ${urgencyColor}08 100%)`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, position: 'relative', borderBottom: `1px solid ${urgencyColor}22` }}>
                 <Av user={{ name: req.requester_name, avatar: req.requester_avatar, color: req.requester_color }} size={38} />
@@ -1523,7 +1535,7 @@ function ItemRequestsSection({ showToast, currentUserId, reload: reloadActivity,
                   )}
                   {/* Inline Handover actions if available */}
                   {inlineBR && (
-                    <div style={{ margin: '8px -12px -12px' }} onClick={e => e.stopPropagation()}>
+                    <div style={{ margin: '12px -12px -12px', borderTop: '1px solid #E2E8F0', background: '#F8FAFC' }} onClick={e => e.stopPropagation()}>
                       <ReqCard r={inlineBR} isBorrowing={inlineBR.borrower_id === currentUserId} user={user} showToast={showToast} reload={reloadActivity} openJourney={openJourney} closeJourney={closeJourney} lifecycleMap={lifecycleMap} openChat={setChatRequest} unreadCount={unreadMap[inlineBR.id] || 0} inlineReq={true} />
                     </div>
                   )}
@@ -1562,7 +1574,8 @@ function ItemRequestsSection({ showToast, currentUserId, reload: reloadActivity,
               )}
             </div>
           )
-        })}
+        })
+        })()}
       </div>
 
       {/* Offer bottom sheet (using Portal to escape modal overflow clipping) */}
@@ -1630,15 +1643,15 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
   }
 
   return (
-    <div id={`req-${r.id}`} className={inlineReq ? '' : 'fade-in'} style={{ 
-      borderRadius: inlineReq ? 0 : 'var(--radius-sm)', 
-      marginBottom: inlineReq ? 0 : 12, 
-      background: inlineReq ? 'transparent' : '#fff', 
-      boxShadow: inlineReq ? 'none' : 'var(--shadow)', 
-      overflow: 'hidden', 
-      border: inlineReq ? 'none' : `1px solid ${accentColor}22`, 
+    <div id={`req-${r.id}`} className={inlineReq ? '' : 'fade-in'} style={{
+      borderRadius: inlineReq ? 0 : 'var(--radius-sm)',
+      marginBottom: inlineReq ? 0 : 12,
+      background: inlineReq ? 'transparent' : '#fff',
+      boxShadow: inlineReq ? 'none' : 'var(--shadow)',
+      overflow: 'hidden',
+      border: inlineReq ? 'none' : `1px solid ${accentColor}22`,
       borderLeft: inlineReq ? 'none' : `4px solid ${accentColor}`,
-      borderTop: inlineReq ? `1px solid var(--border-soft)` : undefined
+      borderTop: 'none'
     }}>
       {/* Card header with navy background */}
       {!inlineReq && (
@@ -1869,17 +1882,17 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
                 🔒 Ask the borrower for their 4-digit PIN to confirm handover
               </div>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                <input 
-                  type="text" 
-                  placeholder="PIN" 
+                <input
+                  type="text"
+                  placeholder="PIN"
                   maxLength={4}
                   value={pin}
                   onChange={e => setPin(e.target.value.replace(/\D/g, ''))}
-                  style={{ ...INP, flex: 1, letterSpacing: '4px', textAlign: 'center', fontSize: 16, fontWeight: 700 }} 
+                  style={{ ...INP, flex: 1, letterSpacing: '4px', textAlign: 'center', fontSize: 16, fontWeight: 700 }}
                 />
-                <button 
-                  className="btn-press" 
-                  style={{ ...btn(true, true), opacity: pin.length === 4 ? 1 : 0.5 }} 
+                <button
+                  className="btn-press"
+                  style={{ ...btn(true, true), opacity: pin.length === 4 ? 1 : 0.5 }}
                   disabled={pin.length !== 4}
                   onClick={async () => {
                     const res = await api.verifyHandover(r.id, pin)
@@ -2451,16 +2464,16 @@ function ChatModal({ request, open, onClose, onMarkRead }) {
 
   if (!open || !request) return null
   const otherName = user?.id === request.borrower_id ? request.owner_name : request.borrower_name
-  
+
   return (
     <Modal open={open} onClose={onClose}>
       <ModalTitle>💬 Chat with {otherName?.split(' ')[0]}</ModalTitle>
       <ModalSub>Regarding: {request._item_title || request.item_title}</ModalSub>
       {err && <div style={ERR}>{err}</div>}
-      
+
       <div style={{ background: '#F8FAFC', borderRadius: 'var(--radius-sm)', padding: 12, height: 320, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12, border: '1px solid var(--border-soft)' }}>
         {messages.length === 0 ? (
-          <div style={{ textAlign: 'center', color: T.textSoft, margin: 'auto' }}>No messages yet.<br/>Say hello!</div>
+          <div style={{ textAlign: 'center', color: T.textSoft, margin: 'auto' }}>No messages yet.<br />Say hello!</div>
         ) : (
           messages.map(m => {
             const isMe = m.sender_id === user.id
@@ -2684,17 +2697,17 @@ export default function App() {
           let total = 0
           const currentIds = new Set()
           let newMsgs = []
-          
+
           chatRes.unread.forEach(m => {
             currentIds.add(m.id)
             if (!prevUnreadIdsRef.current.has(m.id)) newMsgs.push(m)
             map[m.request_id] = (map[m.request_id] || 0) + 1
             total++
           })
-          
+
           setUnreadMap(map)
           setTotalUnread(total)
-          
+
           if (newMsgs.length > 0) {
             const latest = newMsgs[newMsgs.length - 1]
             showToast(`💬 ${latest.sender_name}: ${latest.content}`, true)
@@ -2803,10 +2816,10 @@ export default function App() {
 
         {/* MODALS */}
         {requestOpen && (
-          <RequestsModal 
-            open={requestOpen} 
-            onClose={() => { setRequest(false); setEditRequestData(null); }} 
-            onSuccess={refresh} 
+          <RequestsModal
+            open={requestOpen}
+            onClose={() => { setRequest(false); setEditRequestData(null); }}
+            onSuccess={refresh}
             showToast={showToast}
             targetId={targetReqId}
             onClearTarget={() => setTargetReqId(null)}
@@ -2825,18 +2838,18 @@ export default function App() {
         {listOpen && <ListItemModal open={listOpen} onClose={() => { setList(false); setEditItemData(null); }} onSuccess={refresh} editItemData={editItemData} />}
         {borrowItem && <BorrowModal open={!!borrowItem} item={borrowItem} onClose={() => setBorrow(null)} onSuccess={refresh} showToast={showToast} />}
         {actOpen && (
-          <ActivityModal 
-            open={actOpen} 
-            onClose={() => setAct(false)} 
-            refresh={refresh} 
-            showToast={showToast} 
+          <ActivityModal
+            open={actOpen}
+            onClose={() => setAct(false)}
+            refresh={refresh}
+            showToast={showToast}
             defaultTab={actTab}
             targetId={targetReqId}
             onClearTarget={() => setTargetReqId(null)}
-            newRequestCount={newRequestCount} 
-            myOffersCount={myOffersCount} 
-            markRequestsSeen={markRequestsSeen} 
-            unreadMap={unreadMap} 
+            newRequestCount={newRequestCount}
+            myOffersCount={myOffersCount}
+            markRequestsSeen={markRequestsSeen}
+            unreadMap={unreadMap}
             onMarkRead={handleMarkRead}
             lifecycleMap={lifecycleOpenMap}
             openJourney={openJourney}
@@ -2961,12 +2974,12 @@ export default function App() {
                 setActTab(isMyReq ? 'borrowing' : 'lending')
                 setAct(true)
               }
-            }} style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'} onMouseOut={e => e.currentTarget.style.background = '#F8FAFC'}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: 20 }}>{guide?.icon || '👉'}</span>
+            }} style={{ background: '#fef3c7', borderBottom: '1px solid #fcd34d', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#fde68a'} onMouseOut={e => e.currentTarget.style.background = '#fef3c7'}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ fontSize: 24, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}>{guide?.icon || '👉'}</span>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#334155' }}>Action required on "{actionableReq.item_title || actionableReq.title}"</div>
-                  <div style={{ fontSize: 12, color: '#64748B' }}>{guide?.title ? guide.title : `Tap here to view your ${actionableReq.from_item_request ? 'Requests' : 'Activity'} tab and complete the next step.`}</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Action required on "{actionableReq.item_title || actionableReq.title}"</div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: '#78350f', marginTop: 2 }}>{guide?.title ? guide.title : `Tap here to view your ${actionableReq.from_item_request ? 'Requests' : 'Activity'} tab and complete the next step.`}</div>
                 </div>
               </div>
               <button className="btn-press" style={{ background: T.coral, color: '#fff', border: 'none', borderRadius: 20, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 8px rgba(232,68,90,0.25)' }}>{actionableReq.from_item_request ? 'View Requests' : 'View Activity'}</button>
