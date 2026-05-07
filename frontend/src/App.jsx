@@ -958,10 +958,7 @@ function LifecycleVisualizer({ r, isBorrowing, onClose }) {
       { id: 'selected', icon: '✅', label: 'Approved', desc: 'Lender approved, payment pending', role: 'both' },
       { id: 'paid', icon: '💳', label: 'Payment Made', desc: 'Borrower paid via UPI/Razorpay', role: 'borrower' },
       { id: 'active', icon: '📍', label: 'Pickup Details Sent', desc: 'Lender shared where to collect', role: 'lender' },
-      { id: 'given', icon: '🤝', label: 'Item Handed Over', desc: 'Lender gave item to borrower', role: 'lender' },
-      { id: 'received', icon: '🎒', label: 'Receipt Confirmed', desc: 'Borrower confirmed they got it', role: 'borrower' },
-      { id: 'admin_paid', icon: '💸', label: 'Admin Paying Lender', desc: 'Admin processing lender payout', role: 'admin' },
-      { id: 'payout_done', icon: '💰', label: 'Payout Received', desc: 'Lender confirmed payment received', role: 'lender' },
+      { id: 'handover', icon: '🤝', label: 'Handover Verified', desc: 'Verified securely via PIN', role: 'both' },
       { id: 'returned', icon: '📦', label: 'Return Confirmed', desc: 'Item returned, slot freed', role: 'lender' },
     ],
     sell: [
@@ -969,24 +966,21 @@ function LifecycleVisualizer({ r, isBorrowing, onClose }) {
       { id: 'selected', icon: '✅', label: 'Approved', desc: 'Seller approved, payment pending', role: 'both' },
       { id: 'paid', icon: '💳', label: 'Payment Made', desc: 'Buyer paid via UPI/Razorpay', role: 'borrower' },
       { id: 'active', icon: '📍', label: 'Meetup Details Sent', desc: 'Seller shared where to handover', role: 'lender' },
-      { id: 'given', icon: '🤝', label: 'Item Handed Over', desc: 'Seller gave item to buyer', role: 'lender' },
-      { id: 'received', icon: '🎒', label: 'Receipt Confirmed', desc: 'Buyer confirmed they got it', role: 'borrower' },
-      { id: 'admin_paid', icon: '💸', label: 'Admin Paying Seller', desc: 'Admin processing seller payout', role: 'admin' },
+      { id: 'handover', icon: '🤝', label: 'Handover Verified', desc: 'Verified securely via PIN', role: 'both' },
       { id: 'returned', icon: '🏁', label: 'Sale Complete', desc: 'Transaction done, no return needed', role: 'both' },
     ],
     donate: [
       { id: 'requested', icon: '📝', label: 'Requested', desc: 'Receiver sent request', role: 'both' },
       { id: 'selected', icon: '✅', label: 'Approved', desc: 'Donor approved the request', role: 'both' },
       { id: 'active', icon: '📍', label: 'Pickup Details Sent', desc: 'Donor shared where to collect', role: 'lender' },
-      { id: 'given', icon: '🤝', label: 'Item Handed Over', desc: 'Donor gave item to receiver', role: 'lender' },
+      { id: 'handover', icon: '🤝', label: 'Handover Verified', desc: 'Verified securely via PIN', role: 'both' },
       { id: 'returned', icon: '🎁', label: 'Donation Complete', desc: 'Item received, no return needed', role: 'both' },
     ],
     lend: [
       { id: 'requested', icon: '📝', label: 'Requested', desc: 'Borrower sent request', role: 'both' },
       { id: 'selected', icon: '✅', label: 'Approved', desc: 'Lender approved the request', role: 'both' },
       { id: 'active', icon: '📍', label: 'Pickup Details Sent', desc: 'Lender shared where to collect', role: 'lender' },
-      { id: 'given', icon: '🤝', label: 'Item Handed Over', desc: 'Lender gave item to borrower', role: 'lender' },
-      { id: 'received', icon: '🎒', label: 'Receipt Confirmed', desc: 'Borrower confirmed they got it', role: 'borrower' },
+      { id: 'handover', icon: '🤝', label: 'Handover Verified', desc: 'Verified securely via PIN', role: 'both' },
       { id: 'returned', icon: '📦', label: 'Return Confirmed', desc: 'Item returned, slot freed', role: 'lender' },
     ],
     lost_found: [
@@ -1003,25 +997,13 @@ function LifecycleVisualizer({ r, isBorrowing, onClose }) {
   function getCurrentStageIndex() {
     if (r.status === 'returned' || r.status === 'completed' || r.status === 'declined' || r.status === 'closed') return stages.length // all done
 
-    if (r.payout_status === 'admin_paid') {
-      const i = stages.findIndex(s => s.id === 'payout_done')
-      if (i > -1) return i
-    }
-    if (r.borrower_received) {
-      if (r.is_paid && r.payout_status === 'na') {
-        const i = stages.findIndex(s => s.id === 'admin_paid')
-        if (i > -1) return i
-      }
+    if (r.borrower_received || r.item_given || r.handed_over) {
       const i = stages.findIndex(s => s.id === 'returned')
       return i > -1 ? i : stages.length
     }
-    if (r.item_given || r.handed_over) {
-      const i = stages.findIndex(s => s.id === 'received')
-      return i > -1 ? i : stages.findIndex(s => s.id === 'returned')
-    }
     if (r.status === 'active' && r.pickup_details) {
-      const i = stages.findIndex(s => s.id === 'given')
-      return i > -1 ? i : stages.findIndex(s => s.id === 'received')
+      const i = stages.findIndex(s => s.id === 'handover')
+      return i > -1 ? i : stages.findIndex(s => s.id === 'returned')
     }
     if (r.status === 'active') {
       return stages.findIndex(s => s.id === 'active')
@@ -1623,6 +1605,7 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
   const isPaid = r.is_paid
   const isLF = r.listing_type === 'lost_found'
   const showLifecycle = !!lifecycleMap[r.id]
+  const [pin, setPin] = useState('')
 
   const statusColors = { pending: '#F59E0B', selected: T.coral, active: T.navy, returned: T.success, declined: T.error, overdue: T.error }
   const accentColor = statusColors[r.status] || T.navy
@@ -1796,15 +1779,15 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
             </button>
           )}
 
-          {/* Report Lender Button (borrower only, paid item, active phase, not yet handed over) */}
-          {isBorrowing && r.status === 'active' && isPaid && !r.item_given && (
+          {/* Report Lender Button (borrower only, active phase, not yet handed over) */}
+          {isBorrowing && r.status === 'active' && !r.item_given && (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
               <button
                 className="btn-press"
                 style={{ ...btn(false, true), background: r.borrower_complaint ? '#FCEBEB' : '#fff', color: r.borrower_complaint ? '#c0392b' : '#666', border: '1px solid #e74c3c', width: '100%' }}
                 onClick={async () => {
                   if (r.borrower_complaint) { showToast('Admin has been informed. Please wait.'); return }
-                  if (!window.confirm("Lender not responding? Report to admin to request a refund.")) return
+                  if (!window.confirm("Lender not responding? Report to admin for help/refund.")) return
                   const res = await api.reportLender(r.id)
                   if (res?.error) { showToast(res.error); return }
                   showToast('Admin has been notified. We will resolve this shortly.')
@@ -1900,26 +1883,45 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
             }}>Revoke</button>
           )}
 
-          {/* Item given */}
-          {!isLF && !isBorrowing && r.status === 'active' && r.pickup_details && !r.item_given && (
-            <button className="btn-press" style={btn(true, true)} onClick={async () => {
-              if (!window.confirm('Confirm item physically given?')) return
-              const res = await api.confirmItemGiven(r.id)
-              if (res?.error) { showToast(res.error); return }
-              showToast('Marked as given!')
-              await reload()
-            }}>Item Given ✓</button>
+          {/* Handover PIN Display (Borrower) */}
+          {!isLF && isBorrowing && r.status === 'active' && !r.item_given && r.handover_pin && (
+            <div style={{ width: '100%', background: '#F8FAFC', padding: '12px', borderRadius: 8, border: `1px solid ${T.navy}33`, textAlign: 'center', marginBottom: 8 }}>
+              <div style={{ fontSize: 11, color: T.textSoft, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Your Secret Handover PIN</div>
+              <div style={{ fontSize: 32, letterSpacing: '8px', color: T.navy, fontWeight: 800 }}>{r.handover_pin}</div>
+              <div style={{ fontSize: 11, color: T.textMid, marginTop: 4 }}>Give this PIN to the lender when they hand you the item.</div>
+            </div>
           )}
 
-          {/* Borrower received */}
-          {!isLF && isBorrowing && r.status === 'active' && r.item_given && !r.borrower_received && (
-            <button className="btn-press" style={btn(true, true)} onClick={async () => {
-              if (!window.confirm('Confirm you received the item?')) return
-              const res = await api.confirmBorrowerReceived(r.id)
-              if (res?.error) { showToast(res.error); return }
-              showToast(isPaid ? 'Receipt confirmed! Payout incoming.' : 'Item received!')
-              await reload()
-            }}>I've Received Item ✓</button>
+          {/* Item given (Lender PIN Verify) */}
+          {!isLF && !isBorrowing && r.status === 'active' && r.pickup_details && !r.item_given && (
+            <div style={{ width: '100%', background: '#F8FAFC', padding: '12px', borderRadius: 8, border: `1px solid ${T.navy}33` }}>
+              <div style={{ fontSize: 12, color: T.navy, marginBottom: 8, fontWeight: 600, textAlign: 'center' }}>
+                🔒 Ask the borrower for their 4-digit PIN to confirm handover
+              </div>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <input 
+                  type="text" 
+                  placeholder="PIN" 
+                  maxLength={4}
+                  value={pin}
+                  onChange={e => setPin(e.target.value.replace(/\D/g, ''))}
+                  style={{ ...INP, flex: 1, letterSpacing: '4px', textAlign: 'center', fontSize: 16, fontWeight: 700 }} 
+                />
+                <button 
+                  className="btn-press" 
+                  style={{ ...btn(true, true), opacity: pin.length === 4 ? 1 : 0.5 }} 
+                  disabled={pin.length !== 4}
+                  onClick={async () => {
+                    const res = await api.verifyHandover(r.id, pin)
+                    if (res?.error) { showToast(res.error); return }
+                    showToast('Handover Verified! Status updated.')
+                    await reload()
+                  }}
+                >
+                  Verify
+                </button>
+              </div>
+            </div>
           )}
 
           {/* LF handover buttons */}

@@ -258,13 +258,14 @@ router.patch('/:id/offers/:offerId/accept', requireAuth, async (req, res) => {
     const requestedDays = offer.transaction_type === 'sell' ? 1 : 7
     const status = isPaid ? 'selected' : 'active'
     const dueAt = isPaid ? null : new Date(Date.now() + requestedDays * 864e5)
+    const pin = status === 'active' ? Math.floor(1000 + Math.random() * 9000).toString() : null
 
     const borrowReq = await queryOne(`
       INSERT INTO borrow_requests(
         item_id, borrower_id, owner_id, requested_days, message, status,
-        total_amount, rental_amount, platform_fee, payment_confirmed, due_at
+        total_amount, rental_amount, platform_fee, payment_confirmed, due_at, handover_pin
       )
-      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *
     `, [
       item.id,
       req.userId,          // requester becomes borrower
@@ -276,7 +277,8 @@ router.patch('/:id/offers/:offerId/accept', requireAuth, async (req, res) => {
       rentalAmount,
       platformFee,
       !isPaid,             // non-paid = auto payment_confirmed
-      dueAt
+      dueAt,
+      pin
     ])
 
     // 3. Mark request as closed, decline other offers

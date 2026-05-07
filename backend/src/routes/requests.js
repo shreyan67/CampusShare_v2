@@ -107,10 +107,11 @@ router.patch('/:id/activate-after-payment', requireAuth, async (req, res) => {
     if (!r.payment_confirmed) return res.status(409).json({ error: 'Payment not confirmed yet.' })
 
     const dueAt = new Date(Date.now() + r.requested_days * 864e5)
+    const pin = Math.floor(1000 + Math.random() * 9000).toString()
 
     await query(
-      "UPDATE borrow_requests SET status='active', due_at=$1 WHERE id=$2",
-      [dueAt, r.id]
+      "UPDATE borrow_requests SET status='active', due_at=$1, handover_pin=$2 WHERE id=$3",
+      [dueAt, pin, r.id]
     )
 
     // Decline all other pending/selected requests for this item — payment is committed
@@ -147,11 +148,12 @@ router.patch('/:id/finalize', requireAuth, async (req, res) => {
     }
 
     const dueAt = new Date(Date.now() + r.requested_days * 864e5)
+    const pin = Math.floor(1000 + Math.random() * 9000).toString()
 
     // Mark this request active — pickup details flow begins
     await query(
-      "UPDATE borrow_requests SET status='active', due_at=$1 WHERE id=$2",
-      [dueAt, r.id]
+      "UPDATE borrow_requests SET status='active', due_at=$1, handover_pin=$2 WHERE id=$3",
+      [dueAt, pin, r.id]
     )
 
     // For PAID single-borrower items: decline all other requests immediately
@@ -414,6 +416,52 @@ router.patch('/:id/borrower-received', requireAuth, async (req, res) => {
       // increment return_count to free trust slot
       await query('UPDATE users SET return_count=return_count+1 WHERE id=$1', [r.borrower_id])
       await promoteIfEligible(r.borrower_id)
+    }
+
+    res.json({ success: true, lifecycleComplete: noReturn })
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Failed.' }) }
+})
+
+// PATCH /api/requests/:id/verify-handover - lender enters PIN to confirm handover
+router.patch('/:id/verify-handover', requireAuth, async (req, res) => {
+  try {
+    const { pin } = req.body
+    if (!pin) return res.status(400).json({ error: 'PIN required.' })
+
+    const r = await queryOne('SELECT * FROM borrow_requests WHERE id=$1', [req.params.id])
+    const item = await queryOne('SELECT * FROM items WHERE id=$1', [r?.item_id])
+
+    if (!r || !item) return res.status(404).json({ error: 'Not found.' })
+    if (r.owner_id !== req.userId) return res.status(403).json({ error: 'Not your item.' })
+    if (r.status !== 'active') return res.status(409).json({ error: 'Item must be active.' })
+    
+    // In case older requests don't have a PIN, fail gracefully or allow
+    if (r.handover_pin && r.handover_pin !== pin) {
+      return res.status(400).json({ error: 'Incorrect PIN.' })
+    }
+
+    // Atomic update
+    await query('UPDATE borrow_requests SET item_given=TRUE, borrower_received=TRUE WHERE id=$1', [r.id])
+
+    // item-given logic: decline others, mark borrowed
+    await query(
+      "UPDATE borrow_requests SET status='declined' WHERE item_id=$1 AND id<>$2 AND status IN ('pending','selected')",
+      [r.item_id, r.id]
+    )
+    await query("UPDATE items SET status='borrowed' WHERE id=$1", [r.item_id])
+
+    // borrower-received logic: handle sell/donate instantly
+    const noReturn = ['sell','donate'].includes(item.transaction_type)
+    if (noReturn) {
+      await query("UPDATE borrow_requests SET status='returned', returned_at=NOW() WHERE id=$1", [r.id])
+      await query("UPDATE items SET status='available', is_deleted=TRUE WHERE id=$1", [item.id])
+      await query('UPDATE users SET return_count=return_count+1 WHERE id=$1', [r.borrower_id])
+      await promoteIfEligible(r.borrower_id)
+    }
+
+    // If paid, trigger payout_status='done' immediately!
+    if (item.is_paid && r.payout_status !== 'done') {
+      await query("UPDATE borrow_requests SET payout_status='done' WHERE id=$1", [r.id])
     }
 
     res.json({ success: true, lifecycleComplete: noReturn })

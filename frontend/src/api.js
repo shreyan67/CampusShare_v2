@@ -122,6 +122,7 @@ export const confirmLFReceived = (id)           => req('PATCH', `/requests/${id}
 // Marketplace physical handover flow
 export const sendPickupDetails    = (id, details) => req('PATCH', `/requests/${id}/pickup-details`, { details })
 export const confirmItemGiven     = (id)           => req('PATCH', `/requests/${id}/item-given`)
+export const verifyHandover       = (id, pin)      => req('PATCH', `/requests/${id}/verify-handover`, { pin })
 export const confirmBorrowerReceived = (id)        => req('PATCH', `/requests/${id}/borrower-received`)
 
 // Chat flow

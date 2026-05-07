@@ -1,0 +1,1 @@
+const { query } = require('./src/db/pool'); query('SELECT br.*, i.title AS item_title FROM borrow_requests br JOIN items i ON br.item_id = i.id ORDER BY br.requested_at DESC LIMIT 1').then(res => console.log('OK')).catch(err => console.error('SQL ERROR:', err.message)).finally(() => process.exit(0));

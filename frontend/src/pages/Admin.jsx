@@ -304,16 +304,16 @@ function PayoutsTab({ apiFetch }) {
                         <div>
                           {!p.borrowerReceived && !p.borrowerComplaint && (
                             <div style={{ fontSize: 11, color: "#854F0B", marginBottom: 6 }}>
-                              ⚠️ Borrower hasn't confirmed receipt yet
+                              ⚠️ Handover PIN not verified yet
                             </div>
                           )}
                           {p.borrowerReceived && (
                             <div style={{ fontSize: 11, color: "#3B6D11", marginBottom: 6 }}>
-                              ✅ Borrower confirmed receipt
+                              ✅ Handover Verified via PIN
                             </div>
                           )}
 
-                          {p.borrowerComplaint && (
+                          {p.borrowerComplaint && !p.borrowerReceived && (
                             <div style={{ background: '#FCEBEB', padding: '8px', borderRadius: 6, border: '1px solid #f5b7b1', marginBottom: 8 }}>
                               <div style={{ fontSize: 12, color: "#c0392b", fontWeight: 700, marginBottom: 6 }}>🚨 Borrower Complained!</div>
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -327,9 +327,9 @@ function PayoutsTab({ apiFetch }) {
                             </div>
                           )}
 
-                          <button style={S.btn(false)} disabled={marking === p.requestId || p.borrowerComplaint}
+                          <button style={S.btn(false)} disabled={marking === p.requestId || (p.borrowerComplaint && !p.borrowerReceived)}
                             onClick={() => markPaid(p.requestId, p.lenderName, p.lenderUpi, p.payLender)}>
-                            {marking === p.requestId ? "Saving…" : "✓ Mark Paid"}
+                            {marking === p.requestId ? "Saving…" : "✓ Mark Paid to Lender"}
                           </button>
                         </div>
                       )}

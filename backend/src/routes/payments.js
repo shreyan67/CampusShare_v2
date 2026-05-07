@@ -434,7 +434,7 @@ router.post('/nudge-lender', async (req, res) => {
       const { Resend } = require('resend')
       const resend = new Resend(process.env.RESEND_API_KEY)
       await resend.emails.send({
-        from:    'CampusShare <onboarding@resend.dev>',
+        from:    'CampusShare <noreply@campusshare.co.in>',
         to:      borrowReq.lender_email,
         subject: `ACTION REQUIRED: Borrower is waiting for ${borrowReq.item_title}`,
         html: `
