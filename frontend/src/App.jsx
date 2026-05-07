@@ -1658,6 +1658,25 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
             </button>
           )}
 
+          {/* Report Lender Button (borrower only, paid item, active phase, not yet handed over) */}
+          {isBorrowing && r.status === 'active' && isPaid && !r.item_given && (
+            <button
+              className="btn-press"
+              style={{ ...btn(false, true), background: r.borrower_complaint ? '#FCEBEB' : '#fff', color: r.borrower_complaint ? '#c0392b' : '#666', border: '1px solid #e74c3c', flex: 1 }}
+              onClick={async () => {
+                if (r.borrower_complaint) { showToast('Admin has been informed. Please wait.'); return }
+                if (!window.confirm("Lender not responding? Report to admin to request a refund.")) return
+                const res = await api.reportLender(r.id)
+                if (res?.error) { showToast(res.error); return }
+                showToast('Admin has been notified. We will resolve this shortly.')
+                await reload()
+              }}
+              disabled={r.borrower_complaint}
+            >
+              {r.borrower_complaint ? '⚠️ Reported to Admin' : '🚩 Report Lender'}
+            </button>
+          )}
+
           {/* Pay button */}
           {isBorrowing && r.status === 'selected' && isPaid && !r.payment_confirmed && (
             <button className="btn-press" style={{ ...btn(true, true), flex: 1 }} onClick={async () => {
@@ -2142,7 +2161,7 @@ function ItemCard({ item, currentUserId, onRequest, myRequests = [], onDelete })
         {!isYours && !isLF && <SBadge status={item.status} />}
         {item.is_paid && !isLF && (
           <div style={{ position: 'absolute', bottom: 10, left: 10, background: 'rgba(15,23,42,0.85)', color: '#fff', fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 20, backdropFilter: 'blur(4px)' }}>
-            ₹{item.price_per_day}/day
+            ₹{item.price_per_day}{item.transaction_type === 'sell' ? '' : '/day'}
           </div>
         )}
       </div>

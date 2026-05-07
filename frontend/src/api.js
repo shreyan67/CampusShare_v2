@@ -100,6 +100,7 @@ export const updateUpi = (upiId) => req('PATCH', '/users/me/upi', { upiId })
 
 // Borrower revoke request
 export const revokeRequest = (id) => req('PATCH', `/requests/${id}/revoke`)
+export const reportLender  = (id) => req('PATCH', `/requests/${id}/complaint`)
 
 // Lender payout confirmation
 export const confirmPaymentReceived = (id) => req('PATCH', `/requests/${id}/payment-received`)

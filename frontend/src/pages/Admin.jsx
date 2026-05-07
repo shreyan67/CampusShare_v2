@@ -119,6 +119,27 @@ function PayoutsTab({ apiFetch }) {
 
   useEffect(() => { load() }, [])
 
+  async function nudgeLender(requestId) {
+    if (!window.confirm("Send an email reminding the lender to hand over the item?")) return
+    try {
+      await apiFetch("/api/payments/nudge-lender", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ requestId })
+      })
+      setPayouts(ps => ps.map(p => p.requestId === requestId ? { ...p, adminNudged: true } : p))
+      alert("Email sent to lender.")
+    } catch (e) { alert("Failed: " + e.message) }
+  }
+
+  async function refundBorrower(requestId, amount) {
+    if (!window.confirm(`Confirm: You have refunded ₹${amount} to the borrower via UPI? This will cancel the request.`)) return
+    try {
+      await apiFetch("/api/payments/refund-borrower", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ requestId })
+      })
+      setPayouts(ps => ps.map(p => p.requestId === requestId ? { ...p, payoutStatus: "refunded" } : p))
+    } catch (e) { alert("Failed: " + e.message) }
+  }
+
   async function markPaid(requestId, lenderName, lenderUpi, payLender) {
     if (!window.confirm(`Confirm: You've sent ₹${payLender} to ${lenderName} (${lenderUpi})?`)) return
     setMarking(requestId)
@@ -204,8 +225,8 @@ function PayoutsTab({ apiFetch }) {
             <thead>
               <tr style={{ background: "#f5f5f0" }}>
                 <th style={S.th}>Item</th>
-                <th style={S.th}>Lender</th>
-                <th style={S.th}>Lender UPI</th>
+                <th style={S.th}>Parties</th>
+                <th style={S.th}>UPI Info</th>
                 <th style={S.th}>Total Collected</th>
                 <th style={S.th}>Platform Fee</th>
                 <th style={S.th}>Pay Lender</th>
@@ -226,19 +247,46 @@ function PayoutsTab({ apiFetch }) {
                       <div style={{ fontSize: 11, color: "#999", marginTop: 2 }}>{p.requestId.slice(0,8)}…</div>
                     </td>
                     <td style={S.td}>
-                      <div style={{ fontWeight: 500 }}>{p.lenderName}</div>
-                      <div style={{ fontSize: 11, color: "#666" }}>{p.lenderEmail}</div>
+                      <div style={{ marginBottom: 6 }}>
+                        <span style={{ fontSize: 10, color: '#999', textTransform: 'uppercase' }}>Lender</span>
+                        <div style={{ fontWeight: 500 }}>{p.lenderName}</div>
+                        <div style={{ fontSize: 11, color: "#666" }}>{p.lenderEmail}</div>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: 10, color: '#999', textTransform: 'uppercase' }}>Borrower</span>
+                        <div style={{ fontWeight: 500 }}>{p.borrowerName}</div>
+                        <div style={{ fontSize: 11, color: "#666" }}>{p.borrowerEmail}</div>
+                      </div>
                     </td>
                     <td style={S.td}>
-                      {p.lenderUpi === "NOT SET" ? (
-                        <span style={S.badge("red")}>⚠ Not set</span>
-                      ) : (
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <span style={{ fontFamily: "monospace", fontSize: 12 }}>{p.lenderUpi}</span>
-                          <button onClick={() => navigator.clipboard.writeText(p.lenderUpi)}
-                            style={{ fontSize: 11, padding: "2px 6px", borderRadius: 4, border: "0.5px solid #ccc", cursor: "pointer", background: "#f5f5f0", whiteSpace: "nowrap" }}>
-                            Copy
-                          </button>
+                      <div style={{ marginBottom: 6 }}>
+                        <span style={{ fontSize: 10, color: '#999', textTransform: 'uppercase' }}>Lender UPI</span>
+                        {p.lenderUpi === "NOT SET" ? (
+                          <div style={{ marginTop: 2 }}><span style={S.badge("red")}>⚠ Not set</span></div>
+                        ) : (
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+                            <span style={{ fontFamily: "monospace", fontSize: 12 }}>{p.lenderUpi}</span>
+                            <button onClick={() => navigator.clipboard.writeText(p.lenderUpi)}
+                              style={{ fontSize: 11, padding: "2px 6px", borderRadius: 4, border: "0.5px solid #ccc", cursor: "pointer", background: "#f5f5f0", whiteSpace: "nowrap" }}>
+                              Copy
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      {p.borrowerComplaint && (
+                        <div>
+                          <span style={{ fontSize: 10, color: '#999', textTransform: 'uppercase' }}>Borrower UPI (For Refund)</span>
+                          {p.borrowerUpi === "NOT SET" ? (
+                            <div style={{ marginTop: 2 }}><span style={S.badge("red")}>⚠ Not set</span></div>
+                          ) : (
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+                              <span style={{ fontFamily: "monospace", fontSize: 12 }}>{p.borrowerUpi}</span>
+                              <button onClick={() => navigator.clipboard.writeText(p.borrowerUpi)}
+                                style={{ fontSize: 11, padding: "2px 6px", borderRadius: 4, border: "0.5px solid #ccc", cursor: "pointer", background: "#f5f5f0", whiteSpace: "nowrap" }}>
+                                Copy
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
                     </td>
@@ -254,7 +302,7 @@ function PayoutsTab({ apiFetch }) {
                     <td style={S.td}>
                       {p.payoutStatus === "manual_pending" && (
                         <div>
-                          {!p.borrowerReceived && (
+                          {!p.borrowerReceived && !p.borrowerComplaint && (
                             <div style={{ fontSize: 11, color: "#854F0B", marginBottom: 6 }}>
                               ⚠️ Borrower hasn't confirmed receipt yet
                             </div>
@@ -264,7 +312,22 @@ function PayoutsTab({ apiFetch }) {
                               ✅ Borrower confirmed receipt
                             </div>
                           )}
-                          <button style={S.btn(false)} disabled={marking === p.requestId}
+
+                          {p.borrowerComplaint && (
+                            <div style={{ background: '#FCEBEB', padding: '8px', borderRadius: 6, border: '1px solid #f5b7b1', marginBottom: 8 }}>
+                              <div style={{ fontSize: 12, color: "#c0392b", fontWeight: 700, marginBottom: 6 }}>🚨 Borrower Complained!</div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                <button style={S.btn(false)} onClick={() => nudgeLender(p.requestId)}>
+                                  {p.adminNudged ? 'Email Sent ✓' : '✉️ Inform Lender'}
+                                </button>
+                                <button style={S.btn(true)} onClick={() => refundBorrower(p.requestId, p.totalCollected)}>
+                                  Refund Borrower
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          <button style={S.btn(false)} disabled={marking === p.requestId || p.borrowerComplaint}
                             onClick={() => markPaid(p.requestId, p.lenderName, p.lenderUpi, p.payLender)}>
                             {marking === p.requestId ? "Saving…" : "✓ Mark Paid"}
                           </button>

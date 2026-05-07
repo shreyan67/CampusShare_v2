@@ -435,6 +435,19 @@ router.patch('/:id/revoke', requireAuth, async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ error: 'Failed.' }) }
 })
 
+// PATCH /api/requests/:id/complaint — borrower reports unresponsive lender
+router.patch('/:id/complaint', requireAuth, async (req, res) => {
+  try {
+    const r = await queryOne('SELECT * FROM borrow_requests WHERE id=$1', [req.params.id])
+    if (!r) return res.status(404).json({ error: 'Not found.' })
+    if (r.borrower_id !== req.userId) return res.status(403).json({ error: 'Not your request.' })
+    if (r.status !== 'active') return res.status(409).json({ error: 'Complaint is only available during the active phase.' })
+    
+    await query("UPDATE borrow_requests SET borrower_complaint=TRUE WHERE id=$1", [req.params.id])
+    res.json({ success: true })
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Failed to submit complaint.' }) }
+})
+
 // PATCH /api/requests/:id/payment-received — lender confirms they got paid by admin
 router.patch('/:id/payment-received', requireAuth, async (req, res) => {
   try {

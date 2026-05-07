@@ -271,14 +271,17 @@ router.get('/pending-payouts', async (req, res) => {
               br.payout_status, br.returned_at, br.status AS borrow_status,
               br.razorpay_payment_id, br.payment_confirmed,
               br.pickup_details, br.item_given, br.borrower_received,
+              br.borrower_complaint, br.admin_nudged_lender,
               u.name AS lender_name, u.email AS lender_email, u.upi_id AS lender_upi,
+              b.name AS borrower_name, b.email AS borrower_email, b.upi_id AS borrower_upi,
               i.title AS item_title
          FROM borrow_requests br
          JOIN users u ON u.id = br.owner_id
+         JOIN users b ON b.id = br.borrower_id
          JOIN items i ON i.id = br.item_id
         WHERE br.payment_confirmed = TRUE
           AND br.total_amount > 0
-          AND br.payout_status IN ('manual_pending','admin_paid','disputed','done')
+          AND br.payout_status IN ('manual_pending','admin_paid','disputed','done','refunded')
         ORDER BY br.updated_at DESC NULLS LAST, br.id DESC`,
       []
     )
@@ -303,6 +306,11 @@ router.get('/pending-payouts', async (req, res) => {
         borrowStatus:    r.borrow_status,
         borrowerReceived: r.borrower_received,
         itemGiven:       r.item_given,
+        borrowerComplaint: r.borrower_complaint,
+        adminNudged:     r.admin_nudged_lender,
+        borrowerName:    r.borrower_name,
+        borrowerEmail:   r.borrower_email,
+        borrowerUpi:     r.borrower_upi || 'NOT SET',
         totalCollected,
         platformFee,
         payLender,
@@ -392,6 +400,95 @@ router.post('/mark-paid', async (req, res) => {
     }
 
     res.json({ success: true, payLender, lenderEmail: borrowReq.lender_email })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Failed.' })
+  }
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/payments/nudge-lender   (admin use — add ?key=YOUR_ADMIN_SECRET)
+// Nudge a lender because the borrower complained about lack of response.
+// ─────────────────────────────────────────────────────────────────────────────
+router.post('/nudge-lender', async (req, res) => {
+  if (req.query.key !== process.env.ADMIN_SECRET)
+    return res.status(403).json({ error: 'Unauthorized.' })
+
+  try {
+    const { requestId } = req.body
+    if (!requestId) return res.status(400).json({ error: 'requestId required.' })
+
+    const borrowReq = await queryOne(
+      `SELECT br.*, u.name AS lender_name, u.email AS lender_email, i.title AS item_title
+         FROM borrow_requests br
+         JOIN users u ON u.id = br.owner_id
+         JOIN items i ON i.id = br.item_id
+        WHERE br.id = $1`,
+      [requestId]
+    )
+    if (!borrowReq) return res.status(404).json({ error: 'Request not found.' })
+
+    await query("UPDATE borrow_requests SET admin_nudged_lender=TRUE WHERE id=$1", [requestId])
+
+    try {
+      const { Resend } = require('resend')
+      const resend = new Resend(process.env.RESEND_API_KEY)
+      await resend.emails.send({
+        from:    'CampusShare <onboarding@resend.dev>',
+        to:      borrowReq.lender_email,
+        subject: `ACTION REQUIRED: Borrower is waiting for ${borrowReq.item_title}`,
+        html: `
+          <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
+            <h2 style="color:#c0392b">Hi ${borrowReq.lender_name},</h2>
+            <p>The borrower of <strong>${borrowReq.item_title}</strong> has reported that they are still waiting for you to hand over the item.</p>
+            <p>They have already paid for this transaction. Please log in to CampusShare and send your pickup details or confirm the handover.</p>
+            <p>If the item is not handed over soon, we may have to cancel the transaction and refund the borrower.</p>
+            <p style="font-size:12px;color:#999;margin-top:24px">— CampusShare Admin</p>
+          </div>
+        `
+      })
+      console.log(`[nudge-lender] Notification email sent to ${borrowReq.lender_email}`)
+    } catch (emailErr) {
+      console.error('[nudge-lender] Email failed:', emailErr.message)
+    }
+
+    res.json({ success: true })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Failed.' })
+  }
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/payments/refund-borrower   (admin use — add ?key=YOUR_ADMIN_SECRET)
+// Refund the borrower, mark payout as refunded, free the slot.
+// ─────────────────────────────────────────────────────────────────────────────
+router.post('/refund-borrower', async (req, res) => {
+  if (req.query.key !== process.env.ADMIN_SECRET)
+    return res.status(403).json({ error: 'Unauthorized.' })
+
+  try {
+    const { requestId } = req.body
+    if (!requestId) return res.status(400).json({ error: 'requestId required.' })
+
+    const borrowReq = await queryOne('SELECT * FROM borrow_requests WHERE id=$1', [requestId])
+    if (!borrowReq) return res.status(404).json({ error: 'Request not found.' })
+
+    // Mark refunded, closed
+    await query(
+      "UPDATE borrow_requests SET payout_status='refunded', status='returned', returned_at=NOW() WHERE id=$1",
+      [requestId]
+    )
+    
+    // Set item back to available, since the transaction is cancelled
+    await query("UPDATE items SET status='available' WHERE id=$1", [borrowReq.item_id])
+
+    const { promoteIfEligible } = require('../services/trust')
+    // Free the borrower's slot by incrementing return_count
+    await query('UPDATE users SET return_count=return_count+1 WHERE id=$1', [borrowReq.borrower_id])
+    await promoteIfEligible(borrowReq.borrower_id)
+
+    res.json({ success: true })
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: 'Failed.' })
