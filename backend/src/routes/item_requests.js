@@ -10,13 +10,17 @@ const router = express.Router()
 router.get('/', requireAuth, async (req, res) => {
   try {
     const { search } = req.query
-    const conds  = ['ir.college_id=$1', "ir.status='open'"]
+    const conds  = ['ir.college_id=$1']
     const params = [req.collegeId]
 
     if (search) {
       params.push(`%${search}%`)
       conds.push(`(ir.title ILIKE $${params.length} OR ir.description ILIKE $${params.length})`)
     }
+
+    // Include open requests, OR requests that are closed but the current user is either the requester or the accepted offerer
+    params.push(req.userId)
+    conds.push(`(ir.status='open' OR ir.requester_id=$${params.length} OR EXISTS (SELECT 1 FROM item_request_offers o WHERE o.request_id = ir.id AND o.offerer_id=$${params.length} AND o.status='accepted'))`)
 
     const rows = await query(`
       SELECT ir.*,
@@ -107,6 +111,39 @@ router.patch('/:id/close', requireAuth, async (req, res) => {
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: 'Failed.' })
+  }
+})
+
+// PATCH /api/item-requests/:id — edit an open request
+router.patch('/:id', requireAuth, async (req, res) => {
+  try {
+    const r = await queryOne('SELECT * FROM item_requests WHERE id=$1', [req.params.id])
+    if (!r) return res.status(404).json({ error: 'Not found.' })
+    if (r.requester_id !== req.userId) return res.status(403).json({ error: 'Not your request.' })
+    if (r.status !== 'open') return res.status(409).json({ error: 'Cannot edit a closed request.' })
+
+    const { title, description, category, urgency } = req.body
+    if (!title?.trim()) return res.status(400).json({ error: 'Title is required.' })
+
+    const validUrgency = ['low', 'medium', 'high']
+    const validCats = ['Books','Lab Equipment','Electronics','Notes & Guides','Accessories','Other','Any']
+
+    const updated = await queryOne(`
+      UPDATE item_requests
+      SET title=$1, description=$2, category=$3, urgency=$4
+      WHERE id=$5 RETURNING *
+    `, [
+      title.trim(),
+      (description || '').trim(),
+      validCats.includes(category) ? category : 'Any',
+      validUrgency.includes(urgency) ? urgency : 'medium',
+      req.params.id
+    ])
+
+    res.json({ request: updated })
+  } catch (err) {
+    console.error('[item-requests PATCH]', err)
+    res.status(500).json({ error: 'Failed to edit request.' })
   }
 })
 

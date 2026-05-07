@@ -80,6 +80,14 @@ export function listItem(data) {
   })
   return req('POST', '/items', fd)
 }
+export function editItem(id, data) {
+  const fd = new FormData()
+  Object.entries(data).forEach(([k, v]) => {
+    if (k === 'photos') { (v || []).forEach(f => fd.append('photos', f)) }
+    else if (v !== undefined && v !== null) fd.append(k, v)
+  })
+  return req('PATCH', `/items/${id}`, fd)
+}
 
 // Requests
 export const getMyRequests    = ()  => get('/requests/mine')
@@ -132,6 +140,7 @@ function clean(obj) {
 export const getItemRequests     = (search)          => get(`/item-requests${search?`?search=${encodeURIComponent(search)}`:''}`)
 export const getMyItemRequests   = ()                 => get('/item-requests/mine')
 export const postItemRequest     = (data)             => post('/item-requests', data)
+export const editItemRequest     = (id, data)         => patch(`/item-requests/${id}`, data)
 export const closeItemRequest    = (id)               => patch(`/item-requests/${id}/close`)
 export const getItemRequestOffers= (reqId)            => get(`/item-requests/${reqId}/offers`)
 export const makeOffer           = (reqId, data)      => post(`/item-requests/${reqId}/offers`, data)

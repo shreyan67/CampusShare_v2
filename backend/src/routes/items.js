@@ -142,4 +142,42 @@ router.delete('/:id', requireAuth, async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ error: 'Failed.' }) }
 })
 
+// PATCH /api/items/:id
+router.patch('/:id', requireAuth, upload.array('photos', 3), async (req, res) => {
+  try {
+    const item = await queryOne('SELECT * FROM items WHERE id=$1', [req.params.id])
+    if (!item) return res.status(404).json({ error: 'Not found.' })
+    if (item.owner_id !== req.userId) return res.status(403).json({ error: 'Not your item.' })
+    if (item.status !== 'available') return res.status(409).json({ error: 'Cannot edit an item that is currently requested or borrowed.' })
+
+    const { title, category, conditionNotes, maxBorrowDays, isPaid, pricePerDay, allowMultiple, transactionType } = req.body
+    if (!title?.trim()) return res.status(400).json({ error: 'Title is required.' })
+
+    const validCats = ['Books','Lab Equipment','Electronics','Notes & Guides','Accessories','Other']
+    if (!validCats.includes(category)) return res.status(400).json({ error: 'Invalid category.' })
+
+    const paid  = isPaid === 'true' || isPaid === true
+    const price = paid ? parseFloat(pricePerDay || 0) : 0
+
+    const validTxTypes = ['rent','sell','donate','lend']
+    const txType = validTxTypes.includes(transactionType) ? transactionType : paid ? 'rent' : 'lend'
+
+    // If new photos were uploaded, replace old ones (basic implementation).
+    let images = item.images
+    if (req.files && req.files.length > 0) {
+      images = req.files.map(f => `data:${f.mimetype};base64,${f.buffer.toString('base64')}`)
+    }
+
+    const updated = await queryOne(`
+      UPDATE items
+      SET title=$1, category=$2, condition_notes=$3, max_borrow_days=$4, is_paid=$5, price_per_day=$6, allow_multiple=$7, transaction_type=$8, images=$9
+      WHERE id=$10 RETURNING *
+    `, [
+      title.trim(), category, (conditionNotes||'').trim(), +maxBorrowDays||7, paid, price, allowMultiple === 'true' || allowMultiple === true, txType, images, req.params.id
+    ])
+
+    res.json({ item: updated })
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Failed to edit item.' }) }
+})
+
 module.exports = router
