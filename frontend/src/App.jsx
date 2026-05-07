@@ -863,8 +863,12 @@ function PickupDetailsPanel({ r, reload, showToast }) {
 
   return (
     <InfoBanner type="warn">
-      <div style={{ fontWeight: 600, marginBottom: 8 }}>📍 Send pickup details to borrower</div>
-      <div style={{ fontSize: 12, marginBottom: 8, opacity: 0.8 }}>Tell them where and when to collect.</div>
+      <div style={{ fontWeight: 600, marginBottom: 8 }}>
+        {r.is_paid ? '📍 Borrower has paid to admin , send pickup details' : '📍 Send pickup details to borrower'}
+      </div>
+      <div style={{ fontSize: 12, marginBottom: 8, opacity: 0.8 }}>
+        {r.is_paid ? 'You will be paid after item handover is confirmed' : 'Tell them where and when to collect.'}
+      </div>
       <div style={{ display: 'flex', gap: 8 }}>
         <input style={{ ...INP, flex: 1, fontSize: 13, padding: '8px 12px' }} placeholder="e.g. Hostel C room 301, 5–7pm" value={details} onChange={e => handleChange(e.target.value)} />
         <button className="btn-press" style={{ ...btn(true, true), whiteSpace: 'nowrap' }} onClick={send} disabled={saving}>{saving ? '…' : 'Send'}</button>
@@ -1626,15 +1630,10 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
         {/* Marketplace handover */}
         {!isLF && !isBorrowing && r.status === 'active' && <PickupDetailsPanel r={r} reload={reload} showToast={showToast} />}
         {/* Paid info */}
-        {isBorrowing && r.status === 'selected' && isPaid && r.payment_confirmed && (
-          <InfoBanner type="success">✅ Payment of ₹{r.total_amount} confirmed.</InfoBanner>
-        )}
-        {/* Lender: shown as soon as status flips to active after borrower pays */}
-        {!isBorrowing && r.status === 'active' && isPaid && r.payment_confirmed && !r.pickup_details && (
-          <InfoBanner type="success">
-            💰 <strong>Borrower has paid ₹{r.total_amount} — admin has received it.</strong>
-            <div style={{ marginTop: 6, opacity: 0.9 }}>Send your meetup/pickup details to the borrower below so they can collect the item.</div>
-          </InfoBanner>
+        {isBorrowing && ['selected', 'active'].includes(r.status) && isPaid && r.payment_confirmed && !r.item_given && (
+          <div style={{ fontSize: 11, color: '#059669', marginBottom: 8, textAlign: 'center', fontWeight: 500 }}>
+            ✅ You have paid, admin has received, and will pay lender after handover.
+          </div>
         )}
 
         {/* Payout banners */}
@@ -1653,7 +1652,7 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
 
           {/* Chat button */}
           {['active', 'overdue'].includes(r.status) && (
-            <button className="btn-press" style={{ ...btn(false, true), background: '#E2E8F0', flex: 1, position: 'relative' }} onClick={() => openChat(r)}>
+            <button className="btn-press" style={{ ...btn(false, true), background: '#25D366', color: '#fff', border: 'none', flex: 1, position: 'relative' }} onClick={() => openChat(r)}>
               💬 Chat
               {unreadCount > 0 && <span style={{ position: 'absolute', top: -6, right: -6, background: T.coral, color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 20, boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{unreadCount}</span>}
             </button>
