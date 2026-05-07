@@ -1143,9 +1143,19 @@ function LifecycleVisualizer({ r, isBorrowing, onClose }) {
 // ── ITEM REQUEST MODAL (Borrower posts "I need X") ────────────────────────────
 const _itemRequestCache = {}   // preserve draft across re-renders
 
-function RequestsModal({ open, onClose, onSuccess, showToast, editData = null, initialTab = 'browse', markRequestsSeen, reloadActivity, activeHandovers = [], historyHandovers = [], unreadMap = {}, openJourney, closeJourney, lifecycleMap, setChatRequest }) {
+function RequestsModal({ open, onClose, onSuccess, showToast, editData = null, initialTab = 'browse', markRequestsSeen, reloadActivity, activeHandovers = [], historyHandovers = [], unreadMap = {}, openJourney, closeJourney, lifecycleMap, setChatRequest, targetId, onClearTarget }) {
   const { user } = useApp()
   const [tab, setTab] = useState(initialTab) // 'browse', 'post', 'mine'
+
+  useEffect(() => {
+    if (open && targetId) {
+      setTimeout(() => {
+        const el = document.getElementById(targetId)
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        if (onClearTarget) onClearTarget()
+      }, 400)
+    }
+  }, [open, targetId, onClearTarget])
   
   // Post/Edit form state
   const [title, setTitle] = useState('')
@@ -1620,7 +1630,7 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
   }
 
   return (
-    <div className={inlineReq ? '' : 'fade-in'} style={{ 
+    <div id={`req-${r.id}`} className={inlineReq ? '' : 'fade-in'} style={{ 
       borderRadius: inlineReq ? 0 : 'var(--radius-sm)', 
       marginBottom: inlineReq ? 0 : 12, 
       background: inlineReq ? 'transparent' : '#fff', 
@@ -1661,7 +1671,7 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
           <div>
             <div style={{ fontSize: 10, color: '#3B82F6', letterSpacing: '0.04em', fontWeight: 800, textTransform: 'uppercase' }}>Current Stage</div>
             <div style={{ fontSize: 14, color: '#1E3A8A', fontWeight: 800 }}>
-              {r.status === 'pending' ? 'Waiting for approval' : r.status === 'selected' ? 'Approved — action needed' : r.status === 'active' ? 'Active — handover in progress' : ['returned', 'completed', 'closed'].includes(r.status) ? 'Complete ✓' : r.status === 'declined' ? 'Declined' : 'Overdue'}
+              {r.status === 'pending' ? 'Waiting for approval' : r.status === 'selected' ? 'Approved' : r.status === 'active' ? 'Active' : ['returned', 'completed', 'closed'].includes(r.status) ? 'Complete ✓' : r.status === 'declined' ? 'Declined' : 'Overdue'}
             </div>
           </div>
         </div>
@@ -1677,47 +1687,7 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
 
         {/* ── CONTEXTUAL GUIDE: what to do right now ── */}
         {(() => {
-          const txType = r.transaction_type || (isPaid ? 'rent' : 'lend')
-          const noReturn = ['sell', 'donate'].includes(txType)
-          let guide = null
-
-          if (isBorrowing) {
-            if (r.status === 'pending')
-              guide = { icon: '⏳', title: 'Waiting for approval', body: 'Lender will review your request.' }
-            else if (r.status === 'selected' && isPaid && !r.payment_confirmed)
-              guide = { icon: '💳', title: 'Action needed: Pay now', body: 'Tap "Pay via UPI" below to confirm.' }
-            else if (r.status === 'selected' && (!isPaid || r.payment_confirmed))
-              guide = { icon: '📍', title: 'Awaiting pickup details', body: 'Lender will share where to collect.' }
-            else if (r.status === 'active' && !r.pickup_details)
-              guide = { icon: '📍', title: 'Waiting for pickup details', body: 'Lender will share where to collect.' }
-            else if (r.status === 'active' && r.pickup_details && !r.item_given)
-              guide = { icon: '🏃', title: 'Go collect the item!', body: `Collect from: "${r.pickup_details}".` }
-            else if (r.status === 'active' && r.item_given && !r.borrower_received)
-              guide = { icon: '✋', title: 'Action needed: Confirm receipt', body: 'Lender handed over the item. Tap to confirm.' }
-            else if (r.status === 'active' && r.borrower_received && !noReturn)
-              guide = { icon: '📦', title: 'Return it when done', body: 'Return before due date.' }
-            else if (r.status === 'returned')
-              guide = { icon: '🎉', title: 'All done!', body: 'Transaction complete.' }
-          } else {
-            if (r.status === 'pending')
-              guide = { icon: '👀', title: 'Review request', body: 'Approve or decline below.' }
-            else if (r.status === 'selected' && !isPaid)
-              guide = { icon: '📍', title: 'Action needed: Send pickup details', body: 'Tap "Confirm & Proceed".' }
-            else if (r.status === 'active' && !r.pickup_details)
-              guide = { icon: '📍', title: 'Action needed: Send pickup details', body: 'Type where and when to hand over.' }
-            else if (r.status === 'active' && r.pickup_details && !r.item_given)
-              guide = { icon: '🤝', title: 'Hand it over', body: 'Once physically handed over, tap "Item Given ✓".' }
-            else if (r.status === 'active' && r.item_given && !r.borrower_received)
-              guide = { icon: '⏳', title: 'Waiting for borrower', body: 'Borrower needs to confirm receipt.' }
-            else if (r.status === 'active' && r.borrower_received && isPaid && r.payout_status === 'na')
-              guide = { icon: '💸', title: 'Payout coming', body: 'Admin will process payout shortly.' }
-            else if (r.payout_status === 'admin_paid')
-              guide = { icon: '💰', title: 'Confirm payment', body: 'Check UPI and tap "Payment Received ✓".' }
-            else if (r.status === 'active' && r.borrower_received && !isPaid && !noReturn)
-              guide = { icon: '📦', title: 'Waiting for return', body: 'When returned, tap "Confirm Return".' }
-            else if (r.status === 'returned')
-              guide = { icon: '🎉', title: 'All done!', body: 'Transaction complete.' }
-          }
+          const guide = getGuide(r, isBorrowing)
 
           if (!guide) return null
           return (
@@ -1977,6 +1947,53 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
   )
 }
 
+function getGuide(r, isBorrowing) {
+  if (!r) return null;
+  const isPaid = r.is_paid
+  const txType = r.transaction_type || (isPaid ? 'rent' : 'lend')
+  const noReturn = ['sell', 'donate'].includes(txType)
+  let guide = null
+
+  if (isBorrowing) {
+    if (r.status === 'pending')
+      guide = { icon: '⏳', title: 'Waiting for approval', body: 'Lender will review your request.' }
+    else if (r.status === 'selected' && isPaid && !r.payment_confirmed)
+      guide = { icon: '💳', title: 'Action needed: Pay now', body: 'Tap "Pay via UPI" below to confirm.' }
+    else if (r.status === 'selected' && (!isPaid || r.payment_confirmed))
+      guide = { icon: '📍', title: 'Awaiting pickup details', body: 'Lender will share where to collect.' }
+    else if (r.status === 'active' && !r.pickup_details)
+      guide = { icon: '📍', title: 'Waiting for pickup details', body: 'Lender will share where to collect.' }
+    else if (r.status === 'active' && r.pickup_details && !r.item_given)
+      guide = { icon: '🚶', title: 'Go collect the item!', body: `Collect from: "${r.pickup_details}".` }
+    else if (r.status === 'active' && r.item_given && !r.borrower_received)
+      guide = { icon: '🤝', title: 'Action needed: Confirm receipt', body: 'Lender handed over the item. Tap to confirm.' }
+    else if (r.status === 'active' && r.borrower_received && !noReturn)
+      guide = { icon: '📦', title: 'Return it when done', body: 'Return before due date.' }
+    else if (r.status === 'returned')
+      guide = { icon: '✅', title: 'All done!', body: 'Transaction complete.' }
+  } else {
+    if (r.status === 'pending')
+      guide = { icon: '📝', title: 'Review request', body: 'Approve or decline below.' }
+    else if (r.status === 'selected' && !isPaid)
+      guide = { icon: '📍', title: 'Action needed: Send pickup details', body: 'Tap "Confirm & Proceed".' }
+    else if (r.status === 'active' && !r.pickup_details)
+      guide = { icon: '📍', title: 'Action needed: Send pickup details', body: 'Type where and when to hand over.' }
+    else if (r.status === 'active' && r.pickup_details && !r.item_given)
+      guide = { icon: '🤝', title: 'Hand it over', body: 'Once physically handed over, tap "Item Given ✓".' }
+    else if (r.status === 'active' && r.item_given && !r.borrower_received)
+      guide = { icon: '⏳', title: 'Waiting for borrower', body: 'Borrower needs to confirm receipt.' }
+    else if (r.status === 'active' && r.borrower_received && isPaid && r.payout_status === 'na')
+      guide = { icon: '💸', title: 'Payout coming', body: 'Admin will process payout shortly.' }
+    else if (r.payout_status === 'admin_paid')
+      guide = { icon: '💰', title: 'Confirm payment', body: 'Check UPI and tap "Payment Received ✓".' }
+    else if (r.status === 'active' && r.borrower_received && !isPaid && !noReturn)
+      guide = { icon: '📦', title: 'Waiting for return', body: 'When returned, tap "Confirm Return".' }
+    else if (r.status === 'returned')
+      guide = { icon: '✅', title: 'All done!', body: 'Transaction complete.' }
+  }
+  return guide
+}
+
 function getActionRequired(r, isBorrowing) {
   if (!r) return false;
   if (['returned', 'declined', 'closed'].includes(r.status)) return false;
@@ -1998,9 +2015,9 @@ function getActionRequired(r, isBorrowing) {
   }
 }
 
-function ActivityModal({ open, onClose, refresh, showToast, newRequestCount = 0, myOffersCount = 0, markRequestsSeen, unreadMap = {}, onMarkRead, lifecycleMap, openJourney, closeJourney, setChatRequest }) {
+function ActivityModal({ open, onClose, refresh, showToast, defaultTab, targetId, onClearTarget, newRequestCount = 0, myOffersCount = 0, markRequestsSeen, unreadMap = {}, onMarkRead, lifecycleMap, openJourney, closeJourney, setChatRequest }) {
   const { user, setUser } = useApp()
-  const [tab, setTab] = useState('borrowing')
+  const [tab, setTab] = useState(defaultTab || 'borrowing')
   const [reqs, setReqs] = useState([])
   const [loading, setLoading] = useState(false)
   const [lastUpdated, setLastUpdated] = useState(null)
@@ -2046,6 +2063,20 @@ function ActivityModal({ open, onClose, refresh, showToast, newRequestCount = 0,
     document.addEventListener('focusout', onFocusOut)
     return () => { document.removeEventListener('focusin', onFocusIn); document.removeEventListener('focusout', onFocusOut) }
   }, [])
+
+  useEffect(() => {
+    if (defaultTab) setTab(defaultTab)
+  }, [defaultTab])
+
+  useEffect(() => {
+    if (open && targetId) {
+      setTimeout(() => {
+        const el = document.getElementById(targetId)
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        if (onClearTarget) onClearTarget()
+      }, 400)
+    }
+  }, [open, targetId, onClearTarget])
 
   useEffect(() => {
     if (!open) {
@@ -2487,6 +2518,8 @@ export default function App() {
   // survives cross-tab refreshes without triggering spurious notifications.
   const lastSeenRequestRef = useRef(new Date().toISOString())
   const [actOpen, setAct] = useState(false)
+  const [actTab, setActTab] = useState(null)
+  const [targetReqId, setTargetReqId] = useState(null)
   const [borrowItem, setBorrow] = useState(null)
   const [guideOpen, setGuideOpen] = useState(false)
   const [tick, setTick] = useState(0)
@@ -2775,6 +2808,8 @@ export default function App() {
             onClose={() => { setRequest(false); setEditRequestData(null); }} 
             onSuccess={refresh} 
             showToast={showToast}
+            targetId={targetReqId}
+            onClearTarget={() => setTargetReqId(null)}
             editData={editRequestData}
             markRequestsSeen={markRequestsSeen}
             reloadActivity={refresh}
@@ -2795,6 +2830,9 @@ export default function App() {
             onClose={() => setAct(false)} 
             refresh={refresh} 
             showToast={showToast} 
+            defaultTab={actTab}
+            targetId={targetReqId}
+            onClearTarget={() => setTargetReqId(null)}
             newRequestCount={newRequestCount} 
             myOffersCount={myOffersCount} 
             markRequestsSeen={markRequestsSeen} 
@@ -2911,18 +2949,30 @@ export default function App() {
         </div>
 
         {/* ACTION BANNER */}
-        {actionableReq && (
-          <div onClick={() => setAct(true)} style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'} onMouseOut={e => e.currentTarget.style.background = '#F8FAFC'}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 20 }}>👉</span>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#334155' }}>Action required on "{actionableReq.item_title || actionableReq.title}"</div>
-                <div style={{ fontSize: 12, color: '#64748B' }}>Tap here to view your Activity tab and complete the next step.</div>
+        {actionableReq && (() => {
+          const isMyReq = actionableReq.borrower_id === user?.id
+          const guide = getGuide(actionableReq, isMyReq)
+          return (
+            <div onClick={() => {
+              setTargetReqId(`req-${actionableReq.id}`)
+              if (actionableReq.from_item_request) {
+                setRequest(true)
+              } else {
+                setActTab(isMyReq ? 'borrowing' : 'lending')
+                setAct(true)
+              }
+            }} style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'} onMouseOut={e => e.currentTarget.style.background = '#F8FAFC'}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 20 }}>{guide?.icon || '👉'}</span>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#334155' }}>Action required on "{actionableReq.item_title || actionableReq.title}"</div>
+                  <div style={{ fontSize: 12, color: '#64748B' }}>{guide?.title ? guide.title : `Tap here to view your ${actionableReq.from_item_request ? 'Requests' : 'Activity'} tab and complete the next step.`}</div>
+                </div>
               </div>
+              <button className="btn-press" style={{ background: T.coral, color: '#fff', border: 'none', borderRadius: 20, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 8px rgba(232,68,90,0.25)' }}>{actionableReq.from_item_request ? 'View Requests' : 'View Activity'}</button>
             </div>
-            <button className="btn-press" style={{ background: T.coral, color: '#fff', border: 'none', borderRadius: 20, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 8px rgba(232,68,90,0.25)' }}>View Activity</button>
-          </div>
-        )}
+          )
+        })()}
 
         {/* BODY — desktop: sidebar + grid, mobile: grid only full width */}
         <div style={{ display: 'flex', minHeight: 'calc(100vh - 200px)' }}>
