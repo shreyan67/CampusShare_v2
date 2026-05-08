@@ -633,7 +633,12 @@ function ListItemModal({ open, onClose, onSuccess, editItemData = null }) {
 
   return (
     <Modal open={open} onClose={onClose}>
-      <div style={{ margin: '-8px -24px 20px', padding: '20px 24px 16px', background: `linear-gradient(135deg, ${T.navy} 0%, #1E293B 100%)`, borderRadius: '16px 16px 0 0' }}>
+      <div style={{ margin: '-8px -24px 20px', padding: '16px 24px 16px', background: `linear-gradient(135deg, ${T.navy} 0%, #1E293B 100%)`, borderRadius: '16px 16px 0 0' }}>
+        <div style={{ marginBottom: 12 }}>
+          <button className="btn-press" onClick={onClose} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', padding: '6px 12px', borderRadius: 20, color: '#fff', fontSize: 13, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+             ← Back
+          </button>
+        </div>
         <div style={{ fontFamily: 'var(--font-head)', fontSize: 22, fontWeight: 700, color: '#fff', letterSpacing: '-0.5px', marginBottom: 4 }}>{editItemData ? 'Edit item ✦' : 'List an item ✦'}</div>
         <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>Share what you're not using</div>
         <div style={{ marginTop: 10, padding: '8px 12px', background: 'rgba(255,255,255,0.08)', borderRadius: 'var(--radius-xs)', fontSize: 12, color: 'rgba(255,255,255,0.7)', ...row(6) }}>
@@ -1033,8 +1038,9 @@ function LifecycleVisualizer({ r, isBorrowing, onClose }) {
   }
   const meta = isLF ? TX_META.lost_found : (TX_META[txType] || TX_META.lend)
 
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.7)', backdropFilter: 'blur(8px)', zIndex: 300, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', padding: 0 }}
+  if (typeof document === 'undefined') return null;
+  return createPortal(
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.7)', backdropFilter: 'blur(8px)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', padding: 0 }}
       onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="slide-up" style={{ background: '#fff', borderRadius: '24px 24px 0 0', width: '100%', maxWidth: 480, maxHeight: '88vh', overflowY: 'auto', paddingBottom: 32 }}>
         {/* Handle */}
@@ -1136,7 +1142,8 @@ function LifecycleVisualizer({ r, isBorrowing, onClose }) {
           <button className="btn-press" style={{ ...btn(false), width: '100%', marginTop: 8 }} onClick={onClose}>Close</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -1219,7 +1226,12 @@ function RequestsModal({ open, onClose, onSuccess, showToast, editData = null, i
 
   return (
     <Modal open={open} onClose={onClose} wide={tab === 'browse'}>
-      <div style={{ margin: '-8px -24px 20px', padding: '20px 24px 0', background: `linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%)`, borderRadius: '16px 16px 0 0' }}>
+      <div style={{ margin: '-8px -24px 20px', padding: '16px 24px 0', background: `linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%)`, borderRadius: '16px 16px 0 0' }}>
+        <div style={{ marginBottom: 12 }}>
+          <button className="btn-press" onClick={onClose} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', padding: '6px 12px', borderRadius: 20, color: '#fff', fontSize: 13, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+             ← Back
+          </button>
+        </div>
         <div style={{ ...row(0), justifyContent: 'space-between', marginBottom: 4 }}>
           <div style={{ fontFamily: 'var(--font-head)', fontSize: 22, fontWeight: 700, color: '#fff', letterSpacing: '-0.5px' }}>
             {editData ? 'Edit Request ✏️' : '🙋 Community Requests'}
@@ -1486,7 +1498,7 @@ function ItemRequestsSection({ showToast, currentUserId, reload: reloadActivity,
             if (req.status === 'closed' && !inlineBR) return null
 
             return (
-              <div key={req.id} className="item-card" style={{ ...card, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden', cursor: 'pointer', gridColumn: inlineBR ? '1 / -1' : 'auto' }}>
+              <div key={req.id} className="item-card" style={{ ...card, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden', cursor: 'pointer' }}>
               {/* Top colour strip — replaces image */}
               <div style={{ height: 100, background: `linear-gradient(135deg, ${urgencyColor}18 0%, ${urgencyColor}08 100%)`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, position: 'relative', borderBottom: `1px solid ${urgencyColor}22` }}>
                 <Av user={{ name: req.requester_name, avatar: req.requester_avatar, color: req.requester_color }} size={38} />
@@ -1640,6 +1652,57 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
       await reload()
       return res
     } catch (err) { console.error(err); return { error: 'Something went wrong' } }
+  }
+
+  if (inlineReq) {
+    return (
+      <div id={`req-${r.id}`} style={{ padding: '10px 8px', background: '#F8FAFC', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: '#1E3A8A', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span>{r.status === 'pending' ? '📝' : r.status === 'selected' ? '✅' : r.status === 'active' ? '🤝' : r.status === 'returned' ? '📦' : r.status === 'declined' ? '❌' : '⚠️'}</span>
+            <span style={{ textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+               {r.status === 'pending' ? 'Waiting' : r.status === 'selected' ? 'Approved' : r.status === 'active' ? 'Active' : ['returned', 'completed', 'closed'].includes(r.status) ? 'Complete' : r.status === 'declined' ? 'Declined' : 'Overdue'}
+            </span>
+          </div>
+          <button className="btn-press" onClick={(e) => { e.stopPropagation(); openJourney(r.id); }} style={{ background: '#1D4ED8', color: '#fff', fontSize: 10, fontWeight: 700, padding: '4px 8px', borderRadius: 12, border: 'none', cursor: 'pointer' }}>
+            📍 Track
+          </button>
+        </div>
+        
+        {r.handover_pin && !r.item_given && isBorrowing && (
+          <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 6, padding: '4px', textAlign: 'center' }}>
+            <div style={{ fontSize: 9, color: '#64748B', fontWeight: 700 }}>PIN</div>
+            <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: '2px', color: '#0F172A' }}>{r.handover_pin}</div>
+          </div>
+        )}
+
+        {r.handover_pin && !r.item_given && !isBorrowing && (
+          <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 6, padding: '4px', textAlign: 'center' }}>
+            <div style={{ fontSize: 9, color: '#64748B', fontWeight: 700 }}>Ask borrower for PIN</div>
+          </div>
+        )}
+        
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button className="btn-press" onClick={(e) => { e.stopPropagation(); openChat(r); }} style={{ flex: 1, padding: '6px', background: '#10B981', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 6, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, cursor: 'pointer' }}>
+            💬 Chat {unreadCount > 0 && `(${unreadCount})`}
+          </button>
+          {isBorrowing && r.status === 'active' && !r.item_given && (
+            <button className="btn-press" onClick={async (e) => { 
+                e.stopPropagation(); 
+                if (r.borrower_complaint) { showToast('Admin has been informed. Please wait.'); return }
+                if (!window.confirm("Lender not responding? Report to admin for help/refund.")) return
+                const res = await api.reportLender(r.id)
+                if (res?.error) { showToast(res.error); return }
+                showToast('Admin has been notified. We will resolve this shortly.')
+                await reload()
+            }} style={{ flex: 1, padding: '6px', background: r.borrower_complaint ? '#FCEBEB' : '#fff', border: '1px solid #EF4444', color: r.borrower_complaint ? '#c0392b' : '#EF4444', fontSize: 10, fontWeight: 700, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, cursor: 'pointer' }}>
+              {r.borrower_complaint ? '⚠️ Reported' : '🚩 Report'}
+            </button>
+          )}
+        </div>
+        {showLifecycle && <LifecycleVisualizer r={r} isBorrowing={isBorrowing} onClose={() => closeJourney(r.id)} />}
+      </div>
+    )
   }
 
   return (
@@ -2145,7 +2208,12 @@ function ActivityModal({ open, onClose, refresh, showToast, defaultTab, targetId
   return (
     <Modal open={open} onClose={onClose} wide>
       {/* Navy header */}
-      <div style={{ margin: '-8px -24px 20px', padding: '20px 24px 16px', background: `linear-gradient(135deg, ${T.navy} 0%, #1E293B 100%)`, borderRadius: '16px 16px 0 0' }}>
+      <div style={{ margin: '-8px -24px 20px', padding: '16px 24px 16px', background: `linear-gradient(135deg, ${T.navy} 0%, #1E293B 100%)`, borderRadius: '16px 16px 0 0' }}>
+        <div style={{ marginBottom: 12 }}>
+          <button className="btn-press" onClick={onClose} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', padding: '6px 12px', borderRadius: 20, color: '#fff', fontSize: 13, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+             ← Back
+          </button>
+        </div>
         <div style={{ ...row(0), justifyContent: 'space-between', marginBottom: 2 }}>
           <div style={{ fontFamily: 'var(--font-head)', fontSize: 22, fontWeight: 700, color: '#fff', letterSpacing: '-0.5px' }}>My Activity</div>
           <div style={{ ...row(6) }}>
