@@ -97,6 +97,7 @@ function PayoutsTab({ apiFetch }) {
   const [marking, setMarking] = useState(null)
   const [err, setErr]         = useState("")
   const [filter, setFilter]   = useState("all") // all | pending | disputed | done
+  const [searchQuery, setSearchQuery] = useState("")
 
   async function load() {
     setLoading(true)
@@ -165,10 +166,27 @@ function PayoutsTab({ apiFetch }) {
   const pendingOwed   = payouts.filter(p => p.payoutStatus === "manual_pending").reduce((s, p) => s + p.payLender, 0).toFixed(2)
   const totalEarned   = payouts.reduce((s, p) => s + p.platformFee, 0).toFixed(2)
 
-  const filtered = filter === "all"      ? payouts
-                 : filter === "pending"  ? payouts.filter(p => ["manual_pending","admin_paid"].includes(p.payoutStatus))
-                 : filter === "disputed" ? payouts.filter(p => p.payoutStatus === "disputed")
-                 : payouts.filter(p => p.payoutStatus === "done")
+  const filtered = payouts.filter(p => {
+    if (filter === "pending" && !["manual_pending","admin_paid"].includes(p.payoutStatus)) return false;
+    if (filter === "disputed" && p.payoutStatus !== "disputed") return false;
+    if (filter === "done" && p.payoutStatus !== "done") return false;
+    
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const match = (
+        (p.itemTitle || "").toLowerCase().includes(q) ||
+        (p.requestId || "").toLowerCase().includes(q) ||
+        (p.lenderName || "").toLowerCase().includes(q) ||
+        (p.lenderEmail || "").toLowerCase().includes(q) ||
+        (p.borrowerName || "").toLowerCase().includes(q) ||
+        (p.borrowerEmail || "").toLowerCase().includes(q) ||
+        (p.lenderUpi || "").toLowerCase().includes(q) ||
+        (p.borrowerUpi || "").toLowerCase().includes(q)
+      );
+      if (!match) return false;
+    }
+    return true;
+  });
 
   if (loading) return <p style={{ color: "#666", fontSize: 13 }}>Loading payouts…</p>
   if (err)     return <p style={{ color: "#c0392b", fontSize: 13 }}>Error: {err}</p>
@@ -212,7 +230,16 @@ function PayoutsTab({ apiFetch }) {
             {l}{v === "disputed" && disputedCount > 0 ? ` (${disputedCount})` : ""}
           </button>
         ))}
-        <button onClick={load} style={{ marginLeft: "auto", padding: "4px 12px", borderRadius: 20, border: "0.5px solid #ccc", cursor: "pointer", fontSize: 12, background: "#f5f5f0" }}>↻ Refresh</button>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+          <input 
+            type="text" 
+            placeholder="Search title, name, email, UPI..." 
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            style={{ padding: "6px 12px", borderRadius: 20, border: "0.5px solid #ccc", fontSize: 12, width: 220 }}
+          />
+          <button onClick={load} style={{ padding: "4px 12px", borderRadius: 20, border: "0.5px solid #ccc", cursor: "pointer", fontSize: 12, background: "#f5f5f0" }}>↻ Refresh</button>
+        </div>
       </div>
 
       {filtered.length === 0 ? (
@@ -366,6 +393,7 @@ function ItemsTab({ apiFetch }) {
   const [requests, setRequests] = useState([])
   const [loading, setLoading] = useState(true)
   const [view, setView] = useState("items") // "items" or "requests"
+  const [searchQuery, setSearchQuery] = useState("")
 
   async function load() {
     setLoading(true)
@@ -416,19 +444,38 @@ function ItemsTab({ apiFetch }) {
 
   if (loading) return <p style={{ color: "#666", fontSize: 13 }}>Loading data…</p>
 
-  const list = view === "items" ? items : requests
+  const list = (view === "items" ? items : requests).filter(item => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      (item.title || "").toLowerCase().includes(q) ||
+      (item.id || "").toLowerCase().includes(q) ||
+      (item.owner_id || item.requester_id || "").toLowerCase().includes(q) ||
+      (item.status || "").toLowerCase().includes(q)
+    );
+  })
 
   return (
     <div>
-      <div style={{ ...S.row, marginBottom: 16 }}>
+      <div style={{ ...S.row, marginBottom: 8 }}>
         <div style={{ display: "flex", gap: 6, background: "#f5f5f0", padding: "4px", borderRadius: 8 }}>
           <button onClick={() => setView("items")} style={{ padding: "6px 12px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, background: view === "items" ? "#fff" : "transparent", color: view === "items" ? "#1a1a1a" : "#666", boxShadow: view === "items" ? "0 1px 3px rgba(0,0,0,0.1)" : "none" }}>Marketplace Items</button>
           <button onClick={() => setView("requests")} style={{ padding: "6px 12px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, background: view === "requests" ? "#fff" : "transparent", color: view === "requests" ? "#1a1a1a" : "#666", boxShadow: view === "requests" ? "0 1px 3px rgba(0,0,0,0.1)" : "none" }}>Borrow Requests</button>
         </div>
-        <button onClick={load} style={{ ...S.btn(false), marginLeft: "auto" }}>↻ Refresh</button>
-        {view === "items" && <button onClick={deleteAll} style={{ ...S.btn(true) }}>Delete ALL Items ⚠️</button>}
-        <span style={{ fontSize: 12, color: "#666", marginLeft: 8 }}>{list.length} records</span>
+        
+        <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+          <input 
+            type="text" 
+            placeholder="Search ID, Title, Status..." 
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            style={{ padding: "6px 12px", borderRadius: 20, border: "0.5px solid #ccc", fontSize: 12, width: 220 }}
+          />
+          <button onClick={load} style={{ ...S.btn(false) }}>↻ Refresh</button>
+          {view === "items" && <button onClick={deleteAll} style={{ ...S.btn(true) }}>Delete ALL Items ⚠️</button>}
+        </div>
       </div>
+      <div style={{ fontSize: 12, color: "#666", marginBottom: 8 }}>{list.length} records found</div>
       <div style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>

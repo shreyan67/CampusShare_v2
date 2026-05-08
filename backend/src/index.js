@@ -67,7 +67,7 @@ app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
 // 👉 View all items
 app.get('/admin/items', adminAuth, async (req, res) => {
   try {
-    const result = await pool.query("SELECT * FROM items ORDER BY id DESC")
+    const result = await pool.query("SELECT * FROM items ORDER BY created_at DESC")
     res.json(result.rows)
   } catch (err) {
     console.error(err)
