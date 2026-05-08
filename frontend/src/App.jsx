@@ -953,6 +953,8 @@ function UpiField({ user, setUser, showToast }) {
 // Supports all 4 transaction types: rent, sell, donate, lend
 
 function LifecycleVisualizer({ r, isBorrowing, onClose }) {
+
+
   const txType = r.transaction_type || (r.is_paid ? 'rent' : 'lend')
   const isLF = r.listing_type === 'lost_found'
 
@@ -2622,6 +2624,44 @@ export default function App() {
   const fetchIdRef = useRef(0)
   const statsKey = `cs_stats_${user?.id}`
   const { showInstall, installApp } = usePwaInstall();
+
+  // ── HARDWARE BACK BUTTON HANDLER ──────────────────────────────────────────
+  // Track which modals are open via a ref (avoids stale closures in popstate)
+  const modalsOpenRef = useRef({})
+  useEffect(() => {
+    modalsOpenRef.current = {
+      list: listOpen,
+      request: requestOpen,
+      activity: actOpen,
+      chat: !!chatRequest,
+      journey: Object.values(lifecycleOpenMap).some(Boolean),
+    }
+  })
+
+  // Push a dummy state whenever any modal opens so the back button has something to pop
+  const anyModalOpen = listOpen || requestOpen || actOpen || !!chatRequest || Object.values(lifecycleOpenMap).some(Boolean)
+  const prevAnyModalOpen = useRef(false)
+  useEffect(() => {
+    if (anyModalOpen && !prevAnyModalOpen.current) {
+      window.history.pushState({ csModal: true }, '')
+    }
+    prevAnyModalOpen.current = anyModalOpen
+  }, [anyModalOpen])
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const m = modalsOpenRef.current
+      // Close in priority order: chat > journey > activity > request > list
+      if (m.chat) { setChatRequest(null); return }
+      if (m.journey) { setLifecycleOpenMap({}); return }
+      if (m.activity) { setAct(false); return }
+      if (m.request) { setRequest(false); return }
+      if (m.list) { setList(false); return }
+      // Nothing open — let browser handle it (don't push state again)
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, []) // eslint-disable-line
 
   useEffect(() => {
     if (!user) return
