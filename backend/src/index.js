@@ -114,6 +114,35 @@ app.delete('/admin/delete-item/:id', adminAuth, async (req, res) => {
     res.status(500).send("Error deleting item")
   }
 })
+
+// 👉 View all item requests
+app.get('/admin/item-requests', adminAuth, async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM item_requests ORDER BY created_at DESC")
+    res.json(result.rows)
+  } catch (err) {
+    console.error(err)
+    res.status(500).send("Error fetching item requests")
+  }
+})
+
+// 👉 Delete ONE item request
+app.delete('/admin/delete-item-request/:id', adminAuth, async (req, res) => {
+  try {
+    const { id } = req.params
+    const result = await pool.query(
+      "DELETE FROM item_requests WHERE id = $1 RETURNING *",
+      [id]
+    )
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: "Request not found" })
+    }
+    res.json({ message: "Request deleted", item: result.rows[0] })
+  } catch (err) {
+    console.error(err)
+    res.status(500).send("Error deleting request")
+  }
+})
 app.delete("/admin/delete-all-items", adminAuth, async (req, res) => {
   try {
     await pool.query("DELETE FROM items");

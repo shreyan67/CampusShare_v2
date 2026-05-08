@@ -363,14 +363,20 @@ function PayoutsTab({ apiFetch }) {
 // ── ITEMS TAB ─────────────────────────────────────────────────────────────────
 function ItemsTab({ apiFetch }) {
   const [items, setItems] = useState([])
+  const [requests, setRequests] = useState([])
   const [loading, setLoading] = useState(true)
+  const [view, setView] = useState("items") // "items" or "requests"
 
   async function load() {
     setLoading(true)
     try {
-      const data = await apiFetch("/admin/items")
-      setItems(Array.isArray(data) ? data : [])
-    } catch { setItems([]) }
+      const [dataItems, dataReqs] = await Promise.all([
+        apiFetch("/admin/items").catch(() => []),
+        apiFetch("/admin/item-requests").catch(() => [])
+      ])
+      setItems(Array.isArray(dataItems) ? dataItems : [])
+      setRequests(Array.isArray(dataReqs) ? dataReqs : [])
+    } catch { setItems([]); setRequests([]) }
     setLoading(false)
   }
 
@@ -381,6 +387,14 @@ function ItemsTab({ apiFetch }) {
     try {
       await apiFetch(`/admin/delete-item/${id}`, { method: "DELETE" })
       setItems(i => i.filter(x => x.id !== id))
+    } catch (e) { alert("Failed: " + e.message) }
+  }
+
+  async function deleteRequest(id) {
+    if (!window.confirm("Delete this borrow request?")) return
+    try {
+      await apiFetch(`/admin/delete-item-request/${id}`, { method: "DELETE" })
+      setRequests(r => r.filter(x => x.id !== id))
     } catch (e) { alert("Failed: " + e.message) }
   }
 
@@ -400,39 +414,49 @@ function ItemsTab({ apiFetch }) {
     } catch (e) { alert("Failed: " + e.message) }
   }
 
-  if (loading) return <p style={{ color: "#666", fontSize: 13 }}>Loading items…</p>
+  if (loading) return <p style={{ color: "#666", fontSize: 13 }}>Loading data…</p>
+
+  const list = view === "items" ? items : requests
 
   return (
     <div>
       <div style={{ ...S.row, marginBottom: 16 }}>
-        <button onClick={load} style={{ ...S.btn(false) }}>↻ Refresh</button>
-        <button onClick={deleteAll} style={{ ...S.btn(true) }}>Delete ALL Items ⚠️</button>
-        <span style={{ fontSize: 12, color: "#666" }}>{items.length} items total</span>
+        <div style={{ display: "flex", gap: 6, background: "#f5f5f0", padding: "4px", borderRadius: 8 }}>
+          <button onClick={() => setView("items")} style={{ padding: "6px 12px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, background: view === "items" ? "#fff" : "transparent", color: view === "items" ? "#1a1a1a" : "#666", boxShadow: view === "items" ? "0 1px 3px rgba(0,0,0,0.1)" : "none" }}>Marketplace Items</button>
+          <button onClick={() => setView("requests")} style={{ padding: "6px 12px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, background: view === "requests" ? "#fff" : "transparent", color: view === "requests" ? "#1a1a1a" : "#666", boxShadow: view === "requests" ? "0 1px 3px rgba(0,0,0,0.1)" : "none" }}>Borrow Requests</button>
+        </div>
+        <button onClick={load} style={{ ...S.btn(false), marginLeft: "auto" }}>↻ Refresh</button>
+        {view === "items" && <button onClick={deleteAll} style={{ ...S.btn(true) }}>Delete ALL Items ⚠️</button>}
+        <span style={{ fontSize: 12, color: "#666", marginLeft: 8 }}>{list.length} records</span>
       </div>
       <div style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ background: "#f5f5f0" }}>
               <th style={S.th}>Title</th>
-              <th style={S.th}>Owner ID</th>
+              <th style={S.th}>{view === "items" ? "Owner ID" : "Requester ID"}</th>
               <th style={S.th}>Status</th>
               <th style={S.th}>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {items.length === 0 ? (
-              <tr><td colSpan={4} style={{ ...S.td, textAlign: "center", color: "#999" }}>No items</td></tr>
-            ) : items.map(item => (
+            {list.length === 0 ? (
+              <tr><td colSpan={4} style={{ ...S.td, textAlign: "center", color: "#999" }}>No {view} found</td></tr>
+            ) : list.map(item => (
               <tr key={item.id}>
                 <td style={S.td}>
                   <div style={{ fontWeight: 500 }}>{item.title}</div>
                   <div style={{ fontSize: 11, color: "#999" }}>{item.id.slice(0,8)}…</div>
                 </td>
-                <td style={{ ...S.td, fontFamily: "monospace", fontSize: 12 }}>{item.owner_id.slice(0,12)}…</td>
-                <td style={S.td}><span style={S.badge(item.status === "available" ? "green" : "orange")}>{item.status}</span></td>
+                <td style={{ ...S.td, fontFamily: "monospace", fontSize: 12 }}>{(item.owner_id || item.requester_id).slice(0,12)}…</td>
+                <td style={S.td}><span style={S.badge(item.status === "available" || item.status === "open" ? "green" : "orange")}>{item.status}</span></td>
                 <td style={{ ...S.td, ...S.row }}>
-                  <button onClick={() => deleteItem(item.id)} style={{ ...S.btn(false), background: "#333" }}>Delete Item</button>
-                  <button onClick={() => deleteUser(item.owner_id)} style={S.btn(true)}>Delete User</button>
+                  {view === "items" ? (
+                    <button onClick={() => deleteItem(item.id)} style={{ ...S.btn(false), background: "#333" }}>Delete Item</button>
+                  ) : (
+                    <button onClick={() => deleteRequest(item.id)} style={{ ...S.btn(false), background: "#333" }}>Delete Request</button>
+                  )}
+                  <button onClick={() => deleteUser(item.owner_id || item.requester_id)} style={S.btn(true)}>Delete User</button>
                 </td>
               </tr>
             ))}
