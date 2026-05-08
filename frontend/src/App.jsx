@@ -1152,7 +1152,7 @@ function LifecycleVisualizer({ r, isBorrowing, onClose }) {
 // ── ITEM REQUEST MODAL (Borrower posts "I need X") ────────────────────────────
 const _itemRequestCache = {}   // preserve draft across re-renders
 
-function RequestsModal({ open, onClose, onSuccess, showToast, editData = null, initialTab = 'browse', markRequestsSeen, reloadActivity, activeHandovers = [], historyHandovers = [], unreadMap = {}, openJourney, closeJourney, lifecycleMap, setChatRequest, targetId, onClearTarget }) {
+function RequestsModal({ open, onClose, onSuccess, showToast, editData = null, onEditReq, initialTab = 'browse', markRequestsSeen, reloadActivity, activeHandovers = [], historyHandovers = [], unreadMap = {}, openJourney, closeJourney, lifecycleMap, setChatRequest, targetId, onClearTarget }) {
   const { user } = useApp()
   const [tab, setTab] = useState(initialTab) // 'browse', 'post', 'mine'
 
@@ -1276,7 +1276,7 @@ function RequestsModal({ open, onClose, onSuccess, showToast, editData = null, i
             currentUserId={user?.id}
             onMarkSeen={markRequestsSeen}
             reload={reloadActivity}
-            onEdit={(req) => { setTab('post'); }} // Note: actual editing handled by editData prop from parent
+            onEdit={(req) => { if (onEditReq) onEditReq(req); setTab('post'); }} // Note: actual editing handled by editData prop from parent
             activeHandovers={activeHandovers}
             historyHandovers={historyHandovers}
             openJourney={openJourney}
@@ -1556,8 +1556,8 @@ function ItemRequestsSection({ showToast, currentUserId, reload: reloadActivity,
 
                   {/* Expand to see offers */}
                   {(isOwn || req.offer_count > 0) && isOpen && (
-                    <button onClick={e => { e.stopPropagation(); toggleExpand(req) }} style={{ background: 'none', border: 'none', fontSize: 11, color: T.info, cursor: 'pointer', padding: '2px 0', width: '100%', textAlign: 'center' }}>
-                      {isExp ? '▲ Hide offers' : `▼ View offers (${req.offer_count || 0})`}
+                    <button className="btn-press" onClick={e => { e.stopPropagation(); toggleExpand(req) }} style={{ width: '100%', padding: '8px', marginTop: 8, background: isExp ? '#F1F5F9' : '#EEF2FF', color: isExp ? '#475569' : '#4F46E5', border: 'none', borderRadius: '8px', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                      {isExp ? '▲ Hide Offers' : `👋 View ${req.offer_count} Offer${req.offer_count !== 1 ? 's' : ''}`}
                     </button>
                   )}
                 </div>
@@ -1568,18 +1568,29 @@ function ItemRequestsSection({ showToast, currentUserId, reload: reloadActivity,
                 <div style={{ borderTop: `1px solid var(--border-soft)`, padding: '10px 12px', background: 'rgba(15,23,42,0.02)' }}>
                   {reqOffers.length === 0 && <div style={{ fontSize: 12, color: T.textSoft, textAlign: 'center' }}>No offers yet.</div>}
                   {reqOffers.map(offer => (
-                    <div key={offer.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', background: 'rgba(15,23,42,0.03)', borderRadius: 'var(--radius-xs)', marginBottom: 5 }}>
-                      <Av user={{ name: offer.offerer_name, color: offer.offerer_color }} size={24} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 12, fontWeight: 600 }}>{TX_ICONS[offer.transaction_type]} {offer.offerer_name} — {TX_LABELS[offer.transaction_type]}{offer.price > 0 && <span style={{ color: T.coral }}> ₹{offer.price}</span>}</div>
-                        {offer.note && <div style={{ fontSize: 11, color: T.textMid }}>"{offer.note}"</div>}
+                    <div key={offer.id} style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '8px', background: 'rgba(15,23,42,0.03)', borderRadius: 'var(--radius-xs)', marginBottom: 5 }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Av user={{ name: offer.offerer_name, color: offer.offerer_color }} size={24} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: '#1E293B', marginBottom: 2 }}>{TX_ICONS[offer.transaction_type]} {offer.offerer_name}</div>
+                          <div style={{ fontSize: 11, color: '#475569', display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+                            <span style={{ fontWeight: 600, color: offer.transaction_type === 'lend' || offer.transaction_type === 'donate' ? '#10B981' : '#F59E0B' }}>
+                              {offer.transaction_type === 'lend' ? 'Lending (Free, return later)' :
+                               offer.transaction_type === 'donate' ? 'Donating (Free, yours to keep)' :
+                               offer.transaction_type === 'rent' ? `Renting at ₹${offer.price}/day` :
+                               `Selling for ₹${offer.price}`}
+                            </span>
+                          </div>
+                          {offer.note && <div style={{ fontSize: 11, color: '#64748B', marginTop: 4, fontStyle: 'italic', background: '#F1F5F9', padding: '4px 6px', borderRadius: 4 }}>"{offer.note}"</div>}
+                        </div>
+                        {offer.status === 'accepted' && <span style={{ fontSize: 11, color: T.success, fontWeight: 700 }}>✓</span>}
+                        {offer.status === 'declined' && <span style={{ fontSize: 11, color: T.error }}>✗</span>}
                       </div>
-                      {offer.status === 'accepted' && <span style={{ fontSize: 11, color: T.success, fontWeight: 700 }}>✓</span>}
-                      {offer.status === 'declined' && <span style={{ fontSize: 11, color: T.error }}>✗</span>}
+                      
                       {isOwn && isOpen && offer.status === 'pending' && (
-                        <div style={{ display: 'flex', gap: 3 }}>
-                          <button className="btn-press" style={{ ...btn(true, true), fontSize: 10, padding: '3px 8px' }} onClick={() => acceptOffer(req.id, offer.id, req)}>Accept</button>
-                          <button className="btn-press" style={{ ...btn(false, true), fontSize: 10, padding: '3px 8px', color: T.error }} onClick={() => declineOffer(req.id, offer.id)}>Decline</button>
+                        <div style={{ display: 'flex', gap: 6, width: '100%', marginTop: 2 }}>
+                          <button className="btn-press" style={{ ...btn(true, true), fontSize: 11, padding: '6px 8px', flex: 1 }} onClick={() => acceptOffer(req.id, offer.id, req)}>Accept</button>
+                          <button className="btn-press" style={{ ...btn(false, true), fontSize: 11, padding: '6px 8px', color: T.error, flex: 1 }} onClick={() => declineOffer(req.id, offer.id)}>Decline</button>
                         </div>
                       )}
                     </div>
@@ -1656,34 +1667,116 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
     } catch (err) { console.error(err); return { error: 'Something went wrong' } }
   }
 
+
+
   if (inlineReq) {
+    const guide = getGuide(r, isBorrowing)
     return (
       <div id={`req-${r.id}`} style={{ padding: '10px 8px', background: '#F8FAFC', display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ fontSize: 11, fontWeight: 800, color: '#1E3A8A', display: 'flex', alignItems: 'center', gap: 4 }}>
             <span>{r.status === 'pending' ? '📝' : r.status === 'selected' ? '✅' : r.status === 'active' ? '🤝' : r.status === 'returned' ? '📦' : r.status === 'declined' ? '❌' : '⚠️'}</span>
             <span style={{ textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-               {r.status === 'pending' ? 'Waiting' : r.status === 'selected' ? 'Approved' : r.status === 'active' ? 'Active' : ['returned', 'completed', 'closed'].includes(r.status) ? 'Complete' : r.status === 'declined' ? 'Declined' : 'Overdue'}
+               {r.status === 'pending' ? 'Wait' : r.status === 'selected' ? 'Apprv' : r.status === 'active' ? 'Active' : ['returned', 'completed', 'closed'].includes(r.status) ? 'Done' : 'Fail'}
             </span>
           </div>
           <button className="btn-press" onClick={(e) => { e.stopPropagation(); openJourney(r.id); }} style={{ background: '#1D4ED8', color: '#fff', fontSize: 10, fontWeight: 700, padding: '4px 8px', borderRadius: 12, border: 'none', cursor: 'pointer' }}>
             📍 Track
           </button>
         </div>
-        
-        {r.handover_pin && !r.item_given && isBorrowing && (
-          <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 6, padding: '4px', textAlign: 'center' }}>
-            <div style={{ fontSize: 9, color: '#64748B', fontWeight: 700 }}>PIN</div>
-            <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: '2px', color: '#0F172A' }}>{r.handover_pin}</div>
+
+        {guide && (
+          <div style={{ fontSize: 10, color: '#475569', lineHeight: 1.2 }}>
+            <strong>{guide.icon} {guide.title}</strong>
           </div>
         )}
 
-        {r.handover_pin && !r.item_given && !isBorrowing && (
-          <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 6, padding: '4px', textAlign: 'center' }}>
-            <div style={{ fontSize: 9, color: '#64748B', fontWeight: 700 }}>Ask borrower for PIN</div>
-          </div>
-        )}
-        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }} onClick={e => e.stopPropagation()}>
+          {isBorrowing && r.status === 'selected' && isPaid && !r.payment_confirmed && (
+            <button className="btn-press" style={{...btn(true,true), fontSize:10, padding:'6px', width:'100%'}} onClick={async () => {
+              const orderRes = await api.createPaymentOrder(r.id)
+              if (orderRes?.error) { showToast(orderRes.error); return }
+              if (!window.Razorpay) {
+                await new Promise((resolve, reject) => {
+                  const s = document.createElement('script')
+                  s.src = 'https://checkout.razorpay.com/v1/checkout.js'
+                  s.onload = resolve; s.onerror = reject
+                  document.body.appendChild(s)
+                })
+              }
+              const rzp = new window.Razorpay({
+                key: orderRes.keyId, amount: orderRes.amount, currency: orderRes.currency,
+                name: 'CampusShare', description: `Rental: ${r.item_title}`,
+                order_id: orderRes.orderId, theme: { color: T.coral },
+                handler: async (response) => {
+                  const verifyRes = await api.verifyPayment({
+                    requestId: r.id,
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_signature: response.razorpay_signature,
+                  })
+                  if (verifyRes?.error) { showToast('Verification failed. Contact support.'); return }
+                  const activateRes = await api.activateAfterPayment(r.id)
+                  if (activateRes?.error) { console.warn('Activate warning:', activateRes.error) }
+                  showToast('Payment successful! Lender notified to send pickup details.')
+                  await reload()
+                },
+                modal: { ondismiss: () => showToast('Payment cancelled.') },
+              })
+              rzp.open()
+            }}>Pay ₹{r.total_amount}</button>
+          )}
+          {!isBorrowing && r.status === 'selected' && !isPaid && (
+            <button className="btn-press" style={{...btn(true,true), fontSize:10, padding:'6px', width:'100%'}} onClick={() => act(api.finalizeBorrow, r.id)}>Confirm & Proceed</button>
+          )}
+          {!isBorrowing && r.status === 'active' && !r.pickup_details && (
+             <div style={{ display: 'flex', gap: 4 }}>
+               <input style={{...INP, fontSize:10, padding:'6px', flex:1, minWidth:0}} placeholder="Where/When?" id={`pickup-${r.id}`} />
+               <button className="btn-press" style={{...btn(true,true), fontSize:10, padding:'6px 10px'}} onClick={() => {
+                 const v = document.getElementById(`pickup-${r.id}`).value;
+                 if(v) act(api.sendPickupDetails, r.id, v);
+               }}>Send</button>
+             </div>
+          )}
+          {/* Lost & Found Handover */}
+          {isLF && !isBorrowing && r.status === 'selected' && r.pickup_message && (
+             <button className="btn-press" style={{...btn(true,true), fontSize:10, padding:'6px', width:'100%'}} onClick={() => act(api.confirmHandover, r.id)}>Handed Over ✓</button>
+          )}
+          {isLF && isBorrowing && r.status === 'active' && (
+             <button className="btn-press" style={{...btn(true,true), fontSize:10, padding:'6px', width:'100%'}} onClick={async () => {
+                 if(!window.confirm('Received?')) return;
+                 act(api.confirmLFReceived, r.id);
+             }}>I've Received It ✓</button>
+          )}
+
+          {/* Normal Item Anti-Fraud Handover (Lender verifies PIN) */}
+          {!isLF && !isBorrowing && r.status === 'active' && r.pickup_details && !r.item_given && (
+             <div style={{ display: 'flex', gap: 4 }}>
+               <input type="text" maxLength={4} style={{...INP, fontSize:10, padding:'6px', width:50, textAlign:'center', letterSpacing:2, minWidth:0}} placeholder="PIN" value={pin} onChange={e => setPin(e.target.value.replace(/\D/g, ''))} />
+               <button className="btn-press" style={{...btn(true,true), fontSize:10, padding:'6px 10px', flex:1, background: pin.length===4 ? T.coral : '#94A3B8'}} disabled={pin.length!==4} onClick={() => act(api.verifyHandover, r.id, pin)}>Verify</button>
+             </div>
+          )}
+          
+          {/* Normal Item Anti-Fraud Handover (Borrower shows PIN) */}
+          {!isLF && isBorrowing && r.handover_pin && r.status === 'active' && !r.item_given && (
+            <div style={{ fontSize: 11, textAlign: 'center', background: '#fff', border: '1px solid #E2E8F0', padding: '6px', borderRadius: 6, color: '#475569' }}>
+              Handover PIN: <strong style={{ letterSpacing: 2, color: '#0F172A', fontSize: 13 }}>{r.handover_pin}</strong>
+            </div>
+          )}
+
+          {/* Fallback if somehow item_given but not borrower_received (legacy state) */}
+          {!isLF && isBorrowing && r.status === 'active' && r.item_given && !r.borrower_received && (
+            <button className="btn-press" style={{...btn(true,true), fontSize:10, padding:'6px', width:'100%'}} onClick={() => act(api.confirmBorrowerReceived, r.id)}>Confirm Receipt</button>
+          )}
+
+          {!isBorrowing && r.payout_status === 'admin_paid' && (
+             <button className="btn-press" style={{...btn(true,true), fontSize:10, padding:'6px', background: T.success, width:'100%'}} onClick={() => act(api.confirmPaymentReceived, r.id)}>Got Money ✓</button>
+          )}
+          {!isBorrowing && r.listing_type !== 'lost_found' && ['active', 'overdue'].includes(r.status) && r.borrower_received && (
+             <button className="btn-press" style={{...btn(true,true), fontSize:10, padding:'6px', width:'100%'}} onClick={() => act(api.confirmReturn, r.id)}>Confirm Return</button>
+          )}
+        </div>
+
         <div style={{ display: 'flex', gap: 6 }}>
           <button className="btn-press" onClick={(e) => { e.stopPropagation(); openChat(r); }} style={{ flex: 1, padding: '6px', background: '#10B981', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 6, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, cursor: 'pointer' }}>
             💬 Chat {unreadCount > 0 && `(${unreadCount})`}
@@ -1691,17 +1784,18 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
           {isBorrowing && r.status === 'active' && !r.item_given && (
             <button className="btn-press" onClick={async (e) => { 
                 e.stopPropagation(); 
-                if (r.borrower_complaint) { showToast('Admin has been informed. Please wait.'); return }
-                if (!window.confirm("Lender not responding? Report to admin for help/refund.")) return
+                if (r.borrower_complaint) { showToast('Admin informed.'); return }
+                if (!window.confirm("Report lender?")) return
                 const res = await api.reportLender(r.id)
                 if (res?.error) { showToast(res.error); return }
-                showToast('Admin has been notified. We will resolve this shortly.')
+                showToast('Admin notified.')
                 await reload()
-            }} style={{ flex: 1, padding: '6px', background: r.borrower_complaint ? '#FCEBEB' : '#fff', border: '1px solid #EF4444', color: r.borrower_complaint ? '#c0392b' : '#EF4444', fontSize: 10, fontWeight: 700, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, cursor: 'pointer' }}>
-              {r.borrower_complaint ? '⚠️ Reported' : '🚩 Report'}
+            }} style={{ padding: '6px 8px', background: r.borrower_complaint ? '#FCEBEB' : '#fff', border: '1px solid #EF4444', color: r.borrower_complaint ? '#c0392b' : '#EF4444', fontSize: 10, fontWeight: 700, borderRadius: 6, cursor: 'pointer' }}>
+              {r.borrower_complaint ? '⚠️' : '🚩'}
             </button>
           )}
         </div>
+        
         {showLifecycle && <LifecycleVisualizer r={r} isBorrowing={isBorrowing} onClose={() => closeJourney(r.id)} />}
       </div>
     )
@@ -2395,9 +2489,12 @@ function ItemCard({ item, currentUserId, onRequest, myRequests = [], onDelete, o
         )}
         {!isYours && isLF && <span style={{ background: '#EDE9FE', color: '#5B21B6', fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20, position: 'absolute', top: 10, right: 10 }}>Lost & Found</span>}
         {!isYours && !isLF && <SBadge status={item.status} />}
-        {item.is_paid && !isLF && (
-          <div style={{ position: 'absolute', bottom: 10, left: 10, background: 'rgba(15,23,42,0.85)', color: '#fff', fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 20, backdropFilter: 'blur(4px)' }}>
-            ₹{item.price_per_day}{item.transaction_type === 'sell' ? '' : '/day'}
+        {!isLF && (
+          <div style={{ position: 'absolute', bottom: 10, left: 10, background: 'rgba(15,23,42,0.85)', color: '#fff', fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 20, backdropFilter: 'blur(4px)' }}>
+            {item.transaction_type === 'sell' ? `Buy for ₹${item.price_per_day}` :
+             item.transaction_type === 'rent' ? `Rent ₹${item.price_per_day}/day` :
+             item.transaction_type === 'donate' ? 'Free (Yours to keep)' :
+             'Free (Return later)'}
           </div>
         )}
       </div>
@@ -2932,6 +3029,7 @@ export default function App() {
             targetId={targetReqId}
             onClearTarget={() => setTargetReqId(null)}
             editData={editRequestData}
+            onEditReq={setEditRequestData}
             markRequestsSeen={markRequestsSeen}
             reloadActivity={refresh}
             activeHandovers={myRequests.filter(r => r.from_item_request && !['returned', 'declined', 'closed'].includes(r.status))}
