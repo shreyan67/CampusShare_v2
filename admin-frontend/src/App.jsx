@@ -243,27 +243,27 @@ function PayoutsTab({ apiFetch }) {
       )}
 
       {/* Summary stats */}
-      <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
-        <div style={S.stat}>
+      <div className="stats-container" style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+        <div className="stat-card" style={S.stat}>
           <div style={{ fontSize: 11, color: "#666", marginBottom: 4 }}>Awaiting your payment</div>
           <div style={{ fontSize: 22, fontWeight: 700, color: "#e94560" }}>{pendingCount}</div>
         </div>
-        <div style={S.stat}>
+        <div className="stat-card" style={S.stat}>
           <div style={{ fontSize: 11, color: "#666", marginBottom: 4 }}>Amount to send out</div>
           <div style={{ fontSize: 22, fontWeight: 700 }}>₹{pendingOwed}</div>
         </div>
-        <div style={S.stat}>
+        <div className="stat-card" style={S.stat}>
           <div style={{ fontSize: 11, color: "#666", marginBottom: 4 }}>Your total earnings</div>
           <div style={{ fontSize: 22, fontWeight: 700, color: "#3B6D11" }}>₹{totalEarned}</div>
         </div>
-        <div style={S.stat}>
+        <div className="stat-card" style={S.stat}>
           <div style={{ fontSize: 11, color: "#666", marginBottom: 4 }}>Total transactions</div>
           <div style={{ fontSize: 22, fontWeight: 700 }}>{payouts.length}</div>
         </div>
       </div>
 
       {/* Pipeline legend */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
+      <div className="flex-wrap-mobile" style={{ display: "flex", gap: 8, marginBottom: 16, alignItems: "center" }}>
         <span style={{ fontSize: 12, color: "#666", marginRight: 4 }}>Filter:</span>
         {[["all","All"], ["pending","Needs Action"], ["disputed","Disputed"]].map(([v, l]) => (
           <button key={v} onClick={() => setFilter(v)}
@@ -272,15 +272,16 @@ function PayoutsTab({ apiFetch }) {
             {l}{v === "disputed" && disputedCount > 0 ? ` (${disputedCount})` : ""}
           </button>
         ))}
-        <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+        <div className="flex-wrap-mobile" style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
           <input 
             type="text" 
             placeholder="Search title, name, email, UPI..." 
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
+            className="search-input"
             style={{ padding: "6px 12px", borderRadius: 20, border: "0.5px solid #ccc", fontSize: 12, width: 220 }}
           />
-          <button onClick={load} style={{ padding: "4px 12px", borderRadius: 20, border: "0.5px solid #ccc", cursor: "pointer", fontSize: 12, background: "#f5f5f0" }}>↻ Refresh</button>
+          <button className="mobile-full-btn" onClick={load} style={{ padding: "4px 12px", borderRadius: 20, border: "0.5px solid #ccc", cursor: "pointer", fontSize: 12, background: "#f5f5f0" }}>↻ Refresh</button>
         </div>
       </div>
 
@@ -289,7 +290,7 @@ function PayoutsTab({ apiFetch }) {
           {filter === "all" ? "No paid rentals yet." : `No ${filter} items.`}
         </div>
       ) : (
-        <div style={{ overflowX: "auto" }}>
+        <div className="table-container">
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "#f5f5f0" }}>
@@ -513,26 +514,27 @@ function ItemsTab({ apiFetch }) {
 
   return (
     <div>
-      <div style={{ ...S.row, marginBottom: 8 }}>
+      <div className="flex-wrap-mobile" style={{ ...S.row, marginBottom: 8 }}>
         <div style={{ display: "flex", gap: 6, background: "#f5f5f0", padding: "4px", borderRadius: 8 }}>
           <button onClick={() => setView("items")} style={{ padding: "6px 12px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, background: view === "items" ? "#fff" : "transparent", color: view === "items" ? "#1a1a1a" : "#666", boxShadow: view === "items" ? "0 1px 3px rgba(0,0,0,0.1)" : "none" }}>Marketplace Items</button>
           <button onClick={() => setView("requests")} style={{ padding: "6px 12px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, background: view === "requests" ? "#fff" : "transparent", color: view === "requests" ? "#1a1a1a" : "#666", boxShadow: view === "requests" ? "0 1px 3px rgba(0,0,0,0.1)" : "none" }}>Borrow Requests</button>
         </div>
         
-        <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+        <div className="flex-wrap-mobile" style={{ marginLeft: "auto", display: "flex", gap: 8, flex: 1 }}>
           <input 
             type="text" 
             placeholder="Search ID, Title, Status..." 
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            style={{ padding: "6px 12px", borderRadius: 20, border: "0.5px solid #ccc", fontSize: 12, width: 220 }}
+            className="search-input"
+            style={{ padding: "6px 12px", borderRadius: 20, border: "0.5px solid #ccc", fontSize: 12, width: 220, flex: 1 }}
           />
-          <button onClick={load} style={{ ...S.btn(false) }}>↻ Refresh</button>
-          {view === "items" && <button onClick={deleteAll} style={{ ...S.btn(true) }}>Delete ALL Items ⚠️</button>}
+          <button className="mobile-full-btn" onClick={load} style={{ ...S.btn(false) }}>↻ Refresh</button>
+          {view === "items" && <button className="mobile-full-btn" onClick={deleteAll} style={{ ...S.btn(true) }}>Delete ALL Items ⚠️</button>}
         </div>
       </div>
       <div style={{ fontSize: 12, color: "#666", marginBottom: 8 }}>{list.length} records found</div>
-      <div style={{ overflowX: "auto" }}>
+      <div className="table-container">
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ background: "#f5f5f0" }}>
@@ -585,7 +587,7 @@ export default function Admin() {
   if (!key) return <AuthGate onAuth={saveKey} />
 
   return (
-    <div style={S.page}>
+    <div className="page-container" style={S.page}>
       {/* Header */}
       <div style={{ ...S.row, marginBottom: 20, justifyContent: "space-between" }}>
         <div>

@@ -7,3 +7,46 @@ body {
 * {
   box-sizing: border-box;
 }
+
+/* Mobile Responsiveness for Admin App */
+@media (max-width: 768px) {
+  /* Reduce padding on the main page wrapper */
+  .page-container {
+    padding: 12px !important;
+  }
+  
+  /* Flex containers should wrap their items instead of squeezing or overflowing */
+  .flex-wrap-mobile {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+  
+  /* Search input needs to shrink or take full width */
+  .search-input {
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  /* Make stat cards wrap 2x2 or 1x4 */
+  .stats-container {
+    flex-wrap: wrap !important;
+  }
+  .stat-card {
+    flex: 1 1 45% !important;
+    min-width: 130px;
+    padding: 12px !important;
+  }
+
+  /* Allow table to scroll horizontally, but don't stretch the screen */
+  .table-container {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Buttons can take up more space if needed */
+  .mobile-full-btn {
+    flex: 1 1 100% !important;
+    justify-content: center;
+  }
+}

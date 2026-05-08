@@ -1,7 +1,6 @@
 import { useState, useEffect, createContext, useContext, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import * as api from './api.js'
-import Admin from "./pages/Admin"
 
 // ── DESIGN TOKENS ─────────────────────────────────────────────────────────────
 const T = {
@@ -2698,7 +2697,6 @@ function ChatModal({ request, open, onClose, onMarkRead }) {
 }
 
 export default function App() {
-  const [isAdmin, setIsAdmin] = useState(false)
   const [user, setUser] = useState(() => api.getSavedUser())
   const [tab, setTab] = useState('marketplace')
   const [items, setItems] = useState([])
@@ -3021,7 +3019,6 @@ export default function App() {
   function handleLogout() { api.clearSession(); setUser(null) }
 
   if (!user) return <AuthScreen onLogin={u => setUser(u)} />
-  if (isAdmin) return <Admin goBack={() => setIsAdmin(false)} />
 
   const CAT_COUNTS = CATEGORIES.reduce((a, c) => { a[c] = items.filter(i => i.category === c).length; return a }, {})
   const tier = TRUST_TIERS[user.trust_tier] || TRUST_TIERS.newcomer
@@ -3095,7 +3092,6 @@ export default function App() {
         <header className="desktop-only" style={{ ...row(0), justifyContent: 'space-between', padding: '0 24px', height: 60, background: 'rgba(255,248,240,0.9)', backdropFilter: 'blur(12px)', borderBottom: `1px solid var(--border-soft)`, position: 'sticky', top: 0, zIndex: 100 }}>
           <div style={row(12)}>
             <Logo />
-            <button className="btn-press" style={{ ...btn(false), fontSize: 12 }} onClick={() => setIsAdmin(true)}>👤 Admin</button>
           </div>
           <div style={row(8)}>
             <div style={{ ...row(6), fontSize: 13, color: T.textMid }}>
@@ -3120,7 +3116,6 @@ export default function App() {
         <header className="mobile-only" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px', height: 50, background: 'rgba(255,248,240,0.97)', backdropFilter: 'blur(12px)', borderBottom: `1px solid var(--border-soft)`, position: 'sticky', top: 0, zIndex: 100, width: '100%', boxSizing: 'border-box' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 1, minWidth: 0, overflow: 'hidden' }}>
             <Logo />
-            <button className="btn-press" onClick={() => setIsAdmin(true)} style={{ background: 'rgba(15,23,42,0.07)', border: 'none', borderRadius: 7, padding: '4px 8px', fontSize: 11, fontWeight: 600, color: T.textMid, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>👤 Admin</button>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0, paddingLeft: 8 }}>
             <button className="btn-press" onClick={() => setGuideOpen(true)} style={{ background: 'rgba(15,23,42,0.07)', border: 'none', borderRadius: 7, padding: '4px 8px', fontSize: 11, fontWeight: 600, color: T.textMid, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>📖 Guide</button>
