@@ -67,7 +67,13 @@ app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
 // 👉 View all items
 app.get('/admin/items', adminAuth, async (req, res) => {
   try {
-    const result = await pool.query("SELECT * FROM items ORDER BY created_at DESC")
+    const result = await pool.query(`
+      SELECT i.id, i.title, i.status, i.created_at, i.owner_id, 
+             u.name AS owner_name, u.email AS owner_email 
+      FROM items i
+      LEFT JOIN users u ON i.owner_id = u.id
+      ORDER BY i.created_at DESC
+    `)
     res.json(result.rows)
   } catch (err) {
     console.error(err)
@@ -118,7 +124,13 @@ app.delete('/admin/delete-item/:id', adminAuth, async (req, res) => {
 // 👉 View all item requests
 app.get('/admin/item-requests', adminAuth, async (req, res) => {
   try {
-    const result = await pool.query("SELECT * FROM item_requests ORDER BY created_at DESC")
+    const result = await pool.query(`
+      SELECT r.id, r.title, r.status, r.created_at, r.requester_id, 
+             u.name AS requester_name, u.email AS requester_email 
+      FROM item_requests r
+      LEFT JOIN users u ON r.requester_id = u.id
+      ORDER BY r.created_at DESC
+    `)
     res.json(result.rows)
   } catch (err) {
     console.error(err)

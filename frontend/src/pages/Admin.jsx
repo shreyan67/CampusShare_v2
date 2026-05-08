@@ -451,6 +451,8 @@ function ItemsTab({ apiFetch }) {
       (item.title || "").toLowerCase().includes(q) ||
       (item.id || "").toLowerCase().includes(q) ||
       (item.owner_id || item.requester_id || "").toLowerCase().includes(q) ||
+      (item.owner_name || item.requester_name || "").toLowerCase().includes(q) ||
+      (item.owner_email || item.requester_email || "").toLowerCase().includes(q) ||
       (item.status || "").toLowerCase().includes(q)
     );
   })
@@ -481,7 +483,7 @@ function ItemsTab({ apiFetch }) {
           <thead>
             <tr style={{ background: "#f5f5f0" }}>
               <th style={S.th}>Title</th>
-              <th style={S.th}>{view === "items" ? "Owner ID" : "Requester ID"}</th>
+              <th style={S.th}>{view === "items" ? "Owner" : "Requester"}</th>
               <th style={S.th}>Status</th>
               <th style={S.th}>Actions</th>
             </tr>
@@ -489,13 +491,20 @@ function ItemsTab({ apiFetch }) {
           <tbody>
             {list.length === 0 ? (
               <tr><td colSpan={4} style={{ ...S.td, textAlign: "center", color: "#999" }}>No {view} found</td></tr>
-            ) : list.map(item => (
+            ) : list.map(item => {
+              const name = item.owner_name || item.requester_name || "Unknown User";
+              const email = item.owner_email || item.requester_email || "No Email";
+              return (
               <tr key={item.id}>
                 <td style={S.td}>
                   <div style={{ fontWeight: 500 }}>{item.title}</div>
                   <div style={{ fontSize: 11, color: "#999" }}>{item.id.slice(0,8)}…</div>
                 </td>
-                <td style={{ ...S.td, fontFamily: "monospace", fontSize: 12 }}>{(item.owner_id || item.requester_id).slice(0,12)}…</td>
+                <td style={S.td}>
+                  <div style={{ fontWeight: 500 }}>{name}</div>
+                  <div style={{ fontSize: 11, color: "#666" }}>{email}</div>
+                  <div style={{ fontSize: 10, color: "#999", fontFamily: "monospace", marginTop: 2 }}>{(item.owner_id || item.requester_id).slice(0,12)}…</div>
+                </td>
                 <td style={S.td}><span style={S.badge(item.status === "available" || item.status === "open" ? "green" : "orange")}>{item.status}</span></td>
                 <td style={{ ...S.td, ...S.row }}>
                   {view === "items" ? (
@@ -506,7 +515,7 @@ function ItemsTab({ apiFetch }) {
                   <button onClick={() => deleteUser(item.owner_id || item.requester_id)} style={S.btn(true)}>Delete User</button>
                 </td>
               </tr>
-            ))}
+            )})}
           </tbody>
         </table>
       </div>
