@@ -96,14 +96,18 @@ function PayoutsTab({ apiFetch }) {
   const [loading, setLoading] = useState(true)
   const [marking, setMarking] = useState(null)
   const [err, setErr]         = useState("")
-  const [filter, setFilter]   = useState("all") // all | pending | disputed | done
+  const [filter, setFilter]   = useState("all") // all | pending | disputed
   const [searchQuery, setSearchQuery] = useState("")
+  const [totalEarningsAllTime, setTotalEarningsAllTime] = useState(0)
 
   async function load() {
     setLoading(true)
     setErr("")
     try {
-      const data = await apiFetch("/api/payments/pending-payouts")
+      const [data, stats] = await Promise.all([
+        apiFetch("/api/payments/pending-payouts"),
+        apiFetch("/api/payments/admin-stats").catch(() => ({ totalEarnings: 0 }))
+      ])
       // Sort: disputed first, then by payout stage order, then newest first
       const sorted = (data.pendingPayouts || []).sort((a, b) => {
         const ao = PAYOUT_STAGES[a.payoutStatus]?.order ?? 9
@@ -111,6 +115,7 @@ function PayoutsTab({ apiFetch }) {
         return ao - bo
       })
       setPayouts(sorted)
+      setTotalEarningsAllTime(stats?.totalEarnings || 0)
     } catch (e) {
       setErr(e.message)
     } finally {
@@ -143,16 +148,20 @@ function PayoutsTab({ apiFetch }) {
 
   async function markPaid(requestId, lenderName, lenderUpi, payLender) {
     if (!window.confirm(`Confirm: You've sent ₹${payLender} to ${lenderName} (${lenderUpi})?`)) return
+    
+    const adminUtr = window.prompt("Please enter the UPI Transaction ID (UTR) for proof of payment:\n\nThis will be emailed to the lender.");
+    if (adminUtr === null) return; // user cancelled
+
     setMarking(requestId)
     try {
       await apiFetch("/api/payments/mark-paid", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ requestId }),
+        body: JSON.stringify({ requestId, adminUtr }),
       })
       // Update in-place rather than removing — now shows as admin_paid
       setPayouts(ps => ps.map(p =>
-        p.requestId === requestId ? { ...p, payoutStatus: "admin_paid" } : p
+        p.requestId === requestId ? { ...p, payoutStatus: "admin_paid", adminUtr } : p
       ))
     } catch (e) {
       alert("Failed: " + e.message)
@@ -161,15 +170,24 @@ function PayoutsTab({ apiFetch }) {
     }
   }
 
+  async function dismissDispute(requestId) {
+    if (!window.confirm("Force close this dispute and mark it as successfully paid?")) return
+    try {
+      await apiFetch("/api/payments/dismiss-dispute", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ requestId })
+      })
+      setPayouts(ps => ps.filter(p => p.requestId !== requestId))
+    } catch (e) { alert("Failed: " + e.message) }
+  }
+
   const pendingCount  = payouts.filter(p => p.payoutStatus === "manual_pending").length
   const disputedCount = payouts.filter(p => p.payoutStatus === "disputed").length
   const pendingOwed   = payouts.filter(p => p.payoutStatus === "manual_pending").reduce((s, p) => s + p.payLender, 0).toFixed(2)
-  const totalEarned   = payouts.reduce((s, p) => s + p.platformFee, 0).toFixed(2)
+  const totalEarned   = totalEarningsAllTime.toFixed(2)
 
   const filtered = payouts.filter(p => {
     if (filter === "pending" && !["manual_pending","admin_paid"].includes(p.payoutStatus)) return false;
     if (filter === "disputed" && p.payoutStatus !== "disputed") return false;
-    if (filter === "done" && p.payoutStatus !== "done") return false;
     
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
@@ -223,7 +241,7 @@ function PayoutsTab({ apiFetch }) {
       {/* Pipeline legend */}
       <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
         <span style={{ fontSize: 12, color: "#666", marginRight: 4 }}>Filter:</span>
-        {[["all","All"], ["pending","Needs Action"], ["disputed","Disputed"], ["done","Confirmed"]].map(([v, l]) => (
+        {[["all","All"], ["pending","Needs Action"], ["disputed","Disputed"]].map(([v, l]) => (
           <button key={v} onClick={() => setFilter(v)}
             style={{ padding: "4px 12px", borderRadius: 20, border: "0.5px solid #ccc", cursor: "pointer", fontSize: 12,
               background: filter === v ? "#1a1a1a" : "#f5f5f0", color: filter === v ? "#fff" : "#333", fontWeight: filter === v ? 600 : 400 }}>
@@ -366,10 +384,22 @@ function PayoutsTab({ apiFetch }) {
                       {p.payoutStatus === "disputed" && (
                         <div>
                           <div style={{ fontSize: 12, color: "#c0392b", fontWeight: 600, marginBottom: 4 }}>Lender didn't receive payment</div>
-                          <button style={{ ...S.btn(false), fontSize: 11 }}
-                            onClick={() => markPaid(p.requestId, p.lenderName, p.lenderUpi, p.payLender)}>
-                            Re-send & Mark Paid
-                          </button>
+                          {p.adminUtr && (
+                            <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", padding: "6px", borderRadius: "6px", marginBottom: "8px" }}>
+                              <div style={{ fontSize: 10, color: "#166534", textTransform: "uppercase", marginBottom: "2px" }}>Your Proof (UTR):</div>
+                              <div style={{ fontSize: 13, color: "#15803d", fontWeight: "700", fontFamily: "monospace" }}>{p.adminUtr}</div>
+                            </div>
+                          )}
+                          <div style={{ display: "flex", gap: "6px", flexDirection: "column" }}>
+                            <button style={{ ...S.btn(false), fontSize: 11 }}
+                              onClick={() => markPaid(p.requestId, p.lenderName, p.lenderUpi, p.payLender)}>
+                              Re-send & Mark Paid
+                            </button>
+                            <button style={{ ...S.btn(true), fontSize: 11, background: "#1a1a1a" }}
+                              onClick={() => dismissDispute(p.requestId)}>
+                              Dismiss Dispute
+                            </button>
+                          </div>
                         </div>
                       )}
                       {p.payoutStatus === "done" && (

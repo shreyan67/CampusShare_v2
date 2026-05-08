@@ -21,9 +21,10 @@ function getRazorpay() {
   return _razorpay
 }
 
-// ── Platform fee: percentage YOU keep on every paid rental ───────────────────
-// Adjust between 2-5. E.g. 3 means you keep 3%, lender gets 97%.
-const PLATFORM_FEE_PERCENT = 3
+// ── Platform fee: Dynamic logic based on item amount ───────────────────────────
+function getPlatformFeePercent(amount) {
+  return parseFloat(amount) > 200 ? 5 : 8;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/payments/create-order
@@ -63,7 +64,7 @@ router.post('/create-order', requireAuth, async (req, res) => {
             amount:   existingOrder.amount,
             currency: existingOrder.currency,
             keyId:    process.env.RAZORPAY_KEY_ID,
-            platformFeePercent: PLATFORM_FEE_PERCENT,
+            platformFeePercent: getPlatformFeePercent(borrowReq.total_amount),
           })
         }
       } catch (_) { /* order fetch failed — fall through and create fresh */ }
@@ -94,7 +95,7 @@ router.post('/create-order', requireAuth, async (req, res) => {
       amount:   order.amount,
       currency: order.currency,
       keyId:    process.env.RAZORPAY_KEY_ID,
-      platformFeePercent: PLATFORM_FEE_PERCENT,
+      platformFeePercent: getPlatformFeePercent(borrowReq.total_amount),
     })
 
   } catch (err) {
@@ -205,9 +206,10 @@ async function triggerLenderPayout(requestId) {
     // rental_amount is what lender gets (total_amount - platform_fee)
     // These are stored at request creation time so they never drift
     const total        = parseFloat(borrowReq.total_amount)
+    const feePercent   = getPlatformFeePercent(total)
     const lenderAmount = borrowReq.rental_amount
                            ? parseFloat(borrowReq.rental_amount)
-                           : parseFloat((total * (100 - PLATFORM_FEE_PERCENT) / 100).toFixed(2))
+                           : parseFloat((total * (100 - feePercent) / 100).toFixed(2))
     const platformCut  = parseFloat((total - lenderAmount).toFixed(2))
 
     // Mark as manual_pending so admin panel can track unpaid payouts
@@ -224,7 +226,7 @@ async function triggerLenderPayout(requestId) {
     console.log(`  Lender       : ${borrowReq.lender_name} (${borrowReq.lender_email})`)
     console.log(`  Lender UPI   : ${borrowReq.lender_upi_id || 'NOT SET — contact lender'}`)
     console.log(`  Total paid   : ₹${total}`)
-    console.log(`  Platform fee : ₹${platformCut} (${PLATFORM_FEE_PERCENT}%)`)
+    console.log(`  Platform fee : ₹${platformCut} (${feePercent}%)`)
     console.log(`  Pay lender   : ₹${lenderAmount}`)
     console.log('='.repeat(60))
 
@@ -258,6 +260,24 @@ async function triggerLenderPayout(requestId) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// GET /api/payments/admin-stats   (admin use — add ?key=YOUR_ADMIN_SECRET)
+// Gets true total earnings from completed transactions.
+// ─────────────────────────────────────────────────────────────────────────────
+router.get('/admin-stats', async (req, res) => {
+  if (req.query.key !== process.env.ADMIN_SECRET)
+    return res.status(403).json({ error: 'Unauthorized.' })
+
+  try {
+    const { queryOne } = require('../db/pool')
+    const row = await queryOne(`SELECT SUM(platform_fee) as total_earnings FROM borrow_requests WHERE payout_status = 'done'`);
+    res.json({ totalEarnings: parseFloat(row?.total_earnings || 0) });
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Failed.' })
+  }
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
 // GET /api/payments/pending-payouts   (admin use — add ?key=YOUR_ADMIN_SECRET)
 // Lists all returned paid rentals where payout is still pending.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -274,14 +294,14 @@ router.get('/pending-payouts', async (req, res) => {
               br.borrower_complaint, br.admin_nudged_lender,
               u.name AS lender_name, u.email AS lender_email, u.upi_id AS lender_upi,
               b.name AS borrower_name, b.email AS borrower_email, b.upi_id AS borrower_upi,
-              i.title AS item_title
+              i.title AS item_title, br.admin_utr
          FROM borrow_requests br
          JOIN users u ON u.id = br.owner_id
          JOIN users b ON b.id = br.borrower_id
          JOIN items i ON i.id = br.item_id
         WHERE br.payment_confirmed = TRUE
           AND br.total_amount > 0
-          AND br.payout_status IN ('manual_pending','admin_paid','disputed','done','refunded')
+          AND br.payout_status IN ('manual_pending','admin_paid','disputed','refunded')
         ORDER BY br.updated_at DESC NULLS LAST, br.id DESC`,
       []
     )
@@ -290,9 +310,10 @@ router.get('/pending-payouts', async (req, res) => {
       // Use stored rental_amount/platform_fee if available (new requests),
       // fall back to recalculating for old requests that predate these columns
       const totalCollected = parseFloat(r.total_amount)
+      const feePercent     = getPlatformFeePercent(totalCollected)
       const platformFee    = r.platform_fee
                                ? parseFloat(r.platform_fee)
-                               : parseFloat((totalCollected * PLATFORM_FEE_PERCENT / 100).toFixed(2))
+                               : parseFloat((totalCollected * feePercent / 100).toFixed(2))
       const payLender      = r.rental_amount
                                ? parseFloat(r.rental_amount)
                                : parseFloat((totalCollected - platformFee).toFixed(2))
@@ -316,6 +337,7 @@ router.get('/pending-payouts', async (req, res) => {
         payLender,
         returnedAt:      r.returned_at,
         razorpayPayment: r.razorpay_payment_id,
+        adminUtr:        r.admin_utr,
       }
     })
 
@@ -336,7 +358,7 @@ router.post('/mark-paid', async (req, res) => {
     return res.status(403).json({ error: 'Unauthorized.' })
 
   try {
-    const { requestId } = req.body
+    const { requestId, adminUtr } = req.body
     if (!requestId) return res.status(400).json({ error: 'requestId required.' })
 
     // Fetch request + lender details for notification
@@ -354,15 +376,16 @@ router.post('/mark-paid', async (req, res) => {
 
     // Mark as admin_paid (lender needs to confirm receipt)
     await query(
-      "UPDATE borrow_requests SET payout_status='admin_paid' WHERE id=$1",
-      [requestId]
+      "UPDATE borrow_requests SET payout_status='admin_paid', admin_utr=$1 WHERE id=$2",
+      [adminUtr || null, requestId]
     )
 
     // Calculate amounts for notification
     const total       = parseFloat(borrowReq.total_amount)
+    const feePercent  = getPlatformFeePercent(total)
     const payLender   = borrowReq.rental_amount
                           ? parseFloat(borrowReq.rental_amount)
-                          : parseFloat((total * (100 - PLATFORM_FEE_PERCENT) / 100).toFixed(2))
+                          : parseFloat((total * (100 - feePercent) / 100).toFixed(2))
 
     // Send lender a notification email via Resend
     try {
@@ -380,6 +403,7 @@ router.post('/mark-paid', async (req, res) => {
               <tr><td style="padding:10px 14px;color:#666;font-size:13px">Item</td><td style="padding:10px 14px;font-weight:600">${borrowReq.item_title}</td></tr>
               <tr><td style="padding:10px 14px;color:#666;font-size:13px">Amount sent</td><td style="padding:10px 14px;font-weight:600;color:#2e7d32">₹${payLender}</td></tr>
               <tr><td style="padding:10px 14px;color:#666;font-size:13px">Sent to UPI</td><td style="padding:10px 14px;font-family:monospace">${borrowReq.lender_upi || 'your registered UPI'}</td></tr>
+              ${adminUtr ? `<tr><td style="padding:10px 14px;color:#666;font-size:13px">Bank UTR Ref No.</td><td style="padding:10px 14px;font-family:monospace;font-weight:700;color:#1d4ed8">${adminUtr}</td></tr>` : ''}
             </table>
             <p style="font-size:13px;color:#555">
               Please check your UPI app. Once you receive the payment, open the <strong>Activity tab</strong>
@@ -400,6 +424,28 @@ router.post('/mark-paid', async (req, res) => {
     }
 
     res.json({ success: true, payLender, lenderEmail: borrowReq.lender_email })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Failed.' })
+  }
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/payments/dismiss-dispute   (admin use — add ?key=YOUR_ADMIN_SECRET)
+// Force close a fraudulent dispute from a lender.
+// ─────────────────────────────────────────────────────────────────────────────
+router.post('/dismiss-dispute', async (req, res) => {
+  if (req.query.key !== process.env.ADMIN_SECRET)
+    return res.status(403).json({ error: 'Unauthorized.' })
+
+  try {
+    const { requestId } = req.body
+    if (!requestId) return res.status(400).json({ error: 'requestId required.' })
+
+    const { query } = require('../db/pool')
+    // Set back to admin_paid or done. Since it's dismissed and we already paid, mark it done.
+    await query("UPDATE borrow_requests SET payout_status='done' WHERE id=$1", [requestId])
+    res.json({ success: true })
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: 'Failed.' })

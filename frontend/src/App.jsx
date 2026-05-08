@@ -1770,7 +1770,32 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
           )}
 
           {!isBorrowing && r.payout_status === 'admin_paid' && (
-             <button className="btn-press" style={{...btn(true,true), fontSize:10, padding:'6px', background: T.success, width:'100%'}} onClick={() => act(api.confirmPaymentReceived, r.id)}>Got Money ✓</button>
+             <div style={{ display: 'flex', gap: 6, flexDirection: 'column' }}>
+               {r.admin_utr && (
+                 <div style={{ padding: '6px', background: '#f0fdf4', borderRadius: 6, border: '1px solid #bbf7d0', textAlign: 'center' }}>
+                   <div style={{ fontSize: 9, color: "#166534" }}>Admin Paid via UPI (UTR):</div>
+                   <div style={{ fontSize: 11, color: "#15803d", fontFamily: 'monospace', fontWeight: 700 }}>{r.admin_utr}</div>
+                 </div>
+               )}
+               <button className="btn-press" style={{...btn(true,true), fontSize:10, padding:'6px', background: T.success, width:'100%'}} onClick={() => act(api.confirmPaymentReceived, r.id)}>Got Money ✓</button>
+               <button className="btn-press" style={{...btn(false,true), fontSize:10, padding:'6px', width:'100%', border: '1px solid #EF4444', color: '#EF4444', background: '#FCEBEB'}} onClick={async () => {
+                 if (!window.confirm("Raise dispute?")) return
+                 act(api.raiseDispute, r.id)
+               }}>Raise Dispute</button>
+             </div>
+          )}
+          {!isBorrowing && r.payout_status === 'disputed' && (
+             <div style={{ padding: '8px', background: '#FCEBEB', borderRadius: 6, border: '1px solid #f5b7b1', textAlign: 'center' }}>
+               <div style={{ fontSize: 11, color: "#c0392b", fontWeight: 700, marginBottom: 4 }}>Dispute Raised</div>
+               {r.admin_utr && (
+                 <div style={{ marginTop: 4, padding: '4px', background: '#fff', borderRadius: 4, border: '1px dashed #f5b7b1' }}>
+                   <div style={{ fontSize: 9, color: "#666" }}>Admin Proof (UTR):</div>
+                   <div style={{ fontSize: 11, color: "#1D4ED8", fontFamily: 'monospace', fontWeight: 700 }}>{r.admin_utr}</div>
+                 </div>
+               )}
+               <div style={{ fontSize: 10, color: "#c0392b", marginTop: 4, marginBottom: 6 }}>Admin is reviewing your payout.</div>
+               <button className="btn-press" style={{...btn(true,true), fontSize:10, padding:'6px', background: T.success, width:'100%'}} onClick={() => act(api.confirmPaymentReceived, r.id)}>Got Money ✓</button>
+             </div>
           )}
           {!isBorrowing && r.listing_type !== 'lost_found' && ['active', 'overdue'].includes(r.status) && r.borrower_received && (
              <button className="btn-press" style={{...btn(true,true), fontSize:10, padding:'6px', width:'100%'}} onClick={() => act(api.confirmReturn, r.id)}>Confirm Return</button>
