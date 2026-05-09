@@ -113,6 +113,8 @@ export const reportLender  = (id) => req('PATCH', `/requests/${id}/complaint`)
 // Lender payout confirmation
 export const confirmPaymentReceived = (id) => req('PATCH', `/requests/${id}/payment-received`)
 export const raiseDispute           = (id) => req('PATCH', `/requests/${id}/dispute`)
+export const nudgeReturn            = (id) => req('PATCH', `/requests/${id}/nudge-return`)
+export const forceClose             = (id) => req('PATCH', `/requests/${id}/force-close`)
 
 // Lost & Found handover flow
 export const sendPickupMessage = (id, message) => req('PATCH', `/requests/${id}/pickup-message`, { message })

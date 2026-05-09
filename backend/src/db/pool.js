@@ -36,4 +36,19 @@ async function queryOne(sql, params) {
   return rows[0] || null
 }
 
+async function runMigrations() {
+  const migrations = [
+    `ALTER TABLE borrow_requests ADD COLUMN IF NOT EXISTS lender_nudged_borrower BOOLEAN DEFAULT FALSE`,
+    `ALTER TABLE borrow_requests ADD COLUMN IF NOT EXISTS force_closed BOOLEAN DEFAULT FALSE`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS is_flagged BOOLEAN DEFAULT FALSE`,
+  ]
+  for (const sql of migrations) {
+    try { await query(sql, []) }
+    catch (err) { console.error('[migration] Failed:', sql.slice(0, 60), err.message) }
+  }
+  console.log('[migrations] Done.')
+}
+
+runMigrations()
+
 module.exports = { pool, query, queryOne }

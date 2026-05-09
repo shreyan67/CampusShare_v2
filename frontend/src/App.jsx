@@ -1680,6 +1680,8 @@ function ItemRequestsSection({ showToast, currentUserId, reload: reloadActivity,
 function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJourney, lifecycleMap, openChat, unreadCount = 0, inlineReq = false }) {
   const isPaid = r.is_paid
   const isLF = r.listing_type === 'lost_found'
+  const txType = r.transaction_type || (isPaid ? 'rent' : 'lend')
+  const noReturn = ['sell', 'donate'].includes(txType)
   const showLifecycle = !!lifecycleMap[r.id]
   const [pin, setPin] = useState('')
 
@@ -1797,11 +1799,33 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
             <button className="btn-press" style={{ ...btn(true, true), fontSize: 10, padding: '6px', width: '100%' }} onClick={() => act(api.confirmBorrowerReceived, r.id)}>Confirm Receipt</button>
           )}
 
+          {/* Nudge borrower + force-close (only for rent/lend, while active) */}
+          {!isBorrowing && !isLF && ['active','overdue'].includes(r.status) && r.borrower_received && !['sell','donate'].includes(r.transaction_type) && (
+            <div style={{ display: 'flex', gap: 4 }}>
+              <button className="btn-press" style={{ ...btn(false, true), fontSize: 9, padding: '5px 6px', flex: 1, border: '1px solid #F59E0B', color: '#92400E', background: '#FEF3C7' }}
+                onClick={async () => {
+                  const res = await api.nudgeReturn(r.id)
+                  if (res?.error) return act(() => Promise.resolve(res))
+                  showToast('Nudge sent! Borrower emailed.')
+                }}>⏰ Nudge</button>
+              {r.lender_nudged_borrower && (
+                <button className="btn-press" style={{ ...btn(false, true), fontSize: 9, padding: '5px 6px', flex: 1, border: '1px solid #EF4444', color: '#991B1B', background: '#FEE2E2' }}
+                  onClick={async () => {
+                    if (!window.confirm('Close without return? Borrower will be flagged.')) return
+                    const res = await api.forceClose(r.id)
+                    if (res?.error) showToast(res.error)
+                    else { showToast('Closed. Borrower flagged.'); await reload() }
+                  }}>🚫 Close</button>
+              )}
+            </div>
+          )}
+
+          {/* Payout dispute — show even after returned */}
           {!isBorrowing && r.payout_status === 'manual_pending' && (
             <button className="btn-press" style={{ ...btn(false, true), fontSize: 10, padding: '6px', width: '100%', border: '1px solid #EF4444', color: '#EF4444', background: '#FCEBEB' }} onClick={async () => {
               if (!window.confirm("Raise dispute? Admin will be notified.")) return
               act(api.raiseDispute, r.id)
-            }}>Raise Dispute</button>
+            }}>Raise dispute for payment ⚠️</button>
           )}
 
           {!isBorrowing && r.payout_status === 'admin_paid' && (
@@ -1816,7 +1840,7 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
               <button className="btn-press" style={{ ...btn(false, true), fontSize: 10, padding: '6px', width: '100%', border: '1px solid #EF4444', color: '#EF4444', background: '#FCEBEB' }} onClick={async () => {
                 if (!window.confirm("Raise dispute?")) return
                 act(api.raiseDispute, r.id)
-              }}>Raise Dispute</button>
+              }}>Raise dispute for payment</button>
             </div>
           )}
           {!isBorrowing && r.payout_status === 'disputed' && (
@@ -2161,8 +2185,8 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
             }}>I've Received It ✓</button>
           )}
 
-          {/* Payout confirm/dispute */}
-          {!isBorrowing && isPaid && (r.payout_status === 'admin_paid' || r.payout_status === 'manual_pending') && (
+          {/* Payout confirm/dispute — visible even after returned */}
+          {!isBorrowing && isPaid && ['manual_pending', 'admin_paid', 'disputed'].includes(r.payout_status) && (
             <div style={{ width: '100%', display: 'flex', gap: 8, flexDirection: 'column' }}>
               {r.payout_status === 'admin_paid' && (
                 <button className="btn-press" style={{ ...btn(true, true), flex: 1, background: T.success }} onClick={async () => {
@@ -2172,13 +2196,46 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
                   await reload()
                 }}>Payment Received ✓</button>
               )}
-              <button className="btn-press" style={{ ...btn(false, true), flex: 1, color: T.error, border: `1px solid ${T.error}44` }} onClick={async () => {
-                if (!window.confirm('Raise dispute? Admin will be notified.')) return
-                const res = await api.raiseDispute(r.id)
-                if (res?.error) { showToast(res.error); return }
-                showToast('Dispute raised. Admin notified.')
-                await reload()
-              }}>Raise Dispute ⚠️</button>
+              {r.payout_status !== 'disputed' && (
+                <button className="btn-press" style={{ ...btn(false, true), flex: 1, color: T.error, border: `1px solid ${T.error}44` }} onClick={async () => {
+                  if (!window.confirm('Raise dispute? Admin will be notified.')) return
+                  const res = await api.raiseDispute(r.id)
+                  if (res?.error) { showToast(res.error); return }
+                  showToast('Dispute raised. Admin notified.')
+                  await reload()
+                }}>Raise dispute for payment ⚠️</button>
+              )}
+              {r.payout_status === 'disputed' && (
+                <button className="btn-press" style={{ ...btn(true, true), flex: 1, background: T.success }} onClick={async () => {
+                  const res = await api.confirmPaymentReceived(r.id)
+                  if (res?.error) { showToast(res.error); return }
+                  showToast('Payment confirmed! Dispute closed.')
+                  await reload()
+                }}>Got Money ✓ (Close Dispute)</button>
+              )}
+            </div>
+          )}
+
+          {/* Nudge borrower + Force-close (rent/lend only, while active) */}
+          {!isBorrowing && !isLF && ['active','overdue'].includes(r.status) && r.borrower_received && !noReturn && (
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button className="btn-press" style={{ ...btn(false, true), flex: 1, border: '1px solid #F59E0B', color: '#92400E', background: '#FEF3C7', fontSize: 12 }}
+                onClick={async () => {
+                  const res = await api.nudgeReturn(r.id)
+                  if (res?.error) { showToast(res.error); return }
+                  showToast('Nudge sent! Borrower emailed & notified.')
+                  await reload()
+                }}>⏰ Nudge to Return</button>
+              {r.lender_nudged_borrower && (
+                <button className="btn-press" style={{ ...btn(false, true), flex: 1, border: '1px solid #EF4444', color: '#991B1B', background: '#FEE2E2', fontSize: 12 }}
+                  onClick={async () => {
+                    if (!window.confirm('Close without return? Borrower will be flagged for review.')) return
+                    const res = await api.forceClose(r.id)
+                    if (res?.error) { showToast(res.error); return }
+                    showToast('Transaction closed. Borrower flagged.')
+                    await reload()
+                  }}>🚫 Close & Flag Borrower</button>
+              )}
             </div>
           )}
 

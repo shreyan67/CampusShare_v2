@@ -555,7 +555,7 @@ router.patch('/:id/dispute', requireAuth, async (req, res) => {
     const r = await queryOne('SELECT * FROM borrow_requests WHERE id=$1', [req.params.id])
     if (!r) return res.status(404).json({ error: 'Not found.' })
     if (r.owner_id !== req.userId) return res.status(403).json({ error: 'Not your item.' })
-    if (r.payout_status !== 'admin_paid') return res.status(409).json({ error: 'No payout to dispute.' })
+    if (!['admin_paid', 'manual_pending'].includes(r.payout_status)) return res.status(409).json({ error: 'No payout to dispute.' })
 
     await query(
       "UPDATE borrow_requests SET payout_status='disputed' WHERE id=$1",
@@ -619,6 +619,125 @@ router.patch('/:id/dispute', requireAuth, async (req, res) => {
     console.error(err)
     res.status(500).json({ error: 'Failed.' })
   }
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PATCH /:id/nudge-return — lender sends borrower an email to return the item
+// ─────────────────────────────────────────────────────────────────────────────
+router.patch('/:id/nudge-return', requireAuth, async (req, res) => {
+  try {
+    const r = await queryOne('SELECT * FROM borrow_requests WHERE id=$1', [req.params.id])
+    if (!r) return res.status(404).json({ error: 'Not found.' })
+    if (r.owner_id !== req.userId) return res.status(403).json({ error: 'Not your request.' })
+    if (!['active', 'overdue'].includes(r.status))
+      return res.status(409).json({ error: 'Item not currently borrowed.' })
+
+    await query("UPDATE borrow_requests SET lender_nudged_borrower=TRUE WHERE id=$1", [r.id])
+
+    const lender   = await queryOne('SELECT name FROM users WHERE id=$1', [r.owner_id])
+    const borrower = await queryOne('SELECT name, email FROM users WHERE id=$1', [r.borrower_id])
+    const item     = await queryOne('SELECT title FROM items WHERE id=$1', [r.item_id])
+
+    // Send email to borrower
+    try {
+      const { Resend } = require('resend')
+      const resend = new Resend(process.env.RESEND_API_KEY)
+      await resend.emails.send({
+        from:    'CampusShare <noreply@campusshare.co.in>',
+        to:      borrower.email,
+        subject: `⏰ Please return "${item?.title}" ASAP — ${lender?.name} is waiting`,
+        html: `
+          <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
+            <h2 style="color:#1a1a1a">Hi ${borrower?.name} 👋</h2>
+            <p>A gentle reminder — <strong>${lender?.name}</strong> is waiting for you to return
+            <strong>"${item?.title}"</strong>. Please return it as soon as possible.</p>
+            <p style="font-size:13px;color:#555">
+              If you need more time or have any questions, please contact the lender directly via the
+              <strong>Chat</strong> button on the transaction in the CampusShare app.
+            </p>
+            <p style="font-size:13px;color:#c0392b;font-weight:600">
+              Delays in returning items may affect your trust score and borrowing privileges.
+            </p>
+            <p style="font-size:12px;color:#999;margin-top:24px">— CampusShare Team</p>
+          </div>
+        `
+      })
+    } catch (emailErr) {
+      console.error('[nudge-return] Email failed:', emailErr.message)
+    }
+
+    // Push notify borrower
+    sendPushNotification(r.borrower_id, {
+      title: '⏰ Please return the item!',
+      body: `${lender?.name} is waiting for "${item?.title}". Return it ASAP.`,
+      url: '/'
+    }).catch(() => {})
+
+    res.json({ success: true })
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Failed.' }) }
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PATCH /:id/force-close — lender force-closes the transaction (no borrower
+// confirmation needed). Marks borrower as flagged. Item goes to history.
+// ─────────────────────────────────────────────────────────────────────────────
+router.patch('/:id/force-close', requireAuth, async (req, res) => {
+  try {
+    const r    = await queryOne('SELECT * FROM borrow_requests WHERE id=$1', [req.params.id])
+    const item = await queryOne('SELECT * FROM items WHERE id=$1', [r?.item_id])
+    if (!r || !item) return res.status(404).json({ error: 'Not found.' })
+    if (item.owner_id !== req.userId) return res.status(403).json({ error: 'Not your item.' })
+    if (!['active', 'overdue'].includes(r.status))
+      return res.status(409).json({ error: 'Cannot force-close in current state.' })
+
+    // Close transaction without borrower confirmation
+    await query(
+      "UPDATE borrow_requests SET status='returned', returned_at=NOW(), force_closed=TRUE WHERE id=$1",
+      [r.id]
+    )
+    await query("UPDATE items SET status='available', is_deleted=TRUE WHERE id=$1", [item.id])
+
+    // Flag the borrower — admin can review later
+    await query("UPDATE users SET is_flagged=TRUE WHERE id=$1", [r.borrower_id])
+
+    const lender   = await queryOne('SELECT name FROM users WHERE id=$1', [r.owner_id])
+    const borrower = await queryOne('SELECT name, email FROM users WHERE id=$1', [r.borrower_id])
+
+    // Notify admin
+    try {
+      const { Resend } = require('resend')
+      const resend = new Resend(process.env.RESEND_API_KEY)
+      const adminEmail = process.env.ADMIN_EMAIL
+      if (adminEmail) {
+        await resend.emails.send({
+          from:    'CampusShare <noreply@campusshare.co.in>',
+          to:      adminEmail,
+          subject: `🚨 Force-close: "${item?.title}" — ${borrower?.name} flagged`,
+          html: `
+            <div style="font-family:sans-serif;padding:24px;max-width:480px">
+              <h2 style="color:#c0392b">🚨 Transaction Force-Closed</h2>
+              <p><strong>${lender?.name}</strong> has force-closed the transaction for
+              <strong>"${item?.title}"</strong>.</p>
+              <p><strong>${borrower?.name}</strong> (${borrower?.email}) has been flagged
+              for review. They failed to return the item.</p>
+              <p style="font-size:13px;color:#555">Please review and take action in the admin panel.</p>
+            </div>
+          `
+        })
+      }
+    } catch (emailErr) {
+      console.error('[force-close] Admin email failed:', emailErr.message)
+    }
+
+    // Push admin
+    sendPushNotification('admin', {
+      title: '🚨 Transaction Force-Closed',
+      body: `${lender?.name} closed "${item?.title}" — ${borrower?.name} has been flagged.`,
+      url: '/'
+    }).catch(() => {})
+
+    res.json({ success: true })
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Failed.' }) }
 })
 
 module.exports = router
