@@ -2526,7 +2526,7 @@ function ItemCard({ item, currentUserId, onRequest, myRequests = [], onDelete, o
 
       <div style={{ padding: '12px 14px 14px' }}>
         <div style={{ fontFamily: 'var(--font-head)', fontSize: 13, fontWeight: 700, marginBottom: 3, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{item.title}</div>
-        <div style={{ fontSize: 11, color: T.textSoft, marginBottom: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.category}{!isLF ? ` · max ${item.max_borrow_days}d` : ''}</div>
+        <div style={{ fontSize: 11, color: T.textSoft, marginBottom: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.category}{!isLF && !['sell','donate'].includes(item.transaction_type) ? ` · max ${item.max_borrow_days}d` : ''}</div>
         <div style={{ ...row(0), justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: T.textMid, minWidth: 0, overflow: 'hidden' }}>
             <Av user={{ avatar: item.owner_avatar, color: item.owner_color, name: item.owner_name }} size={18} />
