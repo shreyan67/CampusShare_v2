@@ -105,6 +105,7 @@ export const activateAfterPayment  = (id)         => patch(`/requests/${id}/acti
 
 // Profile
 export const updateUpi = (upiId) => req('PATCH', '/users/me/upi', { upiId })
+export const informAdminSlots = () => req('PATCH', '/users/me/inform-admin-slots')
 
 // Borrower revoke request
 export const revokeRequest = (id) => req('PATCH', `/requests/${id}/revoke`)

@@ -582,7 +582,7 @@ router.patch('/:id/dispute', requireAuth, async (req, res) => {
       } else {
         const { Resend } = require('resend')
         const resend = new Resend(process.env.RESEND_API_KEY)
-        await resend.emails.send({
+        resend.emails.send({
           from:    'onboarding@resend.dev',
           to:      adminEmail,
           subject: `⚠️ DISPUTE raised — ${item?.title} — ${lender?.name}`,
@@ -642,7 +642,7 @@ router.patch('/:id/nudge-return', requireAuth, async (req, res) => {
     try {
       const { Resend } = require('resend')
       const resend = new Resend(process.env.RESEND_API_KEY)
-      await resend.emails.send({
+      resend.emails.send({
         from:    'CampusShare <noreply@campusshare.co.in>',
         to:      borrower.email,
         subject: `⏰ Please return "${item?.title}" ASAP — ${lender?.name} is waiting`,
@@ -709,7 +709,7 @@ router.patch('/:id/force-close', requireAuth, async (req, res) => {
       const resend = new Resend(process.env.RESEND_API_KEY)
       const adminEmail = process.env.ADMIN_EMAIL
       if (adminEmail) {
-        await resend.emails.send({
+        resend.emails.send({
           from:    'CampusShare <noreply@campusshare.co.in>',
           to:      adminEmail,
           subject: `🚨 Force-close: "${item?.title}" — ${borrower?.name} flagged`,

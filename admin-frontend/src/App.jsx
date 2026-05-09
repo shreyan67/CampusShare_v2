@@ -582,7 +582,10 @@ function ItemsTab({ apiFetch }) {
                   <div style={{ fontSize: 11, color: "#999" }}>{item.id.slice(0,8)}…</div>
                 </td>
                 <td style={S.td}>
-                  <div style={{ fontWeight: 500 }}>{name}</div>
+                  <div style={{ fontWeight: 500 }}>
+                    {name} 
+                    {item.is_flagged && <span style={{ marginLeft: 6, background: '#DC2626', color: 'white', padding: '2px 6px', borderRadius: 4, fontSize: 10, fontWeight: 'bold' }}>🚨 FLAGGED</span>}
+                  </div>
                   <div style={{ fontSize: 11, color: "#666" }}>{email}</div>
                   <div style={{ fontSize: 10, color: "#999", fontFamily: "monospace", marginTop: 2 }}>{(item.owner_id || item.requester_id).slice(0,12)}…</div>
                 </td>
@@ -593,7 +596,9 @@ function ItemsTab({ apiFetch }) {
                   ) : (
                     <button onClick={() => deleteRequest(item.id)} style={{ ...S.btn(false), background: "#333" }}>Delete Request</button>
                   )}
-                  <button onClick={() => freeSlots(item.owner_id || item.requester_id)} style={{ ...S.btn(false), background: "#F59E0B", color: "#92400E" }}>Free Slots</button>
+                  {item.is_flagged && (
+                    <button onClick={() => freeSlots(item.owner_id || item.requester_id)} style={{ ...S.btn(false), background: "#F59E0B", color: "#92400E" }}>Free Slots</button>
+                  )}
                   <button onClick={() => deleteUser(item.owner_id || item.requester_id)} style={S.btn(true)}>Delete User</button>
                 </td>
               </tr>

@@ -51,4 +51,46 @@ router.patch('/me/upi', requireAuth, async (req, res) => {
   }
 })
 
+// PATCH /api/users/me/inform-admin-slots
+router.patch('/me/inform-admin-slots', requireAuth, async (req, res) => {
+  try {
+    const user = await queryOne('SELECT * FROM users WHERE id=$1', [req.userId]);
+    const fcReqs = await query(
+      `SELECT br.id, i.title, u.name as lender_name, u.email as lender_email 
+       FROM borrow_requests br 
+       JOIN items i ON i.id = br.item_id 
+       JOIN users u ON u.id = br.owner_id 
+       WHERE br.borrower_id=$1 AND br.force_closed=TRUE`, 
+      [req.userId]
+    );
+
+    if (fcReqs.length === 0) return res.status(400).json({ error: 'No locked slots found.' });
+
+    const adminEmail = process.env.ADMIN_EMAIL;
+    if (adminEmail) {
+      const { Resend } = require('resend');
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      
+      let htmlBody = `<p>Borrower <strong>${user.name}</strong> (${user.email}) has requested to free their slots.</p>
+                      <p>They claim they have returned the item(s) late, but the lender(s) forgot to press confirm return.</p>
+                      <h3>Force-closed items:</h3><ul>`;
+      fcReqs.forEach(r => {
+        htmlBody += `<li>Item: <strong>${r.title}</strong> | Lender: ${r.lender_name} (${r.lender_email})</li>`;
+      });
+      htmlBody += `</ul><p>Please manually email the lender(s) to verify, and then free the borrower's slots if confirmed.</p>`;
+
+      resend.emails.send({
+        from: 'CampusShare <noreply@campusshare.co.in>',
+        to: adminEmail,
+        subject: `⚠️ Slot Unlock Request — ${user.name}`,
+        html: htmlBody
+      }).catch(console.error);
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Inform admin error:', err);
+    res.status(500).json({ error: 'Failed to inform admin.' });
+  }
+});
+
 module.exports = router

@@ -399,7 +399,7 @@ router.post('/mark-paid', async (req, res) => {
     try {
       const { Resend } = require('resend')
       const resend = new Resend(process.env.RESEND_API_KEY)
-      await resend.emails.send({
+      resend.emails.send({
         from:    'CampusShare <noreply@campusshare.co.in>',
         to:      borrowReq.lender_email,
         subject: `₹${payLender} sent to your UPI — ${borrowReq.item_title}`,
@@ -494,7 +494,7 @@ router.post('/nudge-lender', async (req, res) => {
     try {
       const { Resend } = require('resend')
       const resend = new Resend(process.env.RESEND_API_KEY)
-      await resend.emails.send({
+      resend.emails.send({
         from:    'CampusShare <noreply@campusshare.co.in>',
         to:      borrowReq.lender_email,
         subject: `ACTION REQUIRED: Borrower is waiting for ${borrowReq.item_title}`,

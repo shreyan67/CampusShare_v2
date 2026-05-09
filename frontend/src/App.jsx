@@ -584,9 +584,41 @@ function ListItemModal({ open, onClose, onSuccess, editItemData = null }) {
   const isSell = txType === 'sell'
   const noReturn = ['sell', 'donate'].includes(txType)
 
-  function onPhotoPick(e) {
+  function compressImage(file) {
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = (e) => {
+        const img = new Image()
+        img.src = e.target.result
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          const MAX_WIDTH = 800
+          const MAX_HEIGHT = 800
+          let width = img.width
+          let height = img.height
+
+          if (width > height) {
+            if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH }
+          } else {
+            if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT }
+          }
+          canvas.width = width
+          canvas.height = height
+          const ctx = canvas.getContext('2d')
+          ctx.drawImage(img, 0, 0, width, height)
+          canvas.toBlob((blob) => {
+            resolve(new File([blob], file.name, { type: 'image/jpeg', lastModified: Date.now() }))
+          }, 'image/jpeg', 0.8)
+        }
+      }
+    })
+  }
+
+  async function onPhotoPick(e) {
     const files = Array.from(e.target.files).slice(0, 4)
-    setPhotos(files); setPreviews(files.map(f => URL.createObjectURL(f)))
+    const compressed = await Promise.all(files.map(compressImage))
+    setPhotos(compressed); setPreviews(compressed.map(f => URL.createObjectURL(f)))
   }
 
   async function submit() {
@@ -2275,7 +2307,7 @@ function getGuide(r, isBorrowing) {
     else if (r.status === 'active' && r.item_given && !r.borrower_received)
       guide = { icon: '🤝', title: 'Action needed: Confirm receipt', body: 'Lender handed over the item. Tap to confirm.' }
     else if (r.status === 'active' && r.borrower_received && !noReturn)
-      guide = { icon: '📦', title: 'Return it when done', body: 'Return before due date.' }
+      guide = { icon: '📦', title: 'Return it when done', body: 'Return before due date. Failing to return on time will lead to permanent ban from borrowing or buying from this app.' }
     else if (r.status === 'returned')
       guide = { icon: '✅', title: 'All done!', body: 'Transaction complete.' }
   } else {
@@ -2408,7 +2440,7 @@ function ActivityModal({ open, onClose, refresh, showToast, defaultTab, targetId
     } catch (err) { console.error(err); return { error: 'Something went wrong' } }
   }
 
-  const isHistory = (r) => ['returned', 'declined', 'closed'].includes(r.status)
+  const isHistory = (r) => ['returned', 'declined', 'closed'].includes(r.status) && !r.force_closed
 
   const borrowing = reqs.filter(r => r.borrower_id === user?.id && !r.from_item_request)
   const activeBorrowing = borrowing.filter(r => !isHistory(r))
@@ -2486,8 +2518,24 @@ function ActivityModal({ open, onClose, refresh, showToast, defaultTab, targetId
         <>
           <div style={{ ...row(8), marginBottom: 12 }}>
             <TierBadge tier={user?.trust_tier} />
-            <span style={{ fontSize: 13, color: T.textMid }}>{activeCount}/{tier.limit} slots used</span>
+            <span style={{ fontSize: 13, color: T.textMid }}>{user?.is_flagged ? tier.limit : activeCount}/{tier.limit} slots used</span>
           </div>
+          {user?.is_flagged && (
+            <div style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 8, padding: 12, marginBottom: 16 }}>
+              <div style={{ fontSize: 12, color: '#991B1B', fontWeight: 600, marginBottom: 8 }}>Your slots are locked due to an unreturned item.</div>
+              <button 
+                className="btn-press" 
+                style={{ background: '#DC2626', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+                onClick={async () => {
+                  const res = await act(api.informAdminSlots);
+                  if (res?.error) { showToast(res.error); return; }
+                  showToast("Admin has been informed.");
+                }}
+              >
+                Inform Admin to free your slots
+              </button>
+            </div>
+          )}
           {activeBorrowing.length === 0
             ? <div style={{ textAlign: 'center', padding: '2rem 0', color: T.textSoft }}>
               <div style={{ fontSize: 36, marginBottom: 8 }}>📭</div>
@@ -2636,6 +2684,7 @@ const ItemCard = memo(({ item, currentUserId, onRequest, myRequests = [], onDele
 
       <div style={{ padding: '12px 14px 14px' }}>
         <div style={{ fontFamily: 'var(--font-head)', fontSize: 13, fontWeight: 700, marginBottom: 3, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{item.title}</div>
+        {item.condition_notes && <div style={{ fontSize: 11, color: T.textMid, marginBottom: 8, fontStyle: 'italic', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.condition_notes}</div>}
         <div style={{ fontSize: 11, color: T.textSoft, marginBottom: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.category}{!isLF && !['sell', 'donate'].includes(item.transaction_type) ? ` · max ${item.max_borrow_days}d` : ''}</div>
         <div style={{ ...row(0), justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: T.textMid, minWidth: 0, overflow: 'hidden' }}>
