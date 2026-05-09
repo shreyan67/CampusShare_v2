@@ -744,37 +744,53 @@ function ListItemModal({ open, onClose, onSuccess, editItemData = null }) {
 function BorrowModal({ open, item, onClose, onSuccess, showToast }) {
   const { user } = useApp()
   const msgRef = useRef('')
-  const [days, setDays] = useState('3')
+  const [days, setDays] = useState('1')
   const [err, setErr] = useState('')
   const [loading, setLoading] = useState(false)
   const tier = TRUST_TIERS[user?.trust_tier] || TRUST_TIERS.newcomer
   const isLostFound = item?.listing_type === 'lost_found'
-  const rentalCost = item?.is_paid ? parseFloat((parseFloat(item.price_per_day) * parseInt(days)).toFixed(2)) : 0
+  const txType = item?.transaction_type // 'sell' | 'donate' | 'rent' | 'lend'
+  const hasDuration = !isLostFound && txType !== 'sell' && txType !== 'donate'
+
+  // For sell: flat price. For rent/lend: price × days. For donate: 0.
+  const basePrice = item?.is_paid ? parseFloat(item.price_per_day) : 0
+  const rentalCost = item?.is_paid
+    ? (hasDuration ? parseFloat((basePrice * parseInt(days)).toFixed(2)) : basePrice)
+    : 0
   const PLATFORM_FEE_PERCENT = rentalCost > 200 ? 5 : 8
   const platformFee = item?.is_paid ? parseFloat((rentalCost * PLATFORM_FEE_PERCENT / 100).toFixed(2)) : 0
   const totalCost = item?.is_paid ? parseFloat((rentalCost + platformFee).toFixed(2)) : null
 
-  useEffect(() => { if (open) { setErr(''); setDays('3') } }, [open])
+  useEffect(() => {
+    if (open) {
+      setErr('')
+      setDays(hasDuration ? '3' : '1')
+    }
+  }, [open, item])
 
   async function submit() {
     setErr(''); setLoading(true)
-    const r = await api.requestBorrow({ itemId: item.id, requestedDays: isLostFound ? 1 : parseInt(days), message: msgRef.current })
+    const requestedDays = isLostFound ? 1 : (hasDuration ? parseInt(days) : 1)
+    const r = await api.requestBorrow({ itemId: item.id, requestedDays, message: msgRef.current })
     setLoading(false)
     if (r.error) return setErr(r.error)
     onSuccess()
-    showToast(isLostFound ? 'Claim sent! Owner will review.' : item.is_paid ? `Request sent! You'll pay ₹${totalCost} after approval.` : `Request sent to ${item.owner_name}!`)
+    showToast(isLostFound ? 'Claim sent! Owner will review.'
+      : item.is_paid ? `Request sent! You'll pay ₹${totalCost} after approval.`
+      : `Request sent to ${item.owner_name}!`)
     onClose()
   }
 
   if (!item) return null
   return (
     <Modal open={open} onClose={onClose}>
-      <ModalTitle>{isLostFound ? '🔍 Claim this item' : '📦 Request to borrow'}</ModalTitle>
+      <ModalTitle>{isLostFound ? '🔍 Claim this item' : txType === 'sell' ? '🛒 Request to buy' : txType === 'donate' ? '🎁 Request this item' : '📦 Request to borrow'}</ModalTitle>
       <ModalSub>{item.title} · from {item.owner_name}</ModalSub>
       {!isLostFound && <InfoBanner type="success">✓ {tier.label} tier · {tier.limit} borrow slots</InfoBanner>}
       {err && <div style={ERR}>{err}</div>}
 
-      {!isLostFound && (
+      {/* Duration picker — only for rent/lend items */}
+      {hasDuration && (
         <div style={{ marginBottom: 14 }}>
           <label style={LBL}>Duration (max {item.max_borrow_days} days)</label>
           <select style={INP} value={days} onChange={e => setDays(e.target.value)}>
@@ -783,10 +799,19 @@ function BorrowModal({ open, item, onClose, onSuccess, showToast }) {
         </div>
       )}
 
+      {/* Paid price breakdown */}
       {item.is_paid && !isLostFound && (
         <div style={{ marginBottom: 14, padding: '14px', background: `${T.warn}15`, borderRadius: 'var(--radius-sm)', border: `1px solid ${T.warn}44` }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: '#92400E', marginBottom: 6 }}>💰 Paid rental breakdown</div>
-          <div style={{ fontSize: 13, color: '#92400E' }}>₹{item.price_per_day}/day × {days} days</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#92400E', marginBottom: 6 }}>
+            {txType === 'sell' ? '🛒 Purchase summary' : '💰 Rental breakdown'}
+          </div>
+          {hasDuration
+            ? <div style={{ fontSize: 13, color: '#92400E' }}>₹{basePrice}/day × {days} day{parseInt(days) > 1 ? 's' : ''} = ₹{rentalCost}</div>
+            : <div style={{ fontSize: 13, color: '#92400E' }}>Item price: ₹{basePrice}</div>
+          }
+          <div style={{ fontSize: 13, color: '#92400E', marginTop: 4 }}>
+            Platform fee ({PLATFORM_FEE_PERCENT}%): +₹{platformFee}
+          </div>
           <div style={{ fontSize: 15, color: '#92400E', fontWeight: 700, marginTop: 6 }}>Total: ₹{totalCost}</div>
           <div style={{ fontSize: 11, color: '#92400E', marginTop: 4, opacity: 0.8 }}>Pay securely via UPI after approval.</div>
         </div>
@@ -799,11 +824,14 @@ function BorrowModal({ open, item, onClose, onSuccess, showToast }) {
 
       <div style={{ ...row(8), justifyContent: 'flex-end' }}>
         <button className="btn-press" style={btn(false)} onClick={onClose}>Cancel</button>
-        <button className="btn-press" style={btn(true)} onClick={submit} disabled={loading}>{loading ? 'Sending…' : isLostFound ? 'Send Claim' : 'Send Request'}</button>
+        <button className="btn-press" style={btn(true)} onClick={submit} disabled={loading}>
+          {loading ? 'Sending…' : isLostFound ? 'Send Claim' : txType === 'sell' ? 'Request to Buy' : txType === 'donate' ? 'Request Item' : 'Send Request'}
+        </button>
       </div>
     </Modal>
   )
 }
+
 
 // ── LF PICKUP PANEL ───────────────────────────────────────────────────────────
 // Draft text is preserved across 8-second polls via a module-level cache.
