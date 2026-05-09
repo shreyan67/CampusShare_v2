@@ -554,7 +554,7 @@ function ListItemModal({ open, onClose, onSuccess, editItemData = null }) {
   const { user, setUser } = useApp()
   const titleRef = useRef(editItemData?.title || '')
   const notesRef = useRef(editItemData?.condition_notes || '')
-  const [category, setCat] = useState(editItemData?.category || 'Books')
+  const [category, setCat] = useState(editItemData?.category || 'Books & Notes')
   const [maxDays, setMaxDays] = useState(editItemData?.max_borrow_days?.toString() || '7')
   const [ltype, setLtype] = useState(editItemData?.listing_type || 'borrow')
   const [txType, setTxType] = useState(editItemData?.transaction_type || 'lend')  // rent|sell|donate|lend
@@ -569,7 +569,7 @@ function ListItemModal({ open, onClose, onSuccess, editItemData = null }) {
   useEffect(() => {
     titleRef.current = editItemData?.title || ''
     notesRef.current = editItemData?.condition_notes || ''
-    setCat(editItemData?.category || 'Books')
+    setCat(editItemData?.category || 'Books & Notes')
     setMaxDays(editItemData?.max_borrow_days?.toString() || '7')
     setLtype(editItemData?.listing_type || 'borrow')
     setTxType(editItemData?.transaction_type || 'lend')
@@ -806,7 +806,7 @@ function BorrowModal({ open, item, onClose, onSuccess, showToast }) {
     const r = await api.requestBorrow({ itemId: item.id, requestedDays, message: msgRef.current })
     setLoading(false)
     if (r.error) return setErr(r.error)
-    onSuccess()
+    onSuccess(r.request)
     showToast(isLostFound ? 'Claim sent! Owner will review.'
       : item.is_paid ? `Request sent! You'll pay ₹${totalCost} after approval.`
       : `Request sent to ${item.owner_name}!`)
@@ -2643,8 +2643,7 @@ const ItemCard = memo(({ item, currentUserId, onRequest, myRequests = [], onDele
   const firstPhoto = item.images?.[0]
 
   const isLocked = myRequests.some(r => r.item_id === item.id && (
-    ['active', 'overdue'].includes(r.status) ||
-    (r.status === 'selected' && r.payment_confirmed)
+    ['selected', 'active', 'overdue'].includes(r.status)
   ))
   const canDelete = isYours && !isLocked && item.status !== 'borrowed'
 
@@ -2913,6 +2912,7 @@ export default function App() {
     })
   }, [])
   const fetchIdRef = useRef(0)
+  const pollIdRef = useRef(0)  // separate counter for polling so it doesn't clash with initial fetch
   const allItemsRef = useRef([]) // full unfiltered list — search filters this client-side
   const statsKey = `cs_stats_${user?.id}`
   const { showInstall, installApp } = usePwaInstall();
@@ -3023,29 +3023,34 @@ export default function App() {
 
     const cacheKey = `cs_items_${tab}_${cat}_${avail}_${user.id}`
 
-    // Show cached items immediately (same tab only)
-    try {
-      const cached = localStorage.getItem(cacheKey)
-      if (cached) setItems(JSON.parse(cached))
-    } catch (_) { }
+    // Show cached items immediately ONLY when list is empty (first load)
+    // Avoids flash of stale data on filter/tab changes
+    if (items.length === 0) {
+      try {
+        const cached = localStorage.getItem(cacheKey)
+        if (cached) setItems(JSON.parse(cached))
+      } catch (_) { }
+    }
 
     const itemParams = tab === 'marketplace'
       ? { listingType: 'borrow', category: cat !== 'all' ? cat : undefined, status: avail === 'available' ? 'available' : undefined, search: search || undefined }
       : { listingType: 'lost_found', search: search || undefined }
 
-    // Fire all in parallel
-    Promise.all([
-      api.getItems(itemParams),
-      api.getStats(),
-      api.getMyRequests(),
-    ]).then(([itemsRes, statsRes, reqsRes]) => {
-      // CRITICAL: only apply results if this is still the latest fetch
+    // Load items FIRST and independently — user sees them fast
+    api.getItems(itemParams).then(itemsRes => {
       if (fetchIdRef.current !== myId) return
-
       if (!itemsRes?.error) {
         setItems(itemsRes.items || [])
         try { localStorage.setItem(cacheKey, JSON.stringify(itemsRes.items || [])) } catch (_) { }
       }
+    })
+
+    // Load supporting data in parallel (slower, but not blocking items display)
+    Promise.all([
+      api.getStats(),
+      api.getMyRequests(),
+    ]).then(([statsRes, reqsRes]) => {
+      if (fetchIdRef.current !== myId) return
       if (!statsRes?.error) {
         setStats(statsRes)
         try { localStorage.setItem(statsKey, JSON.stringify(statsRes)) } catch (_) { }
@@ -3120,9 +3125,9 @@ export default function App() {
       } catch (e) { }
     }
 
-    // Fire once immediately, then every 20s
+    // Fire once immediately, then every 8s (faster notifications)
     checkNewRequests()
-    notifPollRef.current = setInterval(checkNewRequests, 20000)
+    notifPollRef.current = setInterval(checkNewRequests, 8000)
 
     const handleVis = () => { if (document.visibilityState === 'visible') checkNewRequests() }
     document.addEventListener('visibilitychange', handleVis)
@@ -3150,54 +3155,18 @@ export default function App() {
     }
   }
 
-  // Separate polling effect — fires silently, also uses fetchId
+  // Simple tick-based polling — just increments tick every 8s to re-trigger the single fetch effect above.
+  // This is the ONLY polling mechanism. There is no second fetch effect.
   useEffect(() => {
     if (!user) return
-
-    function doPoll() {
-      const myId = ++fetchIdRef.current
-      const cacheKey = `cs_items_${tab}_${cat}_${avail}_${user.id}`
-      const itemParams = tab === 'marketplace'
-        ? { listingType: 'borrow', category: cat !== 'all' ? cat : undefined, status: avail === 'available' ? 'available' : undefined, search: search || undefined }
-        : { listingType: 'lost_found', search: search || undefined }
-
-      Promise.all([
-        api.getItems(itemParams),
-        api.getStats(),
-        api.getMyRequests(),
-      ]).then(([itemsRes, statsRes, reqsRes]) => {
-        if (fetchIdRef.current !== myId) return
-        if (!itemsRes?.error) {
-          setItems(itemsRes.items || [])
-          try { localStorage.setItem(cacheKey, JSON.stringify(itemsRes.items || [])) } catch (_) { }
-        }
-        if (!statsRes?.error) setStats(statsRes)
-        if (!reqsRes?.error) {
-          setMyRequests(reqsRes.requests || [])
-          try { localStorage.setItem(`cs_reqs_${user.id}`, JSON.stringify(reqsRes.requests || [])) } catch (_) { }
-        }
-      })
-    }
-
-    const interval = setInterval(doPoll, 15000)
-
-    const handleVis = () => { if (document.visibilityState === 'visible') doPoll() }
+    const interval = setInterval(() => setTick(t => t + 1), 8000)
+    const handleVis = () => { if (document.visibilityState === 'visible') setTick(t => t + 1) }
     document.addEventListener('visibilitychange', handleVis)
-
     return () => {
       clearInterval(interval)
       document.removeEventListener('visibilitychange', handleVis)
     }
-  }, [user, tab, cat, avail, search]) // eslint-disable-line
-
-  function handleLogout() { api.clearSession(); setUser(null) }
-
-  if (!user) return <AuthScreen onLogin={u => setUser(u)} />
-
-  const CAT_COUNTS = CATEGORIES.reduce((a, c) => { a[c] = items.filter(i => i.category === c).length; return a }, {})
-  const tier = TRUST_TIERS[user.trust_tier] || TRUST_TIERS.newcomer
-  const activeCount = myRequests.filter(r => ['active', 'selected'].includes(r.status)).length
-  const actionableReq = myRequests.find(r => getActionRequired(r, r.borrower_id === user?.id))
+  }, [user]) // eslint-disable-line
 
   // ── CLIENT-SIDE SEARCH FILTER (Instant) ───────────────────────────────────
   const displayItems = useMemo(() => {
@@ -3211,6 +3180,15 @@ export default function App() {
       (i.condition_notes || '').toLowerCase().includes(q)
     )
   }, [items, debouncedSearch])
+
+  function handleLogout() { api.clearSession(); setUser(null) }
+
+  if (!user) return <AuthScreen onLogin={u => setUser(u)} />
+
+  const CAT_COUNTS = CATEGORIES.reduce((a, c) => { a[c] = items.filter(i => i.category === c).length; return a }, {})
+  const tier = TRUST_TIERS[user.trust_tier] || TRUST_TIERS.newcomer
+  const activeCount = myRequests.filter(r => ['active', 'selected'].includes(r.status)).length
+  const actionableReq = myRequests.find(r => getActionRequired(r, r.borrower_id === user?.id))
 
   // Split unread chats by transaction origin so each button gets the right count
   const requestHandoverIds = new Set(myRequests.filter(r => r.from_item_request).map(r => r.id))
@@ -3252,7 +3230,13 @@ export default function App() {
           />
         )}
         {listOpen && <ListItemModal open={listOpen} onClose={() => { setList(false); setEditItemData(null); }} onSuccess={refresh} editItemData={editItemData} />}
-        {borrowItem && <BorrowModal open={!!borrowItem} item={borrowItem} onClose={() => setBorrow(null)} onSuccess={refresh} showToast={showToast} />}
+        {borrowItem && <BorrowModal open={!!borrowItem} item={borrowItem} onClose={() => setBorrow(null)} onSuccess={(newReq) => {
+          // Optimistically add to myRequests so Request button disables instantly
+          if (newReq) setMyRequests(prev => [...prev, { ...newReq, item_id: borrowItem.id, status: 'pending', borrower_id: user.id }])
+          // Also fire a real refresh to get server truth
+          refresh()
+          setBorrow(null)
+        }} showToast={showToast} />}
         {actOpen && (
           <ActivityModal
             open={actOpen}
@@ -3455,7 +3439,7 @@ export default function App() {
 
             <div className="item-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(min(160px,45vw),1fr))', gap: 12 }}>
               {displayItems.map(item => (
-                <ItemCard key={item.id + '-' + tick} item={item} currentUserId={user.id} onRequest={i => setBorrow(i)} myRequests={myRequests} onDelete={handleDeleteItem} onEdit={i => { setEditItemData(i); setList(true); }} />
+                <ItemCard key={item.id} item={item} currentUserId={user.id} onRequest={i => setBorrow(i)} myRequests={myRequests} onDelete={handleDeleteItem} onEdit={i => { setEditItemData(i); setList(true); }} />
               ))}
             </div>
           </div>

@@ -79,7 +79,7 @@ router.post('/', requireAuth, async (req, res) => {
     if (!u?.is_verified) return res.status(403).json({ error: 'Verify your account first.' })
 
     const validUrgency = ['low', 'medium', 'high']
-    const validCats = ['Books','Lab Equipment','Electronics','Notes & Guides','Accessories','Other','Any']
+    const validCats = ['Books & Notes','Lab Equipment','Electronics','Accessories','Food','Other','Any']
 
     const row = await queryOne(`
       INSERT INTO item_requests(college_id, requester_id, title, description, category, urgency)
@@ -126,7 +126,7 @@ router.patch('/:id', requireAuth, async (req, res) => {
     if (!title?.trim()) return res.status(400).json({ error: 'Title is required.' })
 
     const validUrgency = ['low', 'medium', 'high']
-    const validCats = ['Books','Lab Equipment','Electronics','Notes & Guides','Accessories','Other','Any']
+    const validCats = ['Books & Notes','Lab Equipment','Electronics','Accessories','Food','Other','Any']
 
     const updated = await queryOne(`
       UPDATE item_requests

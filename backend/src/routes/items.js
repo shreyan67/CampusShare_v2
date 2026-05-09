@@ -19,11 +19,15 @@ const upload = multer({
 router.get('/stats', requireAuth, async (req, res) => {
   try {
     const cid = req.collegeId
-    const [avail]   = await query("SELECT COUNT(*) n FROM items WHERE college_id=$1 AND status='available' AND is_deleted=FALSE", [cid])
-    const [total]   = await query('SELECT COUNT(*) n FROM items WHERE college_id=$1 AND is_deleted=FALSE', [cid])
-    const [students]= await query('SELECT COUNT(*) n FROM users WHERE college_id=$1 AND is_verified=TRUE', [cid])
-    const [borrows] = await query("SELECT COUNT(*) n FROM borrow_requests br JOIN items i ON br.item_id=i.id WHERE i.college_id=$1 AND br.status='returned'", [cid])
-    const [pending] = await query("SELECT COUNT(*) n FROM borrow_requests br JOIN items i ON br.item_id=i.id WHERE i.college_id=$1 AND br.status='pending'", [cid])
+    const [
+      [avail], [total], [students], [borrows], [pending]
+    ] = await Promise.all([
+      query("SELECT COUNT(*) n FROM items WHERE college_id=$1 AND status='available' AND is_deleted=FALSE", [cid]),
+      query('SELECT COUNT(*) n FROM items WHERE college_id=$1 AND is_deleted=FALSE', [cid]),
+      query('SELECT COUNT(*) n FROM users WHERE college_id=$1 AND is_verified=TRUE', [cid]),
+      query("SELECT COUNT(*) n FROM borrow_requests br JOIN items i ON br.item_id=i.id WHERE i.college_id=$1 AND br.status='returned'", [cid]),
+      query("SELECT COUNT(*) n FROM borrow_requests br JOIN items i ON br.item_id=i.id WHERE i.college_id=$1 AND br.status='pending'", [cid])
+    ])
     res.json({
       available: +avail.n, total: +total.n,
       students: +students.n, borrows: +borrows.n, pending: +pending.n,
@@ -50,10 +54,14 @@ router.get('/', requireAuth, async (req, res) => {
       conds.push(`i.category=$${params.length}`)
     }
 
-  if (status && status !== 'closed') {
-  params.push(status)
-  conds.push(`i.status=$${params.length}`)
-}
+    // For marketplace listings, always exclude 'borrowed' items unless a specific status is requested
+    if (status && status !== 'closed') {
+      params.push(status)
+      conds.push(`i.status=$${params.length}`)
+    } else if (listingType === 'borrow' || !listingType) {
+      // Default: only show available items in marketplace
+      conds.push(`i.status='available'`)
+    }
 
     if (search) {
       params.push(`%${search}%`)
@@ -84,7 +92,7 @@ router.post('/', requireAuth, upload.array('photos', 3), async (req, res) => {
     const { title, category, conditionNotes, maxBorrowDays, isPaid, pricePerDay, allowMultiple, transactionType } = req.body
     if (!title?.trim()) return res.status(400).json({ error: 'Title is required.' })
 
-    const validCats = ['Books','Lab Equipment','Electronics','Notes & Guides','Accessories','Other']
+    const validCats = ['Books & Notes','Lab Equipment','Electronics','Accessories','Food','Other']
     if (!validCats.includes(category)) return res.status(400).json({ error: 'Invalid category.' })
 
     // Check user is verified
@@ -153,7 +161,7 @@ router.patch('/:id', requireAuth, upload.array('photos', 3), async (req, res) =>
     const { title, category, conditionNotes, maxBorrowDays, isPaid, pricePerDay, allowMultiple, transactionType } = req.body
     if (!title?.trim()) return res.status(400).json({ error: 'Title is required.' })
 
-    const validCats = ['Books','Lab Equipment','Electronics','Notes & Guides','Accessories','Other']
+    const validCats = ['Books & Notes','Lab Equipment','Electronics','Accessories','Food','Other']
     if (!validCats.includes(category)) return res.status(400).json({ error: 'Invalid category.' })
 
     const paid  = isPaid === 'true' || isPaid === true
