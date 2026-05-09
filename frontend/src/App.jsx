@@ -1748,8 +1748,9 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
         </div>
 
         {guide && (
-          <div style={{ fontSize: 10, color: '#475569', lineHeight: 1.2 }}>
+          <div style={{ fontSize: 10, color: '#475569', lineHeight: 1.3 }}>
             <strong>{guide.icon} {guide.title}</strong>
+            <div style={{ marginTop: 2, color: '#334155' }}>{guide.body}</div>
           </div>
         )}
 
