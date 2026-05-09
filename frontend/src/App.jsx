@@ -1820,8 +1820,8 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
             </div>
           )}
 
-          {/* Payout dispute — show even after returned */}
-          {!isBorrowing && r.payout_status === 'manual_pending' && (
+          {/* Payout dispute — show even after returned, but only after item was given */}
+          {!isBorrowing && r.item_given && r.payout_status === 'manual_pending' && (
             <button className="btn-press" style={{ ...btn(false, true), fontSize: 10, padding: '6px', width: '100%', border: '1px solid #EF4444', color: '#EF4444', background: '#FCEBEB' }} onClick={async () => {
               if (!window.confirm("Raise dispute? Admin will be notified.")) return
               act(api.raiseDispute, r.id)
@@ -2185,8 +2185,8 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
             }}>I've Received It ✓</button>
           )}
 
-          {/* Payout confirm/dispute — visible even after returned */}
-          {!isBorrowing && isPaid && ['manual_pending', 'admin_paid', 'disputed'].includes(r.payout_status) && (
+          {/* Payout confirm/dispute — visible even after returned, but only after item was given */}
+          {!isBorrowing && isPaid && r.item_given && ['manual_pending', 'admin_paid', 'disputed'].includes(r.payout_status) && (
             <div style={{ width: '100%', display: 'flex', gap: 8, flexDirection: 'column' }}>
               {r.payout_status === 'admin_paid' && (
                 <button className="btn-press" style={{ ...btn(true, true), flex: 1, background: T.success }} onClick={async () => {
