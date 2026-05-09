@@ -3,6 +3,7 @@ const Razorpay  = require('razorpay')
 const crypto    = require('crypto')
 const { query, queryOne } = require('../db/pool')
 const { requireAuth }     = require('../middleware/auth')
+const { sendPushNotification } = require('./push')
 
 const router = express.Router()
 
@@ -156,6 +157,13 @@ router.post('/verify', requireAuth, async (req, res) => {
        WHERE id = $2`,
       [razorpay_payment_id, requestId]
     )
+
+    // Notify admin: new payment received, payout pending
+    sendPushNotification('admin', {
+      title: '💸 New Payout Pending!',
+      body: `A borrower just paid ₹${borrowReq.total_amount} for "${borrowReq.razorpay_order_id}". Payout required.`,
+      url: '/'
+    }).catch(() => {})
 
     return res.json({ success: true, paymentId: razorpay_payment_id })
 
@@ -422,6 +430,13 @@ router.post('/mark-paid', async (req, res) => {
       // Email failure should NOT block the mark-paid response
       console.error('[mark-paid] Email failed:', emailErr.message)
     }
+
+    // Send push notification to lender's phone
+    sendPushNotification(borrowReq.owner_id, {
+      title: '💸 Payout Sent!',
+      body: `₹${payLender} has been sent to your UPI for "${borrowReq.item_title}". Please confirm receipt in the app.`,
+      url: '/'
+    }).catch(() => {})
 
     res.json({ success: true, payLender, lenderEmail: borrowReq.lender_email })
   } catch (err) {

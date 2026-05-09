@@ -1,6 +1,7 @@
 import { useState, useEffect, createContext, useContext, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import * as api from './api.js'
+import { subscribeToPush } from './push.js'
 
 // ── DESIGN TOKENS ─────────────────────────────────────────────────────────────
 const T = {
@@ -2789,13 +2790,17 @@ export default function App() {
       if (r?.user) { setUser(r.user); api.persistUser(r.user) }
     })
 
-    const requestNotif = () => {
+    // Request push notification permission and subscribe for background notifications
+    const token = localStorage.getItem('cs_token')
+    if (token) {
       if ('Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission()
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') subscribeToPush(token)
+        })
+      } else if ('Notification' in window && Notification.permission === 'granted') {
+        subscribeToPush(token)
       }
-      document.removeEventListener('click', requestNotif)
     }
-    document.addEventListener('click', requestNotif)
 
     // Load cached stats immediately on mount
     try {
@@ -2804,8 +2809,6 @@ export default function App() {
       const cachedReqs = localStorage.getItem(`cs_reqs_${user.id}`)
       if (cachedReqs) setMyRequests(JSON.parse(cachedReqs))
     } catch (_) { }
-
-    return () => document.removeEventListener('click', requestNotif)
   }, []) // eslint-disable-line
 
   // Watch for state changes in myRequests to trigger native push notifications

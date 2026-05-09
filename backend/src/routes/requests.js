@@ -2,6 +2,7 @@ const express = require('express')
 const { query, queryOne } = require('../db/pool')
 const { requireAuth } = require('../middleware/auth')
 const { BORROW_LIMITS, getActiveBorrowCount, promoteIfEligible } = require('../services/trust')
+const { sendPushNotification } = require('./push')
 
 const router = express.Router()
 
@@ -64,6 +65,14 @@ router.post('/', requireAuth, async (req, res) => {
     `, [itemId, req.userId, item.owner_id, days, message||'', status, total, rentalAmount, platformFee])
 
     res.status(201).json({ request: req_, totalAmount: total, rentalAmount, platformFee, isPaid: item.is_paid })
+
+    // Notify lender: new borrow request
+    sendPushNotification(item.owner_id, {
+      title: '📦 New Borrow Request!',
+      body: `${borrower.name} wants to borrow "${item.title}"`,
+      url: '/'
+    }).catch(() => {})
+
   } catch (err) { console.error(err); res.status(500).json({ error: 'Failed to send request.' }) }
 })
 
@@ -202,6 +211,13 @@ router.patch('/:id/approve', requireAuth, async (req, res) => {
       [r.id]
     )
 
+    // Notify borrower: request approved
+    sendPushNotification(r.borrower_id, {
+      title: '✅ Request Approved!',
+      body: `Your request for "${item.title}" was approved. ${item.is_paid ? 'Please complete payment.' : 'Arrange pickup with the lender.'}`,
+      url: '/'
+    }).catch(() => {})
+
     return res.json({ success: true, stage: 'selected', allowMultiple: item.allow_multiple })
 
   } catch (err) {
@@ -217,6 +233,14 @@ router.patch('/:id/decline', requireAuth, async (req, res) => {
     if (!r || !item) return res.status(404).json({ error: 'Not found.' })
     if (item.owner_id !== req.userId) return res.status(403).json({ error: 'Not your item.' })
     await query("UPDATE borrow_requests SET status='declined' WHERE id=$1", [r.id])
+
+    // Notify borrower: request declined
+    sendPushNotification(r.borrower_id, {
+      title: '❌ Request Declined',
+      body: `Your request for "${item.title}" was declined by the lender.`,
+      url: '/'
+    }).catch(() => {})
+
     res.json({ success: true })
   } catch (err) { console.error(err); res.status(500).json({ error: 'Failed.' }) }
 })
@@ -368,6 +392,14 @@ router.patch('/:id/pickup-details', requireAuth, async (req, res) => {
     if (r.status !== 'active') return res.status(409).json({ error: 'Item must be active (payment confirmed).' })
 
     await query('UPDATE borrow_requests SET pickup_details=$1 WHERE id=$2', [details.trim(), req.params.id])
+
+    // Notify borrower: lender sent pickup details
+    sendPushNotification(r.borrower_id, {
+      title: '📍 Pickup Details Ready!',
+      body: 'The lender has sent you the pickup location. Tap to view.',
+      url: '/'
+    }).catch(() => {})
+
     res.json({ success: true })
   } catch (err) { console.error(err); res.status(500).json({ error: 'Failed.' }) }
 })
@@ -572,6 +604,13 @@ router.patch('/:id/dispute', requireAuth, async (req, res) => {
       console.error('[dispute] Email send failed:', emailErr.message)
       // Dispute is still saved in DB as 'disputed' — visible in admin panel
     }
+
+    // Push notify admin on their phone
+    sendPushNotification('admin', {
+      title: '🚨 New Dispute Raised!',
+      body: `${lender?.name} disputes payment for "${item?.title}". Tap to review in admin panel.`,
+      url: '/'
+    }).catch(() => {})
 
     res.json({ success: true })
   } catch (err) {
