@@ -1368,42 +1368,53 @@ function RequestsModal({ open, onClose, onSuccess, showToast, editData = null, o
 
       {tab === 'post' && (
         <div className="pop-in">
-          {err && <div style={ERR}>{err}</div>}
-
-          <div style={{ marginBottom: 14 }}>
-            <label style={LBL}>What do you need? *</label>
-            <input style={INP} placeholder="e.g. 1 packet Maggi, DSA notes, calculator…" value={title} onChange={e => save('title', e.target.value)} />
-          </div>
-
-          <div style={{ marginBottom: 14 }}>
-            <label style={LBL}>Category</label>
-            <select style={INP} value={category} onChange={e => save('category', e.target.value)}>
-              <option>Any</option>
-              {CATEGORIES.map(c => <option key={c}>{c}</option>)}
-            </select>
-          </div>
-
-          <div style={{ marginBottom: 14 }}>
-            <label style={LBL}>Details (optional)</label>
-            <textarea style={{ ...INP, minHeight: 72, resize: 'vertical', lineHeight: 1.5 }} placeholder="Any specifics? Edition, brand, when you need by…" value={desc} onChange={e => save('desc', e.target.value)} />
-          </div>
-
-          <div style={{ marginBottom: 18 }}>
-            <label style={LBL}>Urgency</label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
-              {URGENCY_OPTS.map(o => (
-                <button key={o.val} onClick={() => save('urgency', o.val)} style={{ padding: '10px 8px', borderRadius: 'var(--radius-sm)', border: `2px solid ${urgency === o.val ? T.coral : 'var(--border-soft)'}`, background: urgency === o.val ? `${T.coral}10` : 'transparent', cursor: 'pointer', textAlign: 'center', transition: 'all 0.18s' }}>
-                  <div style={{ fontSize: 18, marginBottom: 2 }}>{o.icon}</div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: urgency === o.val ? T.coral : T.navy }}>{o.label}</div>
-                </button>
-              ))}
+          {user?.is_flagged ? (
+            <div style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 12, padding: '24px 16px', textAlign: 'center' }}>
+              <div style={{ fontSize: 36, marginBottom: 12 }}>🔒</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#991B1B', marginBottom: 8 }}>Your account is flagged</div>
+              <div style={{ fontSize: 13, color: '#DC2626', marginBottom: 16 }}>You cannot post requests until your flagged item issue is resolved. Please contact admin or go to Activity → Borrowing to request slot unlock.</div>
+              <button className="btn-press" style={{ background: '#DC2626', color: '#fff', border: 'none', padding: '8px 20px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer' }} onClick={() => { if (onClose) onClose(); }}>Go Back</button>
             </div>
-          </div>
+          ) : (
+            <>
+              {err && <div style={ERR}>{err}</div>}
 
-          <div style={{ ...row(8), justifyContent: 'flex-end' }}>
-            <button className="btn-press" style={btn(false)} onClick={() => { if (editData) onClose(); else setTab('browse'); }}>{editData ? 'Cancel' : 'Back to Browse'}</button>
-            <button className="btn-press" style={{ ...btn(true), background: '#7C3AED' }} onClick={submit} disabled={loading}>{loading ? 'Saving…' : editData ? 'Update Request' : 'Post Request 🙋'}</button>
-          </div>
+              <div style={{ marginBottom: 14 }}>
+                <label style={LBL}>What do you need? *</label>
+                <input style={INP} placeholder="e.g. 1 packet Maggi, DSA notes, calculator…" value={title} onChange={e => save('title', e.target.value)} />
+              </div>
+
+              <div style={{ marginBottom: 14 }}>
+                <label style={LBL}>Category</label>
+                <select style={INP} value={category} onChange={e => save('category', e.target.value)}>
+                  <option>Any</option>
+                  {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+                </select>
+              </div>
+
+              <div style={{ marginBottom: 14 }}>
+                <label style={LBL}>Details (optional)</label>
+                <textarea style={{ ...INP, minHeight: 72, resize: 'vertical', lineHeight: 1.5 }} placeholder="Any specifics? Edition, brand, when you need by…" value={desc} onChange={e => save('desc', e.target.value)} />
+              </div>
+
+              <div style={{ marginBottom: 18 }}>
+                <label style={LBL}>Urgency</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+                  {URGENCY_OPTS.map(o => (
+                    <button key={o.val} onClick={() => save('urgency', o.val)} style={{ padding: '10px 8px', borderRadius: 'var(--radius-sm)', border: `2px solid ${urgency === o.val ? T.coral : 'var(--border-soft)'}`, background: urgency === o.val ? `${T.coral}10` : 'transparent', cursor: 'pointer', textAlign: 'center', transition: 'all 0.18s' }}>
+                      <div style={{ fontSize: 18, marginBottom: 2 }}>{o.icon}</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: urgency === o.val ? T.coral : T.navy }}>{o.label}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ ...row(8), justifyContent: 'flex-end' }}>
+                <button className="btn-press" style={btn(false)} onClick={() => { if (editData) onClose(); else setTab('browse'); }}>{editData ? 'Cancel' : 'Back to Browse'}</button>
+                <button className="btn-press" style={{ ...btn(true), background: '#7C3AED' }} onClick={submit} disabled={loading}>{loading ? 'Saving…' : editData ? 'Update Request' : 'Post Request 🙋'}</button>
+              </div>
+            </>
+          )}
         </div>
       )}
     </Modal>
@@ -1906,7 +1917,7 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
               <button className="btn-press" style={{ ...btn(true, true), fontSize: 10, padding: '6px', background: T.success, width: '100%' }} onClick={() => act(api.confirmPaymentReceived, r.id)}>Got Money ✓</button>
             </div>
           )}
-          {!isBorrowing && r.listing_type !== 'lost_found' && (['active', 'overdue'].includes(r.status) || (r.status === 'returned' && r.force_closed)) && r.borrower_received && (
+          {!isBorrowing && r.listing_type !== 'lost_found' && (['active', 'overdue'].includes(r.status) || (r.status === 'returned' && r.force_closed)) && (r.borrower_received || r.force_closed) && (
             <button className="btn-press" style={{ ...btn(true, true), fontSize: 10, padding: '6px', width: '100%' }} onClick={() => act(api.confirmReturn, r.id)}>Confirm Return</button>
           )}
         </div>
@@ -2290,11 +2301,12 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
           )}
 
           {/* Confirm return */}
-          {!isBorrowing && r.listing_type !== 'lost_found' && (['active', 'overdue'].includes(r.status) || (r.status === 'returned' && r.force_closed)) && r.borrower_received && (
+          {!isBorrowing && r.listing_type !== 'lost_found' && (['active', 'overdue'].includes(r.status) || (r.status === 'returned' && r.force_closed)) && (r.borrower_received || r.force_closed) && (
             <button className="btn-press" style={btn(true, true)} onClick={async () => {
               const res = await act(api.confirmReturn, r.id)
-              if (!res || res.error) { showToast("Return failed"); return }
-              showToast(res.onTime === false ? 'Return confirmed (late).' : 'Return confirmed!')
+              if (!res || res.error) { showToast('Return failed'); return }
+              if (res.wasForceClose) showToast('Return confirmed. Borrower slots have been freed.')
+              else showToast(res.onTime === false ? 'Return confirmed (late).' : 'Return confirmed!')
             }}>Confirm Return</button>
           )}
           {/* Waiting banner removed as guide handles it */}
@@ -2539,7 +2551,10 @@ function ActivityModal({ open, onClose, refresh, showToast, defaultTab, targetId
         <>
           <div style={{ ...row(8), marginBottom: 12 }}>
             <TierBadge tier={user?.trust_tier} />
-            <span style={{ fontSize: 13, color: T.textMid }}>{hasForceClosedSlot ? tier.limit : activeCount}/{tier.limit} slots used</span>
+            {hasForceClosedSlot
+              ? <span style={{ fontSize: 13, color: '#DC2626', fontWeight: 600 }}>🔒 All slots locked (unreturned item)</span>
+              : <span style={{ fontSize: 13, color: T.textMid }}>{activeCount} used / {tier.limit - activeCount} free slots ({tier.limit} total)</span>
+            }
           </div>
           {hasForceClosedSlot && (
             <div style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 8, padding: 12, marginBottom: 16 }}>
@@ -3140,6 +3155,10 @@ export default function App() {
           prevUnreadIdsRef.current = currentIds
         }
 
+        // Refresh user profile so is_flagged / trust_tier stay current
+        const meRes = await api.getMe()
+        if (meRes?.user) { setUser(meRes.user); api.persistUser(meRes.user) }
+
       } catch (e) { }
     }
 
@@ -3206,9 +3225,11 @@ export default function App() {
   const CAT_COUNTS = CATEGORIES.reduce((a, c) => { a[c] = items.filter(i => i.category === c).length; return a }, {})
   const tier = TRUST_TIERS[user.trust_tier] || TRUST_TIERS.newcomer
   const activeCount = myRequests.filter(r => ['active', 'selected'].includes(r.status)).length
+  const isFlagged = !!user.is_flagged
+  const hasForceClosedSlotMain = myRequests.some(r => r.force_closed && r.borrower_id === user?.id)
   const actionableReq = myRequests.find(r => getActionRequired(r, r.borrower_id === user?.id))
 
-  // Split unread chats by transaction origin so each button gets the right count
+  // Split unread chats by transaction origin — ensure set is rebuilt each render from latest myRequests
   const requestHandoverIds = new Set(myRequests.filter(r => r.from_item_request).map(r => r.id))
   const requestUnread = Object.entries(unreadMap).filter(([id]) => requestHandoverIds.has(Number(id))).reduce((s, [, c]) => s + c, 0)
   const activityUnread = totalUnread - requestUnread
@@ -3347,10 +3368,17 @@ export default function App() {
                   <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>{l}</span>
                 </div>
               ))}
-              <div style={{ background: `${T.coral}22`, borderRadius: 20, padding: '4px 10px', display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0, border: `1px solid ${T.coral}44` }}>
-                <span style={{ fontSize: 11, color: T.coral, fontWeight: 700 }}>{Math.max(0, tier.limit - activeCount)}/{tier.limit}</span>
-                <TierBadge tier={user.trust_tier} />
-              </div>
+              {isFlagged ? (
+                <div style={{ background: 'rgba(220,38,38,0.2)', borderRadius: 20, padding: '4px 10px', display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0, border: '1px solid rgba(220,38,38,0.5)' }}>
+                  <span style={{ fontSize: 10 }}>🔒</span>
+                  <span style={{ fontSize: 11, color: '#FCA5A5', fontWeight: 700 }}>Slots locked</span>
+                </div>
+              ) : (
+                <div style={{ background: `${T.coral}22`, borderRadius: 20, padding: '4px 10px', display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0, border: `1px solid ${T.coral}44` }}>
+                  <span style={{ fontSize: 11, color: T.coral, fontWeight: 700 }}>{activeCount} used / {tier.limit} free slots</span>
+                  <TierBadge tier={user.trust_tier} />
+                </div>
+              )}
             </div>
           </div>
 

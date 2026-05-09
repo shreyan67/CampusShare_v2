@@ -249,28 +249,39 @@ router.patch('/:id/decline', requireAuth, async (req, res) => {
 
 // PATCH /api/requests/:id/return  — owner confirms return
 // For sell/donate items: this route is not used (lifecycle ends at borrower-received)
+// Exception: force_closed items can always be confirmed returned to free borrower slots
 router.patch('/:id/return', requireAuth, async (req, res) => {
   try {
     const r    = await queryOne('SELECT * FROM borrow_requests WHERE id=$1', [req.params.id])
     const item = await queryOne('SELECT * FROM items WHERE id=$1', [r?.item_id])
     if (!r || !item) return res.status(404).json({ error: 'Not found.' })
     if (item.owner_id !== req.userId) return res.status(403).json({ error: 'Not your item.' })
-    if (!['active','overdue'].includes(r.status) && !(r.status === 'returned' && r.force_closed)) return res.status(409).json({ error: 'Item not currently borrowed.' })
+
+    const isForceClosedReturn = r.status === 'returned' && r.force_closed
+    const isNormalReturn = ['active','overdue'].includes(r.status)
+
+    if (!isNormalReturn && !isForceClosedReturn)
+      return res.status(409).json({ error: 'Item not currently borrowed.' })
 
     // Sell/donate items don't expect return — only lend/rent do
-    if (['sell','donate'].includes(item.transaction_type)) {
+    // Exception: if force_closed, allow confirming return to free borrower slots
+    if (['sell','donate'].includes(item.transaction_type) && !isForceClosedReturn) {
       return res.status(400).json({ error: 'This item was sold/donated — no return expected.' })
     }
 
-    const onTime = new Date() <= new Date(r.due_at)
+    const onTime = r.due_at ? new Date() <= new Date(r.due_at) : false
     await query("UPDATE borrow_requests SET status='returned', returned_at=NOW(), force_closed=FALSE WHERE id=$1", [r.id])
     await query("UPDATE items SET status='available', is_deleted=TRUE WHERE id=$1", [item.id])
-    if (onTime) {
+
+    if (isForceClosedReturn) {
+      // Lender confirmed physical return after force-close — unflag the borrower
+      await query("UPDATE users SET is_flagged=FALSE WHERE id=$1", [r.borrower_id])
+    } else if (onTime) {
       await query('UPDATE users SET return_count=return_count+1 WHERE id=$1', [r.borrower_id])
       await promoteIfEligible(r.borrower_id)
     }
 
-    res.json({ success: true, onTime })
+    res.json({ success: true, onTime, wasForceClose: isForceClosedReturn })
   } catch (err) { console.error(err); res.status(500).json({ error: 'Failed.' }) }
 })
 
