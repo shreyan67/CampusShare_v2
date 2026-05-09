@@ -2945,8 +2945,10 @@ export default function App() {
     })
   }, [])
   const fetchIdRef = useRef(0)
-  const pollIdRef = useRef(0)  // separate counter for polling so it doesn't clash with initial fetch
-  const allItemsRef = useRef([]) // full unfiltered list — search filters this client-side
+  const pollIdRef = useRef(0)
+  const allItemsRef = useRef([])
+  const statsRef = useRef(null)
+  const myRequestsRef = useRef([])
   const statsKey = `cs_stats_${user?.id}`
   const { showInstall, installApp } = usePwaInstall();
 
@@ -3009,16 +3011,24 @@ export default function App() {
     // Load cached stats immediately on mount
     try {
       const cachedStats = localStorage.getItem(statsKey)
-      if (cachedStats) setStats(JSON.parse(cachedStats))
+      if (cachedStats) {
+        const parsed = JSON.parse(cachedStats)
+        setStats(parsed)
+        statsRef.current = parsed
+      }
       const cachedReqs = localStorage.getItem(`cs_reqs_${user.id}`)
-      if (cachedReqs) setMyRequests(JSON.parse(cachedReqs))
+      if (cachedReqs) {
+        const parsed = JSON.parse(cachedReqs)
+        setMyRequests(parsed)
+        myRequestsRef.current = parsed
+      }
     } catch (_) { }
   }, []) // eslint-disable-line
 
   // Watch for state changes in myRequests to trigger native push notifications
   const prevReqsRef = useRef(null)
   useEffect(() => {
-    if (!prevReqsRef.current || myRequests.length === 0) {
+    if (!user || !prevReqsRef.current || myRequests.length === 0) {
       prevReqsRef.current = myRequests
       return
     }
@@ -3073,8 +3083,13 @@ export default function App() {
     api.getItems(itemParams).then(itemsRes => {
       if (fetchIdRef.current !== myId) return
       if (!itemsRes?.error) {
-        setItems(itemsRes.items || [])
-        try { localStorage.setItem(cacheKey, JSON.stringify(itemsRes.items || [])) } catch (_) { }
+        const prev = JSON.stringify(allItemsRef.current.map(x => ({ id: x.id, status: x.status, price_per_day: x.price_per_day, listing_type: x.listing_type })))
+        const next = JSON.stringify((itemsRes.items || []).map(x => ({ id: x.id, status: x.status, price_per_day: x.price_per_day, listing_type: x.listing_type })))
+        if (prev !== next) {
+          setItems(itemsRes.items || [])
+          allItemsRef.current = itemsRes.items || []
+          try { localStorage.setItem(cacheKey, JSON.stringify(itemsRes.items || [])) } catch (_) { }
+        }
       }
     })
 
@@ -3085,12 +3100,22 @@ export default function App() {
     ]).then(([statsRes, reqsRes]) => {
       if (fetchIdRef.current !== myId) return
       if (!statsRes?.error) {
-        setStats(statsRes)
-        try { localStorage.setItem(statsKey, JSON.stringify(statsRes)) } catch (_) { }
+        const prev = JSON.stringify(statsRef.current)
+        const next = JSON.stringify(statsRes)
+        if (prev !== next) {
+          setStats(statsRes)
+          statsRef.current = statsRes
+          try { localStorage.setItem(statsKey, JSON.stringify(statsRes)) } catch (_) { }
+        }
       }
       if (!reqsRes?.error) {
-        setMyRequests(reqsRes.requests || [])
-        try { localStorage.setItem(`cs_reqs_${user.id}`, JSON.stringify(reqsRes.requests || [])) } catch (_) { }
+        const prev = JSON.stringify(myRequestsRef.current.map(x => ({ id: x.id, status: x.status, borrower_received: x.borrower_received, pickup_details: !!x.pickup_details })))
+        const next = JSON.stringify((reqsRes.requests || []).map(x => ({ id: x.id, status: x.status, borrower_received: x.borrower_received, pickup_details: !!x.pickup_details })))
+        if (prev !== next) {
+          setMyRequests(reqsRes.requests || [])
+          myRequestsRef.current = reqsRes.requests || []
+          try { localStorage.setItem(`cs_reqs_${user.id}`, JSON.stringify(reqsRes.requests || [])) } catch (_) { }
+        }
       }
     })
   }, [user, tab, cat, avail, search, tick]) // eslint-disable-line
@@ -3155,9 +3180,16 @@ export default function App() {
           prevUnreadIdsRef.current = currentIds
         }
 
-        // Refresh user profile so is_flagged / trust_tier stay current
-        const meRes = await api.getMe()
-        if (meRes?.user) { setUser(meRes.user); api.persistUser(meRes.user) }
+        // Also refresh myRequests so chat routing (request vs activity) stays up to date
+        const reqsRes = await api.getMyRequests()
+        if (reqsRes?.requests) {
+          const prev = JSON.stringify(myRequestsRef.current.map(x => ({ id: x.id, status: x.status })))
+          const next = JSON.stringify(reqsRes.requests.map(x => ({ id: x.id, status: x.status })))
+          if (prev !== next) {
+            setMyRequests(reqsRes.requests)
+            myRequestsRef.current = reqsRes.requests
+          }
+        }
 
       } catch (e) { }
     }

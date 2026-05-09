@@ -44,14 +44,14 @@ router.get('/', requireAuth, async (req, res) => {
 // GET /api/item-requests/mine — requests I posted + offers I made
 router.get('/mine', requireAuth, async (req, res) => {
   try {
-    const [myRequests, myOffers] = await Promise.all([
-      query(`
+    const myRequests = await query(`
         SELECT ir.*,
                (SELECT COUNT(*) FROM item_request_offers o WHERE o.request_id = ir.id AND o.status='pending') AS offer_count,
                (SELECT COUNT(*) FROM item_request_offers o WHERE o.request_id = ir.id AND o.status='accepted') AS accepted_count
           FROM item_requests ir WHERE ir.requester_id=$1 ORDER BY ir.created_at DESC
-      `, [req.userId]),
-      query(`
+      `, [req.userId])
+      
+    const myOffers = await query(`
         SELECT o.*, ir.title AS request_title, ir.description AS request_description,
                u.name AS requester_name
           FROM item_request_offers o
@@ -59,8 +59,7 @@ router.get('/mine', requireAuth, async (req, res) => {
           JOIN users u ON u.id = ir.requester_id
          WHERE o.offerer_id=$1
          ORDER BY o.created_at DESC
-      `, [req.userId]),
-    ])
+      `, [req.userId])
 
     res.json({ myRequests, myOffers })
   } catch (err) {
@@ -80,7 +79,7 @@ router.post('/', requireAuth, async (req, res) => {
     if (u.is_flagged)    return res.status(403).json({ error: 'Your account is flagged. Please contact admin.' })
 
     const validUrgency = ['low', 'medium', 'high']
-    const validCats = ['Books & Notes','Lab Equipment','Electronics','Accessories','Food','Stationary','Other','Any']
+    const validCats = ['Books & Notes', 'Lab Equipment', 'Electronics', 'Accessories', 'Stationary', 'Food', 'Other', 'Any']
 
     const row = await queryOne(`
       INSERT INTO item_requests(college_id, requester_id, title, description, category, urgency)

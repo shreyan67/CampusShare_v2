@@ -19,18 +19,18 @@ const upload = multer({
 router.get('/stats', requireAuth, async (req, res) => {
   try {
     const cid = req.collegeId
-    const [
-      [avail], [total], [students], [borrows], [pending]
-    ] = await Promise.all([
-      query("SELECT COUNT(*) n FROM items WHERE college_id=$1 AND status='available' AND is_deleted=FALSE", [cid]),
-      query('SELECT COUNT(*) n FROM items WHERE college_id=$1 AND is_deleted=FALSE', [cid]),
-      query('SELECT COUNT(*) n FROM users WHERE college_id=$1 AND is_verified=TRUE', [cid]),
-      query("SELECT COUNT(*) n FROM borrow_requests br JOIN items i ON br.item_id=i.id WHERE i.college_id=$1 AND br.status='returned'", [cid]),
-      query("SELECT COUNT(*) n FROM borrow_requests br JOIN items i ON br.item_id=i.id WHERE i.college_id=$1 AND br.status='pending'", [cid])
-    ])
+    const stats = await query(`
+      SELECT 
+        (SELECT COUNT(*) FROM items WHERE college_id=$1 AND status='available' AND is_deleted=FALSE) as avail,
+        (SELECT COUNT(*) FROM items WHERE college_id=$1 AND is_deleted=FALSE) as total,
+        (SELECT COUNT(*) FROM users WHERE college_id=$1 AND is_verified=TRUE) as students,
+        (SELECT COUNT(*) FROM borrow_requests br JOIN items i ON br.item_id=i.id WHERE i.college_id=$1 AND br.status='returned') as borrows,
+        (SELECT COUNT(*) FROM borrow_requests br JOIN items i ON br.item_id=i.id WHERE i.college_id=$1 AND br.status='pending') as pending
+    `, [cid])
+    const row = stats[0] || { avail: 0, total: 0, students: 0, borrows: 0, pending: 0 }
     res.json({
-      available: +avail.n, total: +total.n,
-      students: +students.n, borrows: +borrows.n, pending: +pending.n,
+      available: +row.avail, total: +row.total,
+      students: +row.students, borrows: +row.borrows, pending: +row.pending,
     })
   } catch (err) { console.error(err); res.status(500).json({ error: 'Failed.' }) }
 })
@@ -92,7 +92,7 @@ router.post('/', requireAuth, upload.array('photos', 3), async (req, res) => {
     const { title, category, conditionNotes, maxBorrowDays, isPaid, pricePerDay, allowMultiple, transactionType } = req.body
     if (!title?.trim()) return res.status(400).json({ error: 'Title is required.' })
 
-    const validCats = ['Books & Notes','Lab Equipment','Electronics','Accessories','Food','Stationary','Other']
+    const validCats = ['Books & Notes', 'Lab Equipment', 'Electronics', 'Accessories', 'Stationary', 'Food', 'Other']
     if (!validCats.includes(category)) return res.status(400).json({ error: 'Invalid category.' })
 
     // Check user is verified

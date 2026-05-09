@@ -6,7 +6,7 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
   max: 10,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
+  connectionTimeoutMillis: 15000,
   // Keep connections alive — prevents "Connection terminated unexpectedly"
   keepAlive: true,
   keepAliveInitialDelayMillis: 10000,
