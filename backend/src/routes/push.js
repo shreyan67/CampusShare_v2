@@ -2,14 +2,24 @@ const express = require('express');
 const router = express.Router();
 const webpush = require('web-push');
 const { pool } = require('../db/pool');
-const { authenticateToken } = require('../middleware/auth');
 
-// Setup web-push
-webpush.setVapidDetails(
-  'mailto:admin@campusshare.com',
-  process.env.VAPID_PUBLIC_KEY,
-  process.env.VAPID_PRIVATE_KEY
-);
+// Lazy VAPID setup — only called when first needed, so missing env vars
+// don't crash the server at startup (they just disable push silently).
+let vapidReady = false;
+function ensureVapid() {
+  if (vapidReady) return true;
+  if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+    console.warn('[push] VAPID keys not set — push notifications disabled. Add VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY in Render environment variables.');
+    return false;
+  }
+  webpush.setVapidDetails(
+    'mailto:admin@campusshare.com',
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+  vapidReady = true;
+  return true;
+}
 
 // Subscribe route
 router.post('/subscribe', async (req, res) => {
@@ -59,6 +69,7 @@ router.post('/subscribe', async (req, res) => {
 
 // Utility to send push notification
 async function sendPushNotification(userId, payload) {
+  if (!ensureVapid()) return; // silently skip if VAPID keys not configured
   try {
     const { rows } = await pool.query(
       'SELECT subscription FROM push_subscriptions WHERE user_id = $1',
