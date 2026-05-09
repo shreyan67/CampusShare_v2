@@ -1954,10 +1954,26 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
 
         {/* Payout banners */}
         {!isBorrowing && isPaid && r.payout_status === 'admin_paid' && (
-          <InfoBanner type="warn">💸 Admin sent your payment. Check UPI and confirm below.</InfoBanner>
+          <div style={{ marginBottom: 12 }}>
+            <InfoBanner type="warn">💸 Admin sent your payment. Check UPI and confirm below.</InfoBanner>
+            {r.admin_utr && (
+              <div style={{ marginTop: 6, padding: '10px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0', textAlign: 'center' }}>
+                <div style={{ fontSize: 10, color: "#166534", marginBottom: 2 }}>Bank UTR / Reference No:</div>
+                <div style={{ fontSize: 13, color: "#15803d", fontFamily: 'monospace', fontWeight: 700, letterSpacing: '0.05em' }}>{r.admin_utr}</div>
+              </div>
+            )}
+          </div>
         )}
         {!isBorrowing && isPaid && r.payout_status === 'disputed' && (
-          <InfoBanner type="error">⚠️ Dispute raised — admin notified and will resolve shortly.</InfoBanner>
+          <div style={{ marginBottom: 12 }}>
+            <InfoBanner type="error">⚠️ Dispute raised — admin notified and will resolve shortly.</InfoBanner>
+            {r.admin_utr && (
+              <div style={{ marginTop: 6, padding: '10px', background: '#fef2f2', borderRadius: 8, border: '1px solid #fecaca', textAlign: 'center' }}>
+                <div style={{ fontSize: 10, color: "#991b1b", marginBottom: 2 }}>Admin proof of payment (UTR):</div>
+                <div style={{ fontSize: 13, color: "#991b1b", fontFamily: 'monospace', fontWeight: 700, letterSpacing: '0.05em' }}>{r.admin_utr}</div>
+              </div>
+            )}
+          </div>
         )}
         {!isBorrowing && isPaid && r.payout_status === 'done' && r.status !== 'returned' && (
           <InfoBanner type="success">✅ Payment received. Confirm return when item is back.</InfoBanner>

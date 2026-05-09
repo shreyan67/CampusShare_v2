@@ -400,7 +400,7 @@ router.post('/mark-paid', async (req, res) => {
       const { Resend } = require('resend')
       const resend = new Resend(process.env.RESEND_API_KEY)
       await resend.emails.send({
-        from:    'CampusShare <onboarding@resend.dev>',
+        from:    'CampusShare <noreply@campusshare.co.in>',
         to:      borrowReq.lender_email,
         subject: `₹${payLender} sent to your UPI — ${borrowReq.item_title}`,
         html: `
