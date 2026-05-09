@@ -92,12 +92,13 @@ router.post('/', requireAuth, upload.array('photos', 3), async (req, res) => {
     const { title, category, conditionNotes, maxBorrowDays, isPaid, pricePerDay, allowMultiple, transactionType } = req.body
     if (!title?.trim()) return res.status(400).json({ error: 'Title is required.' })
 
-    const validCats = ['Books & Notes','Lab Equipment','Electronics','Accessories','Food','Other']
+    const validCats = ['Books & Notes','Lab Equipment','Electronics','Accessories','Food','Stationary','Other']
     if (!validCats.includes(category)) return res.status(400).json({ error: 'Invalid category.' })
 
     // Check user is verified
-    const u = await queryOne('SELECT id, is_verified FROM users WHERE id=$1', [req.userId])
+    const u = await queryOne('SELECT id, is_verified, is_flagged FROM users WHERE id=$1', [req.userId])
     if (!u?.is_verified) return res.status(403).json({ error: 'Verify your account first.' })
+    if (u.is_flagged) return res.status(403).json({ error: 'Your account is flagged. Please contact admin.' })
 
     // Convert uploaded images to base64
     const images = (req.files || []).map(f =>
@@ -161,7 +162,7 @@ router.patch('/:id', requireAuth, upload.array('photos', 3), async (req, res) =>
     const { title, category, conditionNotes, maxBorrowDays, isPaid, pricePerDay, allowMultiple, transactionType } = req.body
     if (!title?.trim()) return res.status(400).json({ error: 'Title is required.' })
 
-    const validCats = ['Books & Notes','Lab Equipment','Electronics','Accessories','Food','Other']
+    const validCats = ['Books & Notes','Lab Equipment','Electronics','Accessories','Food','Stationary','Other']
     if (!validCats.includes(category)) return res.status(400).json({ error: 'Invalid category.' })
 
     const paid  = isPaid === 'true' || isPaid === true

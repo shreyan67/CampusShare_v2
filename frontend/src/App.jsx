@@ -30,7 +30,7 @@ const T = {
 const FONTS = `
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
 :root {
   --navy: #0F172A;
@@ -198,8 +198,8 @@ const TRUST_TIERS = {
   trusted: { label: 'Trusted', color: '#10B981', bg: '#D1FAE5', limit: 5 },
   rep: { label: 'Campus Rep', color: '#8B5CF6', bg: '#EDE9FE', limit: 8 },
 }
-const CATEGORIES = ['Books & Notes', 'Lab Equipment', 'Electronics', 'Accessories', 'Food', 'Other']
-const EMOJIS = { 'Books & Notes': '📚', 'Lab Equipment': '🔬', 'Electronics': '🔌', 'Accessories': '🎒', 'Food': '🍔', 'Other': '📦', 'lost_found': '🔍' }
+const CATEGORIES = ['Books & Notes', 'Lab Equipment', 'Electronics', 'Accessories', 'Stationary', 'Food', 'Other']
+const EMOJIS = { 'Books & Notes': '📚', 'Lab Equipment': '🔬', 'Electronics': '🔌', 'Accessories': '🎒', 'Stationary': '✏️', 'Food': '🍔', 'Other': '📦', 'lost_found': '🔍' }
 const STATUS_MAP = {
   available: { bg: '#D1FAE5', color: '#065F46', label: 'Available' },
   borrowed: { bg: '#FEF3C7', color: '#92400E', label: 'Borrowed' },
@@ -1212,7 +1212,7 @@ function LifecycleVisualizer({ r, isBorrowing, onClose }) {
 // ── ITEM REQUEST MODAL (Borrower posts "I need X") ────────────────────────────
 const _itemRequestCache = {}   // preserve draft across re-renders
 
-function RequestsModal({ open, onClose, onSuccess, showToast, editData = null, onEditReq, initialTab = 'browse', markRequestsSeen, reloadActivity, activeHandovers = [], historyHandovers = [], unreadMap = {}, openJourney, closeJourney, lifecycleMap, setChatRequest, targetId, onClearTarget }) {
+function RequestsModal({ open, onClose, onSuccess, showToast, editData = null, onEditReq, initialTab = 'browse', markRequestsSeen, reloadActivity, activeHandovers = [], historyHandovers = [], unreadMap = {}, openJourney, closeJourney, lifecycleMap, setChatRequest, targetId, onClearTarget, hasForceClosedSlot }) {
   const { user } = useApp()
   const [tab, setTab] = useState(initialTab) // 'browse', 'post', 'mine'
 
@@ -1327,6 +1327,23 @@ function RequestsModal({ open, onClose, onSuccess, showToast, editData = null, o
 
       {tab === 'browse' && (
         <div className="slide-up">
+          {hasForceClosedSlot && (
+            <div style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 8, padding: 12, marginBottom: 16 }}>
+              <div style={{ fontSize: 12, color: '#991B1B', fontWeight: 600, marginBottom: 8 }}>Your slots are locked due to an unreturned item.</div>
+              <button 
+                className="btn-press" 
+                style={{ background: '#DC2626', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+                onClick={async () => {
+                  const res = await api.informAdminSlots();
+                  if (res?.error) { showToast(res.error); return; }
+                  showToast('Admin has been informed. They will reach out to the lender.');
+                  reloadActivity();
+                }}
+              >
+                Inform Admin to free your slots
+              </button>
+            </div>
+          )}
           <InfoBanner type="info">
             🙋 <strong>Need something?</strong> Switch to the "Post" tab to ask the community.
           </InfoBanner>
@@ -3221,13 +3238,14 @@ export default function App() {
             onEditReq={setEditRequestData}
             markRequestsSeen={markRequestsSeen}
             reloadActivity={refresh}
-            activeHandovers={myRequests.filter(r => r.from_item_request && !['returned', 'declined', 'closed'].includes(r.status))}
-            historyHandovers={myRequests.filter(r => r.from_item_request && ['returned', 'declined', 'closed'].includes(r.status))}
+            activeHandovers={myRequests.filter(r => r.from_item_request && (!['returned', 'declined', 'closed'].includes(r.status) || r.force_closed))}
+            historyHandovers={myRequests.filter(r => r.from_item_request && ['returned', 'declined', 'closed'].includes(r.status) && !r.force_closed)}
             unreadMap={unreadMap}
             openJourney={openJourney}
             closeJourney={closeJourney}
             lifecycleMap={lifecycleOpenMap}
             setChatRequest={setChatRequest}
+            hasForceClosedSlot={myRequests.some(r => r.force_closed && r.borrower_id === user?.id)}
           />
         )}
         {listOpen && <ListItemModal open={listOpen} onClose={() => { setList(false); setEditItemData(null); }} onSuccess={refresh} editItemData={editItemData} />}

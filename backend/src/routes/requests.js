@@ -42,6 +42,7 @@ router.post('/', requireAuth, async (req, res) => {
 
     if (!item)                        return res.status(404).json({ error: 'Item not found.' })
     if (!borrower.is_verified)        return res.status(403).json({ error: 'Verify your account first.' })
+    if (borrower.is_flagged)          return res.status(403).json({ error: 'Your account is flagged. Please contact admin.' })
     if (item.status !== 'available')  return res.status(409).json({ error: 'Item is not available.' })
     if (item.owner_id === req.userId) return res.status(400).json({ error: 'Cannot borrow your own item.' })
     if (item.college_id !== req.collegeId) return res.status(403).json({ error: 'Item belongs to another college.' })

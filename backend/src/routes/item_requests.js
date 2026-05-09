@@ -75,11 +75,12 @@ router.post('/', requireAuth, async (req, res) => {
     const { title, description, category, urgency } = req.body
     if (!title?.trim()) return res.status(400).json({ error: 'Title is required.' })
 
-    const u = await queryOne('SELECT id, is_verified FROM users WHERE id=$1', [req.userId])
+    const u = await queryOne('SELECT id, is_verified, is_flagged FROM users WHERE id=$1', [req.userId])
     if (!u?.is_verified) return res.status(403).json({ error: 'Verify your account first.' })
+    if (u.is_flagged)    return res.status(403).json({ error: 'Your account is flagged. Please contact admin.' })
 
     const validUrgency = ['low', 'medium', 'high']
-    const validCats = ['Books & Notes','Lab Equipment','Electronics','Accessories','Food','Other','Any']
+    const validCats = ['Books & Notes','Lab Equipment','Electronics','Accessories','Food','Stationary','Other','Any']
 
     const row = await queryOne(`
       INSERT INTO item_requests(college_id, requester_id, title, description, category, urgency)
@@ -126,7 +127,7 @@ router.patch('/:id', requireAuth, async (req, res) => {
     if (!title?.trim()) return res.status(400).json({ error: 'Title is required.' })
 
     const validUrgency = ['low', 'medium', 'high']
-    const validCats = ['Books & Notes','Lab Equipment','Electronics','Accessories','Food','Other','Any']
+    const validCats = ['Books & Notes','Lab Equipment','Electronics','Accessories','Food','Stationary','Other','Any']
 
     const updated = await queryOne(`
       UPDATE item_requests
@@ -180,6 +181,9 @@ router.post('/:id/offers', requireAuth, async (req, res) => {
     const { transactionType, note, price } = req.body
     const validTypes = ['rent', 'sell', 'donate', 'lend']
     if (!validTypes.includes(transactionType)) return res.status(400).json({ error: 'Invalid transaction type.' })
+
+    const u = await queryOne('SELECT is_flagged FROM users WHERE id=$1', [req.userId])
+    if (u?.is_flagged) return res.status(403).json({ error: 'Your account is flagged. Please contact admin.' })
 
     const isPaid = ['rent', 'sell'].includes(transactionType)
     if (isPaid && (!price || parseFloat(price) <= 0)) {
