@@ -492,9 +492,10 @@ router.patch('/:id/verify-handover', requireAuth, async (req, res) => {
       await promoteIfEligible(r.borrower_id)
     }
 
-    // If paid, trigger payout_status='done' immediately!
-    if (item.is_paid && r.payout_status !== 'done') {
-      await query("UPDATE borrow_requests SET payout_status='done' WHERE id=$1", [r.id])
+    // If paid, set payout_status='manual_pending' so it appears in admin payouts tab.
+    // It only moves to 'done' after the lender confirms they received the payment.
+    if (item.is_paid && r.payout_status !== 'done' && r.payout_status !== 'admin_paid') {
+      await query("UPDATE borrow_requests SET payout_status='manual_pending' WHERE id=$1", [r.id])
     }
 
     res.json({ success: true, lifecycleComplete: noReturn })
