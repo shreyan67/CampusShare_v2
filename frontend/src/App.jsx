@@ -198,8 +198,8 @@ const TRUST_TIERS = {
   trusted: { label: 'Trusted', color: '#10B981', bg: '#D1FAE5', limit: 5 },
   rep: { label: 'Campus Rep', color: '#8B5CF6', bg: '#EDE9FE', limit: 8 },
 }
-const CATEGORIES = ['Books', 'Lab Equipment', 'Electronics', 'Notes & Guides', 'Accessories', 'Other']
-const EMOJIS = { 'Books': '📗', 'Lab Equipment': '🔬', 'Electronics': '🔌', 'Notes & Guides': '📝', 'Accessories': '🎒', 'Other': '📦', 'lost_found': '🔍' }
+const CATEGORIES = ['Books & Notes', 'Lab Equipment', 'Electronics', 'Accessories', 'Food', 'Other']
+const EMOJIS = { 'Books & Notes': '📚', 'Lab Equipment': '🔬', 'Electronics': '🔌', 'Accessories': '🎒', 'Food': '🍔', 'Other': '📦', 'lost_found': '🔍' }
 const STATUS_MAP = {
   available: { bg: '#D1FAE5', color: '#065F46', label: 'Available' },
   borrowed: { bg: '#FEF3C7', color: '#92400E', label: 'Borrowed' },
@@ -1856,7 +1856,7 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
               <button className="btn-press" style={{ ...btn(true, true), fontSize: 10, padding: '6px', background: T.success, width: '100%' }} onClick={() => act(api.confirmPaymentReceived, r.id)}>Got Money ✓</button>
             </div>
           )}
-          {!isBorrowing && r.listing_type !== 'lost_found' && ['active', 'overdue'].includes(r.status) && r.borrower_received && (
+          {!isBorrowing && r.listing_type !== 'lost_found' && (['active', 'overdue'].includes(r.status) || (r.status === 'returned' && r.force_closed)) && r.borrower_received && (
             <button className="btn-press" style={{ ...btn(true, true), fontSize: 10, padding: '6px', width: '100%' }} onClick={() => act(api.confirmReturn, r.id)}>Confirm Return</button>
           )}
         </div>
@@ -2240,7 +2240,7 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
           )}
 
           {/* Confirm return */}
-          {!isBorrowing && r.listing_type !== 'lost_found' && ['active', 'overdue'].includes(r.status) && r.borrower_received && (
+          {!isBorrowing && r.listing_type !== 'lost_found' && (['active', 'overdue'].includes(r.status) || (r.status === 'returned' && r.force_closed)) && r.borrower_received && (
             <button className="btn-press" style={btn(true, true)} onClick={async () => {
               const res = await act(api.confirmReturn, r.id)
               if (!res || res.error) { showToast("Return failed"); return }

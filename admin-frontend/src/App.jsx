@@ -124,12 +124,22 @@ function PayoutsTab({ apiFetch }) {
       const prevPending = parseInt(sessionStorage.getItem('prev_pending') || '0', 10)
       const prevDisputed = parseInt(sessionStorage.getItem('prev_disputed') || '0', 10)
       
-      if (Notification.permission === 'granted' && (pending > prevPending || disputed > prevDisputed)) {
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted' && (pending > prevPending || disputed > prevDisputed)) {
         new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(() => {})
-        if (disputed > prevDisputed) {
-          new Notification("🚨 New Dispute!", { body: "A lender has raised a dispute." })
-        } else {
-          new Notification("💸 New Payout Pending", { body: "A new transaction requires payment." })
+        try {
+          if (navigator.serviceWorker) {
+            navigator.serviceWorker.ready.then(reg => {
+              reg.showNotification(disputed > prevDisputed ? "🚨 New Dispute!" : "💸 New Payout Pending", {
+                body: disputed > prevDisputed ? "A lender has raised a dispute." : "A new transaction requires payment."
+              }).catch(() => {
+                new Notification(disputed > prevDisputed ? "🚨 New Dispute!" : "💸 New Payout Pending", { body: disputed > prevDisputed ? "A lender has raised a dispute." : "A new transaction requires payment." })
+              });
+            });
+          } else {
+            new Notification(disputed > prevDisputed ? "🚨 New Dispute!" : "💸 New Payout Pending", { body: disputed > prevDisputed ? "A lender has raised a dispute." : "A new transaction requires payment." })
+          }
+        } catch (err) {
+          console.warn("Notification failed", err);
         }
       }
       
@@ -495,6 +505,15 @@ function ItemsTab({ apiFetch }) {
     } catch (e) { alert("Failed: " + e.message) }
   }
 
+  async function freeSlots(userId) {
+    if (!window.confirm("Free all slots and clear flags for this user?")) return
+    try {
+      await apiFetch(`/admin/free-slots/${userId}`, { method: "POST" })
+      alert("Slots freed!")
+      load()
+    } catch (e) { alert("Failed: " + e.message) }
+  }
+
   async function deleteAll() {
     if (!window.confirm("Delete ALL items? This cannot be undone.")) return
     try {
@@ -574,6 +593,7 @@ function ItemsTab({ apiFetch }) {
                   ) : (
                     <button onClick={() => deleteRequest(item.id)} style={{ ...S.btn(false), background: "#333" }}>Delete Request</button>
                   )}
+                  <button onClick={() => freeSlots(item.owner_id || item.requester_id)} style={{ ...S.btn(false), background: "#F59E0B", color: "#92400E" }}>Free Slots</button>
                   <button onClick={() => deleteUser(item.owner_id || item.requester_id)} style={S.btn(true)}>Delete User</button>
                 </td>
               </tr>

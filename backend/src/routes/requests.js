@@ -254,7 +254,7 @@ router.patch('/:id/return', requireAuth, async (req, res) => {
     const item = await queryOne('SELECT * FROM items WHERE id=$1', [r?.item_id])
     if (!r || !item) return res.status(404).json({ error: 'Not found.' })
     if (item.owner_id !== req.userId) return res.status(403).json({ error: 'Not your item.' })
-    if (!['active','overdue'].includes(r.status)) return res.status(409).json({ error: 'Item not currently borrowed.' })
+    if (!['active','overdue'].includes(r.status) && !(r.status === 'returned' && r.force_closed)) return res.status(409).json({ error: 'Item not currently borrowed.' })
 
     // Sell/donate items don't expect return — only lend/rent do
     if (['sell','donate'].includes(item.transaction_type)) {
@@ -262,7 +262,7 @@ router.patch('/:id/return', requireAuth, async (req, res) => {
     }
 
     const onTime = new Date() <= new Date(r.due_at)
-    await query("UPDATE borrow_requests SET status='returned',returned_at=NOW() WHERE id=$1", [r.id])
+    await query("UPDATE borrow_requests SET status='returned', returned_at=NOW(), force_closed=FALSE WHERE id=$1", [r.id])
     await query("UPDATE items SET status='available', is_deleted=TRUE WHERE id=$1", [item.id])
     if (onTime) {
       await query('UPDATE users SET return_count=return_count+1 WHERE id=$1', [r.borrower_id])

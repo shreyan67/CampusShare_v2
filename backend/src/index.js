@@ -203,6 +203,22 @@ app.delete("/admin/delete-user/:id", adminAuth, async (req, res) => {
     client.release();
   }
 });
+
+app.post("/admin/free-slots/:id", adminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query(
+      "UPDATE borrow_requests SET force_closed=FALSE, status='returned' WHERE borrower_id=$1 AND (status IN ('pending','selected','active','overdue') OR force_closed=TRUE)",
+      [id]
+    );
+    await pool.query("UPDATE users SET is_flagged=FALSE WHERE id=$1", [id]);
+    res.json({ message: "User slots freed and flags cleared ✅" });
+  } catch (err) {
+    console.error("FREE SLOTS ERROR:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ===== 404 =====
 app.use((_req, res) => res.status(404).json({ error: 'Route not found.' }))
 

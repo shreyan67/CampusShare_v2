@@ -13,7 +13,7 @@ async function getActiveBorrowCount(borrowerId) {
   // 'selected' is included so LF claims (which sit in selected before handover)
   // also count against the borrow limit — slot frees only on lf-received
   const r = await queryOne(
-    "SELECT COUNT(*) as n FROM borrow_requests WHERE borrower_id=$1 AND status IN ('pending','selected','payment_pending','active')",
+    "SELECT COUNT(*) as n FROM borrow_requests WHERE borrower_id=$1 AND (status IN ('pending','selected','payment_pending','active','overdue') OR (status='returned' AND force_closed=TRUE))",
     [borrowerId]
   )
   return parseInt(r?.n || '0')
