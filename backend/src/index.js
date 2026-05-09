@@ -208,7 +208,7 @@ app.post("/admin/free-slots/:id", adminAuth, async (req, res) => {
   try {
     const { id } = req.params;
     await pool.query(
-      "UPDATE borrow_requests SET force_closed=FALSE, status='returned' WHERE borrower_id=$1 AND (status IN ('pending','selected','active','overdue') OR force_closed=TRUE)",
+      "UPDATE borrow_requests SET force_closed=FALSE WHERE borrower_id=$1 AND force_closed=TRUE",
       [id]
     );
     await pool.query("UPDATE users SET is_flagged=FALSE WHERE id=$1", [id]);

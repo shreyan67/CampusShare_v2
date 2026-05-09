@@ -13,6 +13,19 @@ router.get('/me', requireAuth, async (req, res) => {
       [req.userId]
     )
     if (!user) return res.status(404).json({ error: 'User not found.' })
+
+    // Self-heal: if is_flagged is set but no force_closed request exists, clear it
+    if (user.is_flagged) {
+      const locked = await query(
+        'SELECT id FROM borrow_requests WHERE borrower_id=$1 AND force_closed=TRUE LIMIT 1',
+        [req.userId]
+      )
+      if (!locked || locked.length === 0) {
+        await query('UPDATE users SET is_flagged=FALSE WHERE id=$1', [req.userId])
+        user.is_flagged = false
+      }
+    }
+
     res.json({ user })
   } catch (err) { console.error(err); res.status(500).json({ error: 'Failed.' }) }
 })
@@ -64,7 +77,13 @@ router.patch('/me/inform-admin-slots', requireAuth, async (req, res) => {
       [req.userId]
     );
 
-    if (fcReqs.length === 0) return res.status(400).json({ error: 'No locked slots found.' });
+    if (fcReqs.length === 0) {
+      if (user.is_flagged) {
+        await query("UPDATE users SET is_flagged=FALSE WHERE id=$1", [req.userId]);
+        return res.json({ success: true, autoFixed: true });
+      }
+      return res.status(400).json({ error: 'No locked slots found.' });
+    }
 
     const adminEmail = process.env.ADMIN_EMAIL;
     if (adminEmail) {

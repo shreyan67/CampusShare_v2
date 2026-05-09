@@ -2446,6 +2446,9 @@ function ActivityModal({ open, onClose, refresh, showToast, defaultTab, targetId
   const activeBorrowing = borrowing.filter(r => !isHistory(r))
   const historyBorrowing = borrowing.filter(r => isHistory(r))
 
+  // True only if there is at least one borrow_request that is actually force_closed
+  const hasForceClosedSlot = borrowing.some(r => r.force_closed)
+
   const lending = reqs.filter(r => r.owner_id === user?.id && !r.from_item_request)
   const activeLending = lending.filter(r => !isHistory(r))
   const historyLending = lending.filter(r => isHistory(r))
@@ -2518,9 +2521,9 @@ function ActivityModal({ open, onClose, refresh, showToast, defaultTab, targetId
         <>
           <div style={{ ...row(8), marginBottom: 12 }}>
             <TierBadge tier={user?.trust_tier} />
-            <span style={{ fontSize: 13, color: T.textMid }}>{user?.is_flagged ? tier.limit : activeCount}/{tier.limit} slots used</span>
+            <span style={{ fontSize: 13, color: T.textMid }}>{hasForceClosedSlot ? tier.limit : activeCount}/{tier.limit} slots used</span>
           </div>
-          {user?.is_flagged && (
+          {hasForceClosedSlot && (
             <div style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 8, padding: 12, marginBottom: 16 }}>
               <div style={{ fontSize: 12, color: '#991B1B', fontWeight: 600, marginBottom: 8 }}>Your slots are locked due to an unreturned item.</div>
               <button 
@@ -2529,7 +2532,8 @@ function ActivityModal({ open, onClose, refresh, showToast, defaultTab, targetId
                 onClick={async () => {
                   const res = await act(api.informAdminSlots);
                   if (res?.error) { showToast(res.error); return; }
-                  showToast("Admin has been informed.");
+                  showToast('Admin has been informed. They will reach out to the lender.');
+                  reload();
                 }}
               >
                 Inform Admin to free your slots
