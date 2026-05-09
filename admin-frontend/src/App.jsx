@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+import { subscribeToPush } from './push';
+
 // Derive backend root from the same VITE_API_URL env var used by api.js
 // VITE_API_URL = "https://your-backend.onrender.com/api"
 // We strip "/api" to get the backend root for admin routes
@@ -21,11 +23,15 @@ const S = {
 }
 
 function useAdmin() {
-  const [key, setKey] = useState(() => sessionStorage.getItem("cs_admin_key") || "")
+  const [key, setKey] = useState(() => localStorage.getItem("cs_admin_key") || "")
+
+  useEffect(() => {
+    if (key) subscribeToPush(key, BASE_URL);
+  }, [key]);
 
   function saveKey(k) {
     setKey(k)
-    sessionStorage.setItem("cs_admin_key", k)
+    localStorage.setItem("cs_admin_key", k)
   }
 
   async function apiFetch(path, opts = {}) {
@@ -49,7 +55,7 @@ function AuthGate({ onAuth, goBack }) {
     try {
       const res = await fetch(`${BASE_URL}/admin/items?key=${val.trim()}`)
       if (res.status === 403) { setErr("Wrong admin secret."); return }
-      sessionStorage.setItem("cs_admin_key", val.trim())
+      localStorage.setItem("cs_admin_key", val.trim())
       onAuth(val.trim())
     } catch {
       setErr("Could not connect to backend.")

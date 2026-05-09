@@ -1,14 +1,13 @@
 self.addEventListener('install', (event) => {
-  console.log('Service Worker Installed');
+  console.log('Admin Service Worker Installed');
 });
 
 self.addEventListener('fetch', (event) => {
-  // basic caching (can improve later)
 });
 
 self.addEventListener('push', (event) => {
   const data = event.data ? event.data.json() : {};
-  const title = data.title || 'CampusShare Notification';
+  const title = data.title || 'Admin Notification';
   const options = {
     body: data.body || 'You have a new update.',
     icon: '/android-chrome-192x192.png',
