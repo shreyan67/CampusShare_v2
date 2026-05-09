@@ -1797,6 +1797,13 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
             <button className="btn-press" style={{ ...btn(true, true), fontSize: 10, padding: '6px', width: '100%' }} onClick={() => act(api.confirmBorrowerReceived, r.id)}>Confirm Receipt</button>
           )}
 
+          {!isBorrowing && r.payout_status === 'manual_pending' && (
+            <button className="btn-press" style={{ ...btn(false, true), fontSize: 10, padding: '6px', width: '100%', border: '1px solid #EF4444', color: '#EF4444', background: '#FCEBEB' }} onClick={async () => {
+              if (!window.confirm("Raise dispute? Admin will be notified.")) return
+              act(api.raiseDispute, r.id)
+            }}>Raise Dispute</button>
+          )}
+
           {!isBorrowing && r.payout_status === 'admin_paid' && (
             <div style={{ display: 'flex', gap: 6, flexDirection: 'column' }}>
               {r.admin_utr && (
@@ -2155,14 +2162,16 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
           )}
 
           {/* Payout confirm/dispute */}
-          {!isBorrowing && isPaid && r.payout_status === 'admin_paid' && (
-            <>
-              <button className="btn-press" style={{ ...btn(true, true), flex: 1, background: T.success }} onClick={async () => {
-                const res = await api.confirmPaymentReceived(r.id)
-                if (res?.error) { showToast(res.error); return }
-                showToast('Payment confirmed!')
-                await reload()
-              }}>Payment Received ✓</button>
+          {!isBorrowing && isPaid && (r.payout_status === 'admin_paid' || r.payout_status === 'manual_pending') && (
+            <div style={{ width: '100%', display: 'flex', gap: 8, flexDirection: 'column' }}>
+              {r.payout_status === 'admin_paid' && (
+                <button className="btn-press" style={{ ...btn(true, true), flex: 1, background: T.success }} onClick={async () => {
+                  const res = await api.confirmPaymentReceived(r.id)
+                  if (res?.error) { showToast(res.error); return }
+                  showToast('Payment confirmed!')
+                  await reload()
+                }}>Payment Received ✓</button>
+              )}
               <button className="btn-press" style={{ ...btn(false, true), flex: 1, color: T.error, border: `1px solid ${T.error}44` }} onClick={async () => {
                 if (!window.confirm('Raise dispute? Admin will be notified.')) return
                 const res = await api.raiseDispute(r.id)
@@ -2170,7 +2179,7 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
                 showToast('Dispute raised. Admin notified.')
                 await reload()
               }}>Raise Dispute ⚠️</button>
-            </>
+            </div>
           )}
 
           {/* Confirm return */}
@@ -2223,8 +2232,8 @@ function getGuide(r, isBorrowing) {
       guide = { icon: '🤝', title: 'Hand it over', body: 'Once physically handed over, tap "Item Given ✓".' }
     else if (r.status === 'active' && r.item_given && !r.borrower_received)
       guide = { icon: '⏳', title: 'Waiting for borrower', body: 'Borrower needs to confirm receipt.' }
-    else if (r.status === 'active' && r.borrower_received && isPaid && r.payout_status === 'na')
-      guide = { icon: '💸', title: 'Payout coming', body: 'Admin will process payout shortly.' }
+    else if (r.status === 'active' && r.borrower_received && isPaid && (r.payout_status === 'na' || r.payout_status === 'manual_pending'))
+      guide = { icon: '💸', title: 'Payout coming', body: 'Expected within 10 mins. If delayed, tap "Raise Dispute".' }
     else if (r.payout_status === 'admin_paid')
       guide = { icon: '💰', title: 'Confirm payment', body: 'Check UPI and tap "Payment Received ✓".' }
     else if (r.status === 'active' && r.borrower_received && !isPaid && !noReturn)
