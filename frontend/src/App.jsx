@@ -749,8 +749,8 @@ function BorrowModal({ open, item, onClose, onSuccess, showToast }) {
   const [loading, setLoading] = useState(false)
   const tier = TRUST_TIERS[user?.trust_tier] || TRUST_TIERS.newcomer
   const isLostFound = item?.listing_type === 'lost_found'
-  const PLATFORM_FEE_PERCENT = 3
   const rentalCost = item?.is_paid ? parseFloat((parseFloat(item.price_per_day) * parseInt(days)).toFixed(2)) : 0
+  const PLATFORM_FEE_PERCENT = rentalCost > 200 ? 5 : 8
   const platformFee = item?.is_paid ? parseFloat((rentalCost * PLATFORM_FEE_PERCENT / 100).toFixed(2)) : 0
   const totalCost = item?.is_paid ? parseFloat((rentalCost + platformFee).toFixed(2)) : null
 

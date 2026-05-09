@@ -52,9 +52,10 @@ router.post('/', requireAuth, async (req, res) => {
     if (active >= limit)
       return res.status(429).json({ error: `Borrow limit reached (${limit} for ${borrower.trust_tier} tier).` })
 
-    // Platform fee (3%) added ON TOP of rental — lender always gets full price_per_day
-    const PLATFORM_FEE_PERCENT = 3
+    // Platform fee: 8% for amounts ≤ ₹200, 5% for amounts > ₹200
+    // Fee is added ON TOP of rental — borrower pays rental + fee
     const rentalAmount = item.is_paid ? parseFloat((parseFloat(item.price_per_day) * days).toFixed(2)) : 0
+    const PLATFORM_FEE_PERCENT = rentalAmount > 200 ? 5 : 8
     const platformFee  = item.is_paid ? parseFloat((rentalAmount * PLATFORM_FEE_PERCENT / 100).toFixed(2)) : 0
     const total        = parseFloat((rentalAmount + platformFee).toFixed(2))
     const status = 'pending'
