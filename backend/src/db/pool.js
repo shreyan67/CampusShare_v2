@@ -62,6 +62,13 @@ async function runMigrations() {
     `ALTER TABLE borrow_requests ADD COLUMN IF NOT EXISTS lender_nudged_borrower BOOLEAN DEFAULT FALSE`,
     `ALTER TABLE borrow_requests ADD COLUMN IF NOT EXISTS force_closed BOOLEAN DEFAULT FALSE`,
     `ALTER TABLE users ADD COLUMN IF NOT EXISTS is_flagged BOOLEAN DEFAULT FALSE`,
+    `CREATE TABLE IF NOT EXISTS push_subscriptions (
+       id SERIAL PRIMARY KEY,
+       user_id VARCHAR(255) NOT NULL,
+       subscription JSONB NOT NULL,
+       created_at TIMESTAMP DEFAULT NOW(),
+       UNIQUE(user_id, subscription)
+     )`
   ]
   for (const sql of migrations) {
     try { await query(sql, []) }
