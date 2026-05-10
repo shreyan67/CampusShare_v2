@@ -809,7 +809,7 @@ function BorrowModal({ open, item, onClose, onSuccess, showToast }) {
     onSuccess(r.request)
     showToast(isLostFound ? 'Claim sent! Owner will review.'
       : item.is_paid ? `Request sent! You'll pay ₹${totalCost} after approval.`
-      : `Request sent to ${item.owner_name}!`)
+        : `Request sent to ${item.owner_name}!`)
     onClose()
   }
 
@@ -1330,8 +1330,8 @@ function RequestsModal({ open, onClose, onSuccess, showToast, editData = null, o
           {hasForceClosedSlot && (
             <div style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 8, padding: 12, marginBottom: 16 }}>
               <div style={{ fontSize: 12, color: '#991B1B', fontWeight: 600, marginBottom: 8 }}>Your slots are locked due to an unreturned item.</div>
-              <button 
-                className="btn-press" 
+              <button
+                className="btn-press"
                 style={{ background: '#DC2626', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
                 onClick={async () => {
                   const res = await api.informAdminSlots();
@@ -1861,7 +1861,7 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
           )}
 
           {/* Nudge borrower + force-close (only for rent/lend, while active) */}
-          {!isBorrowing && !isLF && ['active','overdue'].includes(r.status) && r.borrower_received && !['sell','donate'].includes(r.transaction_type) && (
+          {!isBorrowing && !isLF && ['active', 'overdue'].includes(r.status) && r.borrower_received && !['sell', 'donate'].includes(r.transaction_type) && (
             <div style={{ display: 'flex', gap: 4 }}>
               <button className="btn-press" style={{ ...btn(false, true), fontSize: 9, padding: '5px 6px', flex: 1, border: '1px solid #F59E0B', color: '#92400E', background: '#FEF3C7' }}
                 onClick={async () => {
@@ -2279,7 +2279,7 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
           )}
 
           {/* Nudge borrower + Force-close (rent/lend only, while active) */}
-          {!isBorrowing && !isLF && ['active','overdue'].includes(r.status) && r.borrower_received && !noReturn && (
+          {!isBorrowing && !isLF && ['active', 'overdue'].includes(r.status) && r.borrower_received && !noReturn && (
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button className="btn-press" style={{ ...btn(false, true), flex: 1, border: '1px solid #F59E0B', color: '#92400E', background: '#FEF3C7', fontSize: 12 }}
                 onClick={async () => {
@@ -2561,8 +2561,8 @@ function ActivityModal({ open, onClose, refresh, showToast, defaultTab, targetId
           {hasForceClosedSlot && (
             <div style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 8, padding: 12, marginBottom: 16 }}>
               <div style={{ fontSize: 12, color: '#991B1B', fontWeight: 600, marginBottom: 8 }}>Your slots are locked due to an unreturned item.</div>
-              <button 
-                className="btn-press" 
+              <button
+                className="btn-press"
                 style={{ background: '#DC2626', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
                 onClick={async () => {
                   const res = await act(api.informAdminSlots);
@@ -3176,8 +3176,12 @@ export default function App() {
             total++
           })
 
-          setUnreadMap(map)
-          setRequestOfferUnreadIds(requestOfferUnreadIds)
+          setUnreadMap(prev => JSON.stringify(prev) === JSON.stringify(map) ? prev : map)
+          setRequestOfferUnreadIds(prev => {
+            const prevArr = Array.from(prev).sort()
+            const nextArr = Array.from(requestOfferUnreadIds).sort()
+            return JSON.stringify(prevArr) === JSON.stringify(nextArr) ? prev : requestOfferUnreadIds
+          })
           setTotalUnread(total)
 
           if (newMsgs.length > 0) {
@@ -3260,7 +3264,7 @@ export default function App() {
     const q = debouncedSearch.toLowerCase().trim()
     const base = items.filter(i => i.status !== 'closed')
     if (!q) return base
-    return base.filter(i => 
+    return base.filter(i =>
       (i.title || '').toLowerCase().includes(q) ||
       (i.category || '').toLowerCase().includes(q) ||
       (i.owner_name || '').toLowerCase().includes(q) ||

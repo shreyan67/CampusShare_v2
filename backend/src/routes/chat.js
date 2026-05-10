@@ -1,6 +1,7 @@
 const express = require('express')
 const { query, queryOne } = require('../db/pool')
 const { requireAuth } = require('../middleware/auth')
+const { sendPushNotification } = require('./push')
 
 const router = express.Router()
 
@@ -97,6 +98,17 @@ router.post('/:requestId', requireAuth, async (req, res) => {
 
     const user = await queryOne('SELECT name, avatar, color FROM users WHERE id=$1', [req.userId])
     
+    // Determine recipient
+    const r = access.request
+    const recipientId = (r.borrower_id === req.userId) ? r.owner_id : r.borrower_id
+    
+    // Send actual Web Push notification to recipient
+    sendPushNotification(recipientId, {
+      title: `💬 New message from ${user.name}`,
+      body: content.trim(),
+      url: `/?chat=${r.id}`
+    })
+
     res.status(201).json({ 
       message: { 
         ...message, 

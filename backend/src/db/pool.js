@@ -17,6 +17,18 @@ pool.on('error', (err, client) => {
   console.error('DB pool error (non-fatal):', err.message)
 })
 
+// Graceful shutdown to prevent connection leaks on nodemon restarts
+const shutdown = async () => {
+  console.log('Shutting down DB pool...')
+  try {
+    await pool.end()
+  } catch (err) { }
+  process.exit(0)
+}
+process.on('SIGINT', shutdown)
+process.on('SIGTERM', shutdown)
+process.on('SIGUSR2', shutdown) // nodemon restart
+
 async function query(sql, params) {
   let client
   try {

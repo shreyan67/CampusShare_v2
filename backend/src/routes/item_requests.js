@@ -1,6 +1,7 @@
 const express = require('express')
 const { query, queryOne } = require('../db/pool')
 const { requireAuth } = require('../middleware/auth')
+const { sendPushNotification } = require('./push')
 
 const router = express.Router()
 
@@ -206,6 +207,12 @@ router.post('/:id/offers', requireAuth, async (req, res) => {
       (note || '').trim(),
       isPaid ? parseFloat(price) : 0,
     ])
+    // Notify requester
+    sendPushNotification(r.requester_id, {
+      title: '🎁 New Offer Received!',
+      body: `Someone offered to ${transactionType} you "${r.title}". Tap to view.`,
+      url: '/?requests=mine'
+    })
 
     res.status(201).json({ offer })
   } catch (err) {
@@ -292,6 +299,13 @@ router.patch('/:id/offers/:offerId/accept', requireAuth, async (req, res) => {
     )
     await query("UPDATE item_request_offers SET status='accepted' WHERE id=$1", [offer.id])
 
+    // Notify offerer that their offer was accepted
+    sendPushNotification(offer.offerer_id, {
+      title: '✅ Offer Accepted!',
+      body: `Your offer for "${r.title}" was accepted!`,
+      url: '/?activity=lending'
+    })
+
     res.json({ success: true, borrowRequestId: borrowReq.id, itemId: item.id })
   } catch (err) {
     console.error('[accept offer]', err)
@@ -305,6 +319,16 @@ router.patch('/:id/offers/:offerId/decline', requireAuth, async (req, res) => {
     const r = await queryOne('SELECT * FROM item_requests WHERE id=$1', [req.params.id])
     if (!r || r.requester_id !== req.userId) return res.status(403).json({ error: 'Not your request.' })
     await query("UPDATE item_request_offers SET status='declined' WHERE id=$1", [req.params.offerId])
+
+    const offer = await queryOne('SELECT offerer_id, request_id FROM item_request_offers WHERE id=$1', [req.params.offerId])
+    const reqItem = await queryOne('SELECT title FROM item_requests WHERE id=$1', [offer.request_id])
+    
+    sendPushNotification(offer.offerer_id, {
+      title: '❌ Offer Declined',
+      body: `Your offer for "${reqItem.title}" was declined.`,
+      url: '/'
+    })
+
     res.json({ success: true })
   } catch (err) {
     console.error(err)

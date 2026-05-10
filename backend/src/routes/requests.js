@@ -520,6 +520,12 @@ router.patch('/:id/verify-handover', requireAuth, async (req, res) => {
       await query("UPDATE borrow_requests SET payout_status='manual_pending' WHERE id=$1", [r.id])
     }
 
+    sendPushNotification(r.borrower_id, {
+      title: '🤝 Handover Verified!',
+      body: `You received "${item.title}". ${noReturn ? 'Enjoy!' : 'Please return it on time.'}`,
+      url: '/?activity=borrowing'
+    })
+
     res.json({ success: true, lifecycleComplete: noReturn })
   } catch (err) { console.error(err); res.status(500).json({ error: 'Failed.' }) }
 })
