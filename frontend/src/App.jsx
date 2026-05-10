@@ -2395,6 +2395,13 @@ function getActionRequired(r, isBorrowing) {
   }
 }
 
+function isGlobalHistory(r) {
+  if (!['returned', 'declined', 'closed'].includes(r.status)) return false;
+  if (r.force_closed) return false;
+  if (r.is_paid && r.payout_status && !['done', 'na'].includes(r.payout_status)) return false;
+  return true;
+}
+
 function ActivityModal({ open, onClose, refresh, showToast, defaultTab, targetId, onClearTarget, newRequestCount = 0, myOffersCount = 0, markRequestsSeen, unreadMap = {}, onMarkRead, lifecycleMap, openJourney, closeJourney, setChatRequest }) {
   const { user, setUser } = useApp()
   const [tab, setTab] = useState(defaultTab || 'borrowing')
@@ -2475,14 +2482,33 @@ function ActivityModal({ open, onClose, refresh, showToast, defaultTab, targetId
   async function reload() { await fetchReqs(true); refresh() }
   async function act(fn, ...args) {
     try {
-      const res = await fn(...args)
-      if (res?.error) return res
-      await reload()
-      return res
+      const reqId = args[0];
+      // Optimistic update for instant button feedback
+      setReqs(prev => prev.map(r => {
+        if (r.id !== reqId) return r;
+        const copy = { ...r };
+        if (fn === api.sendPickupDetails) copy.pickup_details = args[1] || 'Sent';
+        else if (fn === api.finalizeBorrow) copy.status = 'active';
+        else if (fn === api.confirmHandover || fn === api.verifyHandover) { copy.item_given = true; copy.status = 'active'; }
+        else if (fn === api.confirmLFReceived || fn === api.confirmBorrowerReceived) copy.borrower_received = true;
+        else if (fn === api.confirmReturn) copy.status = 'returned';
+        else if (fn === api.raiseDispute) copy.payout_status = 'disputed';
+        return copy;
+      }));
+
+      // Fire the API silently in the background
+      fn(...args).then(res => {
+        if (res?.error) { showToast(res.error); reload(); }
+        else reload();
+      }).catch(err => {
+        console.error(err); reload();
+      });
+
+      return { success: true };
     } catch (err) { console.error(err); return { error: 'Something went wrong' } }
   }
 
-  const isHistory = (r) => ['returned', 'declined', 'closed'].includes(r.status) && !r.force_closed
+  const isHistory = isGlobalHistory
 
   const borrowing = reqs.filter(r => r.borrower_id === user?.id && !r.from_item_request)
   const activeBorrowing = borrowing.filter(r => !isHistory(r))
@@ -2916,6 +2942,90 @@ function ChatModal({ request, open, onClose, onMarkRead }) {
       </form>
     </Modal>
   )
+}
+
+function InstallPrompt() {
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [show, setShow] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+
+  useEffect(() => {
+    // Only target mobile
+    if (window.innerWidth > 768) return;
+
+    // Check if already installed
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    if (isStandalone) return;
+    
+    // Check if dismissed recently
+    if (localStorage.getItem('cs_install_dismissed') === 'true') return;
+
+    const ua = window.navigator.userAgent;
+    const isIOSDevice = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+    setIsIOS(isIOSDevice);
+
+    if (isIOSDevice) {
+      // iOS doesn't fire beforeinstallprompt. Show manually after a short delay
+      setTimeout(() => setShow(true), 3000);
+    }
+
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setTimeout(() => setShow(true), 3000);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  if (!show) return null;
+
+  return (
+    <div style={{
+      position: 'fixed', bottom: 0, left: 0, right: 0, 
+      background: '#fff', padding: '20px', borderTopLeftRadius: 20, borderTopRightRadius: 20,
+      boxShadow: '0 -4px 20px rgba(0,0,0,0.15)', zIndex: 999999,
+      display: 'flex', flexDirection: 'column', gap: 12,
+      animation: 'slideUp 0.3s ease-out'
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <h3 style={{ margin: '0 0 4px', fontSize: 18, color: '#0F172A', fontFamily: 'var(--font-head)' }}>Install CampusShare 🚀</h3>
+          <p style={{ margin: 0, fontSize: 13, color: '#475569' }}>
+            Get instant background notifications and a faster app experience!
+          </p>
+        </div>
+        <button onClick={() => { setShow(false); localStorage.setItem('cs_install_dismissed', 'true'); }} 
+          style={{ background: 'transparent', border: 'none', fontSize: 20, color: '#94A3B8', padding: '0 4px', cursor: 'pointer' }}>✕</button>
+      </div>
+
+      {isIOS ? (
+        <div style={{ background: '#F8FAFC', padding: 12, borderRadius: 8, fontSize: 13, color: '#334155', border: '1px solid #E2E8F0' }}>
+          To install: tap the <strong>Share icon</strong> (box with arrow up) at the bottom of Safari, then select <strong>Add to Home Screen</strong> ＋
+        </div>
+      ) : (
+        <button className="btn-press"
+          onClick={async () => {
+            if (deferredPrompt) {
+              deferredPrompt.prompt();
+              const { outcome } = await deferredPrompt.userChoice;
+              if (outcome === 'accepted') {
+                setShow(false);
+              }
+              setDeferredPrompt(null);
+            } else {
+              // Fallback if button clicked before prompt is fully ready or browser blocked it
+              setShow(false);
+              alert("Tap the 3 dots in your browser menu and select 'Install App' or 'Add to Home Screen'.");
+            }
+          }}
+          style={{ background: '#7C3AED', color: '#fff', border: 'none', padding: 12, borderRadius: 10, fontWeight: 700, fontSize: 15, cursor: 'pointer' }}
+        >
+          Install App Now
+        </button>
+      )}
+    </div>
+  );
 }
 
 export default function App() {
@@ -3399,8 +3509,8 @@ export default function App() {
             onEditReq={setEditRequestData}
             markRequestsSeen={markRequestsSeen}
             reloadActivity={refresh}
-            activeHandovers={myRequests.filter(r => r.from_item_request && (!['returned', 'declined', 'closed'].includes(r.status) || r.force_closed))}
-            historyHandovers={myRequests.filter(r => r.from_item_request && ['returned', 'declined', 'closed'].includes(r.status) && !r.force_closed)}
+            activeHandovers={myRequests.filter(r => r.from_item_request && !isGlobalHistory(r))}
+            historyHandovers={myRequests.filter(r => r.from_item_request && isGlobalHistory(r))}
             unreadMap={unreadMap}
             openJourney={openJourney}
             closeJourney={closeJourney}
@@ -3649,6 +3759,7 @@ export default function App() {
           ))}
         </nav>
 
+        <InstallPrompt />
         <Toast msg={toast} />
       </div>
     </Ctx.Provider>
