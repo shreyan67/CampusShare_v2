@@ -3,6 +3,7 @@ const { query, queryOne, pool } = require('../db/pool')
 const { requireAuth } = require('../middleware/auth')
 const { BORROW_LIMITS, getActiveBorrowCount, promoteIfEligible } = require('../services/trust')
 const { sendPushNotification } = require('./push')
+const { emitToUser } = require('../socket')
 
 const router = express.Router()
 
@@ -68,12 +69,14 @@ router.post('/', requireAuth, async (req, res) => {
 
     res.status(201).json({ request: req_, totalAmount: total, rentalAmount, platformFee, isPaid: item.is_paid })
 
-    // Notify lender: new borrow request
+    // Notify lender: new borrow request (push + socket)
     sendPushNotification(item.owner_id, {
       title: '📦 New Borrow Request!',
       body: `${borrower.name} wants to borrow "${item.title}"`,
       url: '/'
     }).catch(() => {})
+    emitToUser(item.owner_id, 'refresh:requests')
+    emitToUser(item.owner_id, 'refresh:item-requests')
 
   } catch (err) { console.error(err); res.status(500).json({ error: 'Failed to send request.' }) }
 })
@@ -186,6 +189,8 @@ router.patch('/:id/finalize', requireAuth, async (req, res) => {
       body: `The lender finalized your request for "${item.title}".`,
       url: '/?activity=borrowing'
     }).catch(() => {})
+    emitToUser(r.borrower_id, 'refresh:requests')
+    emitToUser(req.userId, 'refresh:requests')
 
     res.json({ success: true, dueAt })
 
@@ -226,6 +231,8 @@ router.patch('/:id/approve', requireAuth, async (req, res) => {
       body: `Your request for "${item.title}" was approved. ${item.is_paid ? 'Please complete payment.' : 'Arrange pickup with the lender.'}`,
       url: '/'
     }).catch(() => {})
+    emitToUser(r.borrower_id, 'refresh:requests')
+    emitToUser(req.userId, 'refresh:requests')
 
     return res.json({ success: true, stage: 'selected', allowMultiple: item.allow_multiple })
 
@@ -249,6 +256,8 @@ router.patch('/:id/decline', requireAuth, async (req, res) => {
       body: `Your request for "${item.title}" was declined by the lender.`,
       url: '/'
     }).catch(() => {})
+    emitToUser(r.borrower_id, 'refresh:requests')
+    emitToUser(req.userId, 'refresh:requests')
 
     res.json({ success: true })
   } catch (err) { console.error(err); res.status(500).json({ error: 'Failed.' }) }
@@ -303,6 +312,8 @@ router.patch('/:id/return', requireAuth, async (req, res) => {
       body: `The lender confirmed the return of "${item.title}". Thank you!`,
       url: '/?activity=borrowing'
     }).catch(() => {})
+    emitToUser(r.borrower_id, 'refresh:requests')
+    emitToUser(req.userId, 'refresh:requests')
 
     res.json({ success: true, onTime, wasForceClose: isForceClosedReturn })
   } catch (err) { console.error(err); res.status(500).json({ error: 'Failed.' }) }
@@ -441,6 +452,7 @@ router.patch('/:id/pickup-details', requireAuth, async (req, res) => {
       body: 'The lender has sent you the pickup location. Tap to view.',
       url: '/'
     }).catch(() => {})
+    emitToUser(r.borrower_id, 'refresh:requests')
 
     res.json({ success: true })
   } catch (err) { console.error(err); res.status(500).json({ error: 'Failed.' }) }

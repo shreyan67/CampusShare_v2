@@ -2,6 +2,7 @@ const express = require('express')
 const { query, queryOne } = require('../db/pool')
 const { requireAuth } = require('../middleware/auth')
 const { sendPushNotification } = require('./push')
+const { emitToUser } = require('../socket')
 
 const router = express.Router()
 
@@ -213,6 +214,7 @@ router.post('/:id/offers', requireAuth, async (req, res) => {
       body: `Someone offered to ${transactionType} you "${r.title}". Tap to view.`,
       url: '/?requests=mine'
     })
+    emitToUser(r.requester_id, 'refresh:item-requests')
 
     res.status(201).json({ offer })
   } catch (err) {
@@ -305,6 +307,8 @@ router.patch('/:id/offers/:offerId/accept', requireAuth, async (req, res) => {
       body: `Your offer for "${r.title}" was accepted!`,
       url: '/?activity=lending'
     })
+    emitToUser(offer.offerer_id, 'refresh:requests')
+    emitToUser(req.userId, 'refresh:item-requests')
 
     res.json({ success: true, borrowRequestId: borrowReq.id, itemId: item.id })
   } catch (err) {
@@ -328,6 +332,8 @@ router.patch('/:id/offers/:offerId/decline', requireAuth, async (req, res) => {
       body: `Your offer for "${reqItem.title}" was declined.`,
       url: '/'
     })
+    emitToUser(offer.offerer_id, 'refresh:requests')
+    emitToUser(req.userId, 'refresh:item-requests')
 
     res.json({ success: true })
   } catch (err) {

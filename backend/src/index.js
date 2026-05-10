@@ -1,22 +1,29 @@
 require('dotenv').config()
 const express = require('express')
+const http = require('http')
 const cors = require('cors')
 const app = express()
+const server = http.createServer(app)
 const PORT = process.env.PORT || 4000
+
+// ===== SOCKET.IO =====
+const socketModule = require('./socket')
+const CORS_ORIGINS = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'https://campusshare-v2-frontend.onrender.com',
+  'https://www.campusshare.co.in',
+  'https://campusshare-v2.onrender.com'
+]
+socketModule.init(server, CORS_ORIGINS)
 
 // ===== DATABASE =====
 const { pool } = require('./db/pool')
 
 // ===== CORS =====
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'https://campusshare-v2-frontend.onrender.com',
-    'https://www.campusshare.co.in',
-    'https://campusshare-v2.onrender.com'
-  ],
+  origin: CORS_ORIGINS,
   credentials: true
 }))
 app.options('*', cors())
@@ -222,7 +229,7 @@ app.use((err, _req, res, _next) => {
 })
 
 // ===== SERVER =====
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`\n🚀 CampusShare API → http://localhost:${PORT}`)
   console.log(`   Health: http://localhost:${PORT}/api/health\n`)
 })

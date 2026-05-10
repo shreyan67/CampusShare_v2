@@ -2,6 +2,7 @@ import { useState, useEffect, createContext, useContext, useCallback, useRef, us
 import { createPortal } from 'react-dom'
 import * as api from './api.js'
 import { subscribeToPush } from './push.js'
+import * as socketClient from './socketClient.js'
 
 // ── DESIGN TOKENS ─────────────────────────────────────────────────────────────
 const T = {
@@ -2456,9 +2457,10 @@ function ActivityModal({ open, onClose, refresh, showToast, defaultTab, targetId
     }
     fetchReqs(false)
     // Only poll when no input is focused (pause ref). Also skip if Journey modal open.
+    // Interval raised to 20s to avoid DB connection saturation.
     pollRef.current = setInterval(() => {
-      if (!pausePollRef.current) fetchReqs(true)
-    }, 5000)
+      if (!pausePollRef.current && document.visibilityState === 'visible') fetchReqs(true)
+    }, 20000)
     return () => clearInterval(pollRef.current)
   }, [open]) // eslint-disable-line
 
@@ -2825,8 +2827,22 @@ function ChatModal({ request, open, onClose, onMarkRead }) {
   useEffect(() => {
     if (open && request) {
       loadMessages()
-      const interval = setInterval(loadMessages, 5000)
-      return () => clearInterval(interval)
+
+      // Listen for incoming messages via socket (instant, no poll)
+      const unsub = socketClient.on('new:message', ({ requestId, message }) => {
+        if (requestId !== request.id) return
+        setMessages(prev => {
+          if (prev.some(m => m.id === message.id)) return prev
+          return [...prev, message]
+        })
+        // Mark as read since the chat is open
+        api.markChatRead(request.id)
+        if (onMarkRead) onMarkRead(request.id)
+      })
+
+      // Light fallback poll every 30s in case socket missed something
+      const interval = setInterval(loadMessages, 30000)
+      return () => { clearInterval(interval); unsub() }
     }
   }, [open, request, loadMessages])
 
@@ -3026,6 +3042,52 @@ export default function App() {
         myRequestsRef.current = parsed
       }
     } catch (_) { }
+
+    // ── SOCKET.IO: Connect and listen for server-push events ──────────────────
+    // This replaces the need for aggressive polling. The server emits events
+    // only when something changes, so the client reacts instantly at zero cost.
+    const sock = socketClient.connect(user.id)
+
+    const unsubs = [
+      // Server tells us our requests changed (approve, decline, pickup-details etc.)
+      socketClient.on('refresh:requests', () => {
+        api.getMyRequests().then(r => {
+          if (r?.requests) { setMyRequests(r.requests); myRequestsRef.current = r.requests }
+        })
+      }),
+      // Server tells us item-requests changed (new offer received etc.)
+      socketClient.on('refresh:item-requests', () => {
+        // This triggers the existing notification check loop instantly
+        api.getItemRequests('').then(r => {
+          if (r?.requests) {
+            // Update unread badge
+            const myOffers = r.requests.filter(req => req.requester_id !== user.id)
+            if (myOffers.length > 0) setNewRequestCount(n => n + 0) // triggers re-render
+          }
+        })
+      }),
+      // Server tells us an unread chat message arrived
+      socketClient.on('refresh:chat-unread', () => {
+        api.getChatUnread().then(r => {
+          if (r?.unread) {
+            const map = {}
+            let total = 0
+            const requestOfferUnreadIds = new Set()
+            r.unread.forEach(msg => {
+              map[msg.request_id] = (map[msg.request_id] || 0) + 1
+              total++
+            })
+            setUnreadMap(prev => JSON.stringify(prev) === JSON.stringify(map) ? prev : map)
+            setTotalUnread(total)
+          }
+        })
+      }),
+    ]
+
+    return () => {
+      unsubs.forEach(fn => fn())
+      socketClient.disconnect()
+    }
   }, []) // eslint-disable-line
 
   // Watch for state changes in myRequests to trigger native push notifications
@@ -3218,7 +3280,9 @@ export default function App() {
 
     // Fire once immediately, then every 8s (faster notifications)
     checkNewRequests(true)
-    notifPollRef.current = setInterval(() => checkNewRequests(false), 8000)
+    notifPollRef.current = setInterval(() => {
+      if (document.visibilityState === 'visible') checkNewRequests(false)
+    }, 25000)
 
     const handleVis = () => { if (document.visibilityState === 'visible') checkNewRequests() }
     document.addEventListener('visibilitychange', handleVis)
@@ -3250,7 +3314,9 @@ export default function App() {
   // This is the ONLY polling mechanism. There is no second fetch effect.
   useEffect(() => {
     if (!user) return
-    const interval = setInterval(() => setTick(t => t + 1), 8000)
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') setTick(t => t + 1)
+    }, 20000)
     const handleVis = () => { if (document.visibilityState === 'visible') setTick(t => t + 1) }
     document.addEventListener('visibilitychange', handleVis)
     return () => {

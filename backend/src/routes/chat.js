@@ -2,6 +2,7 @@ const express = require('express')
 const { query, queryOne } = require('../db/pool')
 const { requireAuth } = require('../middleware/auth')
 const { sendPushNotification } = require('./push')
+const { emitToUser } = require('../socket')
 
 const router = express.Router()
 
@@ -109,14 +110,14 @@ router.post('/:requestId', requireAuth, async (req, res) => {
       url: `/?chat=${r.id}`
     })
 
-    res.status(201).json({ 
-      message: { 
-        ...message, 
-        sender_name: user.name, 
-        sender_avatar: user.avatar, 
-        sender_color: user.color 
-      } 
-    })
+    const fullMsg = { ...message, sender_name: user.name, sender_avatar: user.avatar, sender_color: user.color }
+
+    // Push message instantly to the recipient via socket (they don't need to poll)
+    emitToUser(recipientId, 'new:message', { requestId: r.id, message: fullMsg })
+    // Also refresh unread badge for recipient
+    emitToUser(recipientId, 'refresh:chat-unread')
+
+    res.status(201).json({ message: fullMsg })
   } catch (err) {
     console.error('[chat POST]', err)
     res.status(500).json({ error: 'Failed to send message.' })
