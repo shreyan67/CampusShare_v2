@@ -607,7 +607,7 @@ router.patch('/:id/payment-received', requireAuth, async (req, res) => {
     const r = await queryOne('SELECT * FROM borrow_requests WHERE id=$1', [req.params.id])
     if (!r) return res.status(404).json({ error: 'Not found.' })
     if (r.owner_id !== req.userId) return res.status(403).json({ error: 'Not your item.' })
-    if (!['admin_paid', 'disputed'].includes(r.payout_status)) return res.status(409).json({ error: 'No pending payout to confirm.' })
+    if (!['manual_pending', 'admin_paid', 'disputed'].includes(r.payout_status)) return res.status(409).json({ error: 'No pending payout to confirm.' })
 
     await query(
       "UPDATE borrow_requests SET payout_status='done' WHERE id=$1",
