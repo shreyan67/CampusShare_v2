@@ -137,6 +137,8 @@ router.patch('/:id/activate-after-payment', requireAuth, async (req, res) => {
       )
     }
 
+    emitToUser(r.owner_id, 'refresh:requests')
+    emitToUser(r.borrower_id, 'refresh:requests')
     res.json({ success: true, dueAt })
   } catch (err) {
     console.error('[activate-after-payment] error:', err)
@@ -363,6 +365,8 @@ router.patch('/:id/handover', requireAuth, async (req, res) => {
       [r.item_id, req.params.id]
     )
 
+    emitToUser(r.borrower_id, 'refresh:requests')
+    emitToUser(r.owner_id, 'refresh:requests')
     res.json({ success: true })
   } catch (err) { console.error(err); res.status(500).json({ error: 'Failed.' }) }
 })
@@ -422,6 +426,8 @@ router.patch('/:id/lf-received', requireAuth, async (req, res) => {
       url: '/?activity=lending'
     }).catch(() => {})
 
+    emitToUser(r.owner_id, 'refresh:requests')
+    emitToUser(r.borrower_id, 'refresh:requests')
     res.json({ success: true })
   } catch (err) {
     console.error('[lf-received] error:', err)
@@ -478,6 +484,8 @@ router.patch('/:id/item-given', requireAuth, async (req, res) => {
     // Mark item as borrowed
     await query("UPDATE items SET status='borrowed' WHERE id=$1", [r.item_id])
 
+    emitToUser(r.borrower_id, 'refresh:requests')
+    emitToUser(r.owner_id, 'refresh:requests')
     res.json({ success: true })
   } catch (err) { console.error(err); res.status(500).json({ error: 'Failed.' }) }
 })
@@ -504,6 +512,8 @@ router.patch('/:id/borrower-received', requireAuth, async (req, res) => {
       await promoteIfEligible(r.borrower_id)
     }
 
+    emitToUser(r.owner_id, 'refresh:requests')
+    emitToUser(r.borrower_id, 'refresh:requests')
     res.json({ success: true, lifecycleComplete: noReturn })
   } catch (err) { console.error(err); res.status(500).json({ error: 'Failed.' }) }
 })
@@ -557,6 +567,8 @@ router.patch('/:id/verify-handover', requireAuth, async (req, res) => {
       url: '/?activity=borrowing'
     })
 
+    emitToUser(r.borrower_id, 'refresh:requests')
+    emitToUser(r.owner_id, 'refresh:requests')
     res.json({ success: true, lifecycleComplete: noReturn })
   } catch (err) { console.error(err); res.status(500).json({ error: 'Failed.' }) }
 })
@@ -601,6 +613,8 @@ router.patch('/:id/payment-received', requireAuth, async (req, res) => {
       "UPDATE borrow_requests SET payout_status='done' WHERE id=$1",
       [req.params.id]
     )
+    emitToUser(r.borrower_id, 'refresh:requests')
+    emitToUser(r.owner_id, 'refresh:requests')
     res.json({ success: true })
   } catch (err) {
     console.error(err)
@@ -673,6 +687,8 @@ router.patch('/:id/dispute', requireAuth, async (req, res) => {
       url: '/'
     }).catch(() => {})
 
+    emitToUser(r.owner_id, 'refresh:requests')
+    emitToUser(r.borrower_id, 'refresh:requests')
     res.json({ success: true })
   } catch (err) {
     console.error(err)

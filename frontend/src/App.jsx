@@ -2454,18 +2454,15 @@ function ActivityModal({ open, onClose, refresh, showToast, defaultTab, targetId
   // This prevents React from remounting child components (which resets text inputs)
   // when the poll returns identical data.
   function mergeReqs(newReqs) {
-    const prev = JSON.stringify(reqsRef.current.map(r => ({
+    const mapReq = r => ({
       id: r.id, status: r.status, pickup_details: r.pickup_details,
       pickup_message: r.pickup_message, item_given: r.item_given,
       borrower_received: r.borrower_received, payout_status: r.payout_status,
-      payment_confirmed: r.payment_confirmed,
-    })))
-    const next = JSON.stringify(newReqs.map(r => ({
-      id: r.id, status: r.status, pickup_details: r.pickup_details,
-      pickup_message: r.pickup_message, item_given: r.item_given,
-      borrower_received: r.borrower_received, payout_status: r.payout_status,
-      payment_confirmed: r.payment_confirmed,
-    })))
+      payment_confirmed: r.payment_confirmed, force_closed: r.force_closed,
+      lender_nudged_borrower: r.lender_nudged_borrower
+    })
+    const prev = JSON.stringify(reqsRef.current.map(mapReq))
+    const next = JSON.stringify(newReqs.map(mapReq))
     if (prev !== next) {
       reqsRef.current = newReqs
       setReqs(newReqs)
@@ -3226,7 +3223,7 @@ export default function App() {
       }),
       // Server tells us an unread chat message arrived
       socketClient.on('refresh:chat-unread', () => {
-        api.getChatUnread().then(r => {
+        api.getUnreadChats().then(r => {
           if (r?.unread) {
             const map = {}
             let total = 0
@@ -3342,8 +3339,9 @@ export default function App() {
         }
       }
       if (!reqsRes?.error) {
-        const prev = JSON.stringify(myRequestsRef.current.map(x => ({ id: x.id, status: x.status, borrower_received: x.borrower_received, pickup_details: !!x.pickup_details, lender_nudged_borrower: x.lender_nudged_borrower, force_closed: x.force_closed })))
-        const next = JSON.stringify((reqsRes.requests || []).map(x => ({ id: x.id, status: x.status, borrower_received: x.borrower_received, pickup_details: !!x.pickup_details, lender_nudged_borrower: x.lender_nudged_borrower, force_closed: x.force_closed })))
+        const mapReq = x => ({ id: x.id, status: x.status, pickup_details: !!x.pickup_details, pickup_message: !!x.pickup_message, item_given: x.item_given, borrower_received: x.borrower_received, payment_confirmed: x.payment_confirmed, payout_status: x.payout_status, force_closed: x.force_closed, lender_nudged_borrower: x.lender_nudged_borrower })
+        const prev = JSON.stringify(myRequestsRef.current.map(mapReq))
+        const next = JSON.stringify((reqsRes.requests || []).map(mapReq))
         if (prev !== next) {
           setMyRequests(reqsRes.requests || [])
           myRequestsRef.current = reqsRes.requests || []
@@ -3424,8 +3422,9 @@ export default function App() {
         // Also refresh myRequests so chat routing (request vs activity) stays up to date
         const reqsRes = await api.getMyRequests()
         if (reqsRes?.requests) {
-          const prev = JSON.stringify(myRequestsRef.current.map(x => ({ id: x.id, status: x.status, force_closed: x.force_closed, lender_nudged_borrower: x.lender_nudged_borrower })))
-          const next = JSON.stringify(reqsRes.requests.map(x => ({ id: x.id, status: x.status, force_closed: x.force_closed, lender_nudged_borrower: x.lender_nudged_borrower })))
+          const mapReq = x => ({ id: x.id, status: x.status, pickup_details: !!x.pickup_details, pickup_message: !!x.pickup_message, item_given: x.item_given, borrower_received: x.borrower_received, payment_confirmed: x.payment_confirmed, payout_status: x.payout_status, force_closed: x.force_closed, lender_nudged_borrower: x.lender_nudged_borrower })
+          const prev = JSON.stringify(myRequestsRef.current.map(mapReq))
+          const next = JSON.stringify(reqsRes.requests.map(mapReq))
           if (prev !== next) {
             setMyRequests(reqsRes.requests)
             myRequestsRef.current = reqsRes.requests

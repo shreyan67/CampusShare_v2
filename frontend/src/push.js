@@ -1,7 +1,7 @@
 // Registers service worker and subscribes to Web Push (VAPID-based).
 // This is what enables background notifications even when the app is closed.
 
-const VAPID_PUBLIC_KEY = "BL4sny3aXOdDC9VkYlEdgGbdKctD7F4SKAY5aQEm87TMO7rkwJCPRSMeTZhzq-BfGuqsmCU1kpDxloFT07M1jZA";
+const VAPID_PUBLIC_KEY = "BIuW0xcAAAN5e2bk9EoNmQBh_7bRKwjC7AI2lPimt7lkOdbNBe1MfwqL_ku10h3LmsFO9xzod9O5an7m5dTwyZ4";
 
 function urlB64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
