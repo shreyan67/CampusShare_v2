@@ -1,7 +1,7 @@
 // CampusShare Service Worker
 // Handles background push notifications even when app is closed
 
-const CACHE_NAME = 'campusshare-v1';
+const CACHE_NAME = 'campusshare-v2';
 
 // Install: activate immediately without waiting for old SW to die
 self.addEventListener('install', (event) => {

@@ -1014,6 +1014,45 @@ function UpiField({ user, setUser, showToast }) {
   )
 }
 
+function NotificationSettings({ showToast }) {
+  const [status, setStatus] = useState('Notification' in window ? Notification.permission : 'unsupported');
+
+  const enable = async () => {
+    if (status === 'unsupported') return;
+    const perm = await Notification.requestPermission();
+    setStatus(perm);
+    if (perm === 'granted') {
+      const token = localStorage.getItem('cs_token');
+      if (token) subscribeToPush(token);
+      showToast('Notifications enabled successfully!');
+    } else {
+      showToast('Permission denied. Please enable in browser settings.');
+    }
+  };
+
+  if (status === 'unsupported') return null;
+
+  return (
+    <div style={{ marginBottom: 14, padding: '14px', background: status === 'granted' ? '#D1FAE5' : '#FEF3C7', borderRadius: 'var(--radius-sm)', border: `1.5px solid ${status === 'granted' ? '#059669' : '#D97706'}33` }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: status === 'granted' ? '#065F46' : '#92400E' }}>
+            {status === 'granted' ? '🔔 Notifications Active' : '🔕 Notifications Disabled'}
+          </div>
+          <div style={{ fontSize: 12, color: status === 'granted' ? '#047857' : '#B45309', marginTop: 2 }}>
+            {status === 'granted' ? 'You will receive background alerts.' : 'Enable to get handover alerts.'}
+          </div>
+        </div>
+        {status !== 'granted' && (
+          <button className="btn-press" onClick={enable} style={{ background: '#D97706', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: 6, fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+            Enable
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── ACTIVITY MODAL ────────────────────────────────────────────────────────────
 
 // ── LIFECYCLE VISUALIZER ──────────────────────────────────────────────────────
@@ -2683,6 +2722,7 @@ function ActivityModal({ open, onClose, refresh, showToast, defaultTab, targetId
           </div>
 
           <UpiField user={user} setUser={setUser} showToast={showToast} />
+          <NotificationSettings showToast={showToast} />
 
           {user?.trust_tier !== 'rep' && (() => {
             const next = { newcomer: 'regular', regular: 'trusted', trusted: 'rep' }[user.trust_tier]
