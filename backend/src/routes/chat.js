@@ -20,9 +20,11 @@ async function checkChatAccess(requestId, userId) {
 router.get('/unread', requireAuth, async (req, res) => {
   try {
     const unread = await query(`
-      SELECT m.*, u.name as sender_name, u.avatar as sender_avatar
+      SELECT m.*, u.name as sender_name, u.avatar as sender_avatar,
+             i.listing_type as item_listing_type
       FROM transaction_messages m
       JOIN borrow_requests br ON m.request_id = br.id
+      JOIN items i ON i.id = br.item_id
       JOIN users u ON m.sender_id = u.id
       WHERE m.sender_id != $1 AND m.is_read = false
         AND (br.borrower_id = $1 OR br.owner_id = $1)

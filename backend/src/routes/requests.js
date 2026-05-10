@@ -274,8 +274,18 @@ router.patch('/:id/return', requireAuth, async (req, res) => {
     await query("UPDATE items SET status='available', is_deleted=TRUE WHERE id=$1", [item.id])
 
     if (isForceClosedReturn) {
-      // Lender confirmed physical return after force-close — unflag the borrower
-      await query("UPDATE users SET is_flagged=FALSE WHERE id=$1", [r.borrower_id])
+      // Lender confirmed physical return after force-close
+      // Only unflag the borrower if they have returned EVERYTHING
+      const pendingCount = await queryOne(`
+        SELECT COUNT(*) as n FROM borrow_requests 
+        WHERE borrower_id=$1 
+          AND (status IN ('pending','selected','payment_pending','active','overdue') 
+               OR (status='returned' AND force_closed=TRUE))
+      `, [r.borrower_id])
+      
+      if (parseInt(pendingCount?.n || 0) === 0) {
+        await query("UPDATE users SET is_flagged=FALSE WHERE id=$1", [r.borrower_id])
+      }
     } else if (onTime) {
       await query('UPDATE users SET return_count=return_count+1 WHERE id=$1', [r.borrower_id])
       await promoteIfEligible(r.borrower_id)

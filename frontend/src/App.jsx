@@ -1866,8 +1866,9 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
               <button className="btn-press" style={{ ...btn(false, true), fontSize: 9, padding: '5px 6px', flex: 1, border: '1px solid #F59E0B', color: '#92400E', background: '#FEF3C7' }}
                 onClick={async () => {
                   const res = await api.nudgeReturn(r.id)
-                  if (res?.error) return act(() => Promise.resolve(res))
+                  if (res?.error) { showToast(res.error); return }
                   showToast('Nudge sent! Borrower emailed.')
+                  await reload()
                 }}>⏰ Nudge</button>
               {r.lender_nudged_borrower && (
                 <button className="btn-press" style={{ ...btn(false, true), fontSize: 9, padding: '5px 6px', flex: 1, border: '1px solid #EF4444', color: '#991B1B', background: '#FEE2E2' }}
@@ -2307,6 +2308,7 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
               if (!res || res.error) { showToast('Return failed'); return }
               if (res.wasForceClose) showToast('Return confirmed. Borrower slots have been freed.')
               else showToast(res.onTime === false ? 'Return confirmed (late).' : 'Return confirmed!')
+              if (reload) reload()
             }}>Confirm Return</button>
           )}
           {/* Waiting banner removed as guide handles it */}
@@ -2476,8 +2478,8 @@ function ActivityModal({ open, onClose, refresh, showToast, defaultTab, targetId
   const activeBorrowing = borrowing.filter(r => !isHistory(r))
   const historyBorrowing = borrowing.filter(r => isHistory(r))
 
-  // True only if there is at least one borrow_request that is actually force_closed
-  const hasForceClosedSlot = borrowing.some(r => r.force_closed)
+  // True only if there is at least one borrow_request that is actually force_closed (including item requests)
+  const hasForceClosedSlot = reqs.some(r => r.force_closed && r.borrower_id === user?.id)
 
   const lending = reqs.filter(r => r.owner_id === user?.id && !r.from_item_request)
   const activeLending = lending.filter(r => !isHistory(r))
@@ -2492,7 +2494,7 @@ function ActivityModal({ open, onClose, refresh, showToast, defaultTab, targetId
   const rCount = activeHandovers.filter(r => getActionRequired(r, r.borrower_id === user?.id)).length
 
   const tier = TRUST_TIERS[user?.trust_tier] || TRUST_TIERS.newcomer
-  const activeCount = activeBorrowing.filter(r => ['active', 'selected'].includes(r.status)).length
+  const activeCount = reqs.filter(r => r.borrower_id === user?.id && ['active', 'selected'].includes(r.status)).length
 
   const tabs = [
     { id: 'borrowing', label: 'Borrowing', count: activeBorrowing.length, icon: '📥', actionBadge: bCount },
@@ -2915,6 +2917,7 @@ export default function App() {
   const [newRequestCount, setNewRequestCount] = useState(0)
   const [myOffersCount, setMyOffersCount] = useState(0)
   const [unreadMap, setUnreadMap] = useState({})
+  const [requestOfferUnreadIds, setRequestOfferUnreadIds] = useState(new Set())
   const [totalUnread, setTotalUnread] = useState(0)
   const prevUnreadIdsRef = useRef(new Set())
   const notifPollRef = useRef(null)
@@ -3109,8 +3112,8 @@ export default function App() {
         }
       }
       if (!reqsRes?.error) {
-        const prev = JSON.stringify(myRequestsRef.current.map(x => ({ id: x.id, status: x.status, borrower_received: x.borrower_received, pickup_details: !!x.pickup_details })))
-        const next = JSON.stringify((reqsRes.requests || []).map(x => ({ id: x.id, status: x.status, borrower_received: x.borrower_received, pickup_details: !!x.pickup_details })))
+        const prev = JSON.stringify(myRequestsRef.current.map(x => ({ id: x.id, status: x.status, borrower_received: x.borrower_received, pickup_details: !!x.pickup_details, lender_nudged_borrower: x.lender_nudged_borrower, force_closed: x.force_closed })))
+        const next = JSON.stringify((reqsRes.requests || []).map(x => ({ id: x.id, status: x.status, borrower_received: x.borrower_received, pickup_details: !!x.pickup_details, lender_nudged_borrower: x.lender_nudged_borrower, force_closed: x.force_closed })))
         if (prev !== next) {
           setMyRequests(reqsRes.requests || [])
           myRequestsRef.current = reqsRes.requests || []
@@ -3125,7 +3128,7 @@ export default function App() {
   useEffect(() => {
     if (!user) return
 
-    async function checkNewRequests() {
+    async function checkNewRequests(isInitial = false) {
       try {
         const r = await api.getItemRequests('')
         if (r?.error || !r?.requests) return
@@ -3159,6 +3162,7 @@ export default function App() {
         const chatRes = await api.getUnreadChats()
         if (!chatRes.error && chatRes.unread) {
           const map = {}
+          const requestOfferUnreadIds = new Set()
           let total = 0
           const currentIds = new Set()
           let newMsgs = []
@@ -3167,10 +3171,13 @@ export default function App() {
             currentIds.add(m.id)
             if (!prevUnreadIdsRef.current.has(m.id)) newMsgs.push(m)
             map[m.request_id] = (map[m.request_id] || 0) + 1
+            // Track which request_ids come from request_offer items
+            if (m.item_listing_type === 'request_offer') requestOfferUnreadIds.add(String(m.request_id))
             total++
           })
 
           setUnreadMap(map)
+          setRequestOfferUnreadIds(requestOfferUnreadIds)
           setTotalUnread(total)
 
           if (newMsgs.length > 0) {
@@ -3183,11 +3190,22 @@ export default function App() {
         // Also refresh myRequests so chat routing (request vs activity) stays up to date
         const reqsRes = await api.getMyRequests()
         if (reqsRes?.requests) {
-          const prev = JSON.stringify(myRequestsRef.current.map(x => ({ id: x.id, status: x.status })))
-          const next = JSON.stringify(reqsRes.requests.map(x => ({ id: x.id, status: x.status })))
+          const prev = JSON.stringify(myRequestsRef.current.map(x => ({ id: x.id, status: x.status, force_closed: x.force_closed, lender_nudged_borrower: x.lender_nudged_borrower })))
+          const next = JSON.stringify(reqsRes.requests.map(x => ({ id: x.id, status: x.status, force_closed: x.force_closed, lender_nudged_borrower: x.lender_nudged_borrower })))
           if (prev !== next) {
             setMyRequests(reqsRes.requests)
             myRequestsRef.current = reqsRes.requests
+          }
+        }
+
+        // Keep user stats/flags in sync (skip on initial load to avoid duplicate requests)
+        if (!isInitial) {
+          const meRes = await api.getMe()
+          if (meRes?.user) {
+            if (user.is_flagged !== meRes.user.is_flagged || user.return_count !== meRes.user.return_count) {
+              setUser(meRes.user)
+              api.persistUser(meRes.user)
+            }
           }
         }
 
@@ -3195,8 +3213,8 @@ export default function App() {
     }
 
     // Fire once immediately, then every 8s (faster notifications)
-    checkNewRequests()
-    notifPollRef.current = setInterval(checkNewRequests, 8000)
+    checkNewRequests(true)
+    notifPollRef.current = setInterval(() => checkNewRequests(false), 8000)
 
     const handleVis = () => { if (document.visibilityState === 'visible') checkNewRequests() }
     document.addEventListener('visibilitychange', handleVis)
@@ -3256,14 +3274,16 @@ export default function App() {
 
   const CAT_COUNTS = CATEGORIES.reduce((a, c) => { a[c] = items.filter(i => i.category === c).length; return a }, {})
   const tier = TRUST_TIERS[user.trust_tier] || TRUST_TIERS.newcomer
-  const activeCount = myRequests.filter(r => ['active', 'selected'].includes(r.status)).length
+  // Hero activeCount must match Activity tab: include ALL borrowed items (from marketplace AND item requests)
+  const activeCount = myRequests.filter(r => r.borrower_id === user?.id && ['active', 'selected'].includes(r.status)).length
   const isFlagged = !!user.is_flagged
   const hasForceClosedSlotMain = myRequests.some(r => r.force_closed && r.borrower_id === user?.id)
   const actionableReq = myRequests.find(r => getActionRequired(r, r.borrower_id === user?.id))
 
-  // Split unread chats by transaction origin — ensure set is rebuilt each render from latest myRequests
-  const requestHandoverIds = new Set(myRequests.filter(r => r.from_item_request).map(r => r.id))
-  const requestUnread = Object.entries(unreadMap).filter(([id]) => requestHandoverIds.has(Number(id))).reduce((s, [, c]) => s + c, 0)
+  // Split unread chats by transaction origin — use item_listing_type from unread response (reliable)
+  const requestUnread = Object.entries(unreadMap)
+    .filter(([id]) => requestOfferUnreadIds.has(String(id)))
+    .reduce((s, [, c]) => s + c, 0)
   const activityUnread = totalUnread - requestUnread
 
   const requestActionCount = newRequestCount + myOffersCount
@@ -3407,7 +3427,7 @@ export default function App() {
                 </div>
               ) : (
                 <div style={{ background: `${T.coral}22`, borderRadius: 20, padding: '4px 10px', display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0, border: `1px solid ${T.coral}44` }}>
-                  <span style={{ fontSize: 11, color: T.coral, fontWeight: 700 }}>{activeCount} used / {tier.limit} free slots</span>
+                  <span style={{ fontSize: 11, color: T.coral, fontWeight: 700 }}>{activeCount} used / {tier.limit - activeCount} free slots</span>
                   <TierBadge tier={user.trust_tier} />
                 </div>
               )}
