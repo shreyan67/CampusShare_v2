@@ -1,0 +1,1 @@
+require('dotenv').config({path: './backend/.env'}); const { pool } = require('./backend/src/db/pool'); pool.query('SELECT count(*) FROM push_subscriptions').then(r => console.log('Count:', r.rows[0].count)).catch(e => console.error(e.message)).finally(() => process.exit(0));

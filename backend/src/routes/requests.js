@@ -1,5 +1,5 @@
 const express = require('express')
-const { query, queryOne } = require('../db/pool')
+const { query, queryOne, pool } = require('../db/pool')
 const { requireAuth } = require('../middleware/auth')
 const { BORROW_LIMITS, getActiveBorrowCount, promoteIfEligible } = require('../services/trust')
 const { sendPushNotification } = require('./push')
@@ -180,6 +180,13 @@ router.patch('/:id/finalize', requireAuth, async (req, res) => {
     }
     // For multi-borrower items, item stays 'available' so other selected borrowers can also finalize
 
+    // Notify borrower
+    sendPushNotification(r.borrower_id, {
+      title: '✅ Request Finalized!',
+      body: `The lender finalized your request for "${item.title}".`,
+      url: '/?activity=borrowing'
+    }).catch(() => {})
+
     res.json({ success: true, dueAt })
 
   } catch (err) {
@@ -291,6 +298,12 @@ router.patch('/:id/return', requireAuth, async (req, res) => {
       await promoteIfEligible(r.borrower_id)
     }
 
+    sendPushNotification(r.borrower_id, {
+      title: '✅ Return Confirmed!',
+      body: `The lender confirmed the return of "${item.title}". Thank you!`,
+      url: '/?activity=borrowing'
+    }).catch(() => {})
+
     res.json({ success: true, onTime, wasForceClose: isForceClosedReturn })
   } catch (err) { console.error(err); res.status(500).json({ error: 'Failed.' }) }
 })
@@ -391,6 +404,12 @@ router.patch('/:id/lf-received', requireAuth, async (req, res) => {
       [r.borrower_id]
     )
     await promoteIfEligible(r.borrower_id)
+
+    sendPushNotification(r.owner_id, {
+      title: '🎉 Item Received!',
+      body: `The claimer received "${r._item_title}".`,
+      url: '/?activity=lending'
+    }).catch(() => {})
 
     res.json({ success: true })
   } catch (err) {

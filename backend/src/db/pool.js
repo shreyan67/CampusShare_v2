@@ -4,7 +4,7 @@ const { Pool } = require('pg')
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
-  max: 3,
+  max: 10,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 15000,
   // Keep connections alive — prevents "Connection terminated unexpectedly"
@@ -31,15 +31,24 @@ process.on('SIGUSR2', shutdown) // nodemon restart
 
 async function query(sql, params) {
   let client
+  let errorHandler
   try {
     client = await pool.connect()
+    
+    // Attach error listener to prevent process crashes if this specific client disconnects mid-query
+    errorHandler = err => console.error('Checked-out DB client error:', err.message)
+    client.on('error', errorHandler)
+    
     const result = await client.query(sql, params)
     return result.rows
   } catch (err) {
     console.error('DB query error:', err.message, '|', sql.slice(0, 80))
     throw err
   } finally {
-    if (client) client.release()
+    if (client) {
+      if (errorHandler) client.removeListener('error', errorHandler)
+      client.release()
+    }
   }
 }
 
