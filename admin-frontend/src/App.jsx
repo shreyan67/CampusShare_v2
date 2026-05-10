@@ -99,7 +99,7 @@ function PayoutsTab({ apiFetch }) {
   const [loading, setLoading] = useState(true)
   const [marking, setMarking] = useState(null)
   const [err, setErr]         = useState("")
-  const [filter, setFilter]   = useState("all") // all | pending | disputed
+  const [filter, setFilter]   = useState("pending") // all | pending | disputed
   const [searchQuery, setSearchQuery] = useState("")
   const [totalEarningsAllTime, setTotalEarningsAllTime] = useState(0)
 
@@ -186,11 +186,14 @@ function PayoutsTab({ apiFetch }) {
     } catch (e) { alert("Failed: " + e.message) }
   }
 
-  async function markPaid(requestId, lenderName, lenderUpi, payLender) {
+  async function markPaid(requestId, lenderName, lenderUpi, payLender, isDispute = false) {
     if (!window.confirm(`Confirm: You've sent ₹${payLender} to ${lenderName} (${lenderUpi})?`)) return
     
-    const adminUtr = window.prompt("Please enter the UPI Transaction ID (UTR) for proof of payment:\n\nThis will be emailed to the lender.");
-    if (adminUtr === null) return; // user cancelled
+    let adminUtr = "";
+    if (isDispute) {
+      adminUtr = window.prompt("DISPUTE RESOLUTION: Please enter the UPI Transaction ID (UTR) for proof of payment:\n\nThis will be emailed to the lender.");
+      if (adminUtr === null) return; // user cancelled
+    }
 
     setMarking(requestId)
     try {
@@ -413,9 +416,9 @@ function PayoutsTab({ apiFetch }) {
                             </div>
                           )}
 
-                          <button style={S.btn(false)} disabled={marking === p.requestId || (p.borrowerComplaint && !p.borrowerReceived)}
-                            onClick={() => markPaid(p.requestId, p.lenderName, p.lenderUpi, p.payLender)}>
-                            {marking === p.requestId ? "Saving…" : "✓ Mark Paid to Lender"}
+                          <button style={{ ...S.btn(false), background: '#10B981', padding: '10px 16px', fontSize: 13, width: '100%', fontWeight: 700, boxShadow: '0 4px 6px rgba(16, 185, 129, 0.2)' }} disabled={marking === p.requestId || (p.borrowerComplaint && !p.borrowerReceived)}
+                            onClick={() => markPaid(p.requestId, p.lenderName, p.lenderUpi, p.payLender, false)}>
+                            {marking === p.requestId ? "Saving…" : `✓ Pay ₹${p.payLender} to Lender`}
                           </button>
                         </div>
                       )}
@@ -433,8 +436,8 @@ function PayoutsTab({ apiFetch }) {
                           )}
                           <div style={{ display: "flex", gap: "6px", flexDirection: "column" }}>
                             <button style={{ ...S.btn(false), fontSize: 11 }}
-                              onClick={() => markPaid(p.requestId, p.lenderName, p.lenderUpi, p.payLender)}>
-                              Re-send & Mark Paid
+                              onClick={() => markPaid(p.requestId, p.lenderName, p.lenderUpi, p.payLender, true)}>
+                              Re-send & Provide UTR
                             </button>
                             <button style={{ ...S.btn(true), fontSize: 11, background: "#1a1a1a" }}
                               onClick={() => dismissDispute(p.requestId)}>

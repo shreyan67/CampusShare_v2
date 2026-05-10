@@ -2,6 +2,7 @@ require('dotenv').config()
 const express = require('express')
 const http = require('http')
 const cors = require('cors')
+const { initCronJobs } = require('./cron')
 const app = express()
 const server = http.createServer(app)
 const PORT = process.env.PORT || 4000
@@ -232,4 +233,5 @@ app.use((err, _req, res, _next) => {
 server.listen(PORT, () => {
   console.log(`\n🚀 CampusShare API → http://localhost:${PORT}`)
   console.log(`   Health: http://localhost:${PORT}/api/health\n`)
+  initCronJobs()
 })
