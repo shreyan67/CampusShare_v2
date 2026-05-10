@@ -2,7 +2,7 @@ const express = require('express')
 const { query, queryOne } = require('../db/pool')
 const { requireAuth } = require('../middleware/auth')
 const { sendPushNotification } = require('./push')
-const { emitToUser } = require('../socket')
+const { emitToUser, broadcast } = require('../socket')
 
 const router = express.Router()
 
@@ -96,6 +96,7 @@ router.post('/', requireAuth, async (req, res) => {
     ])
 
     res.status(201).json({ request: row })
+    broadcast('refresh:item-requests')
   } catch (err) {
     console.error('[item-requests POST]', err)
     res.status(500).json({ error: 'Failed to post request.' })
@@ -215,6 +216,7 @@ router.post('/:id/offers', requireAuth, async (req, res) => {
       url: '/?requests=mine'
     })
     emitToUser(r.requester_id, 'refresh:item-requests')
+    broadcast('refresh:item-requests')
 
     res.status(201).json({ offer })
   } catch (err) {
@@ -309,6 +311,7 @@ router.patch('/:id/offers/:offerId/accept', requireAuth, async (req, res) => {
     })
     emitToUser(offer.offerer_id, 'refresh:requests')
     emitToUser(req.userId, 'refresh:item-requests')
+    broadcast('refresh:item-requests')
 
     res.json({ success: true, borrowRequestId: borrowReq.id, itemId: item.id })
   } catch (err) {

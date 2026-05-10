@@ -594,23 +594,23 @@ function ListItemModal({ open, onClose, onSuccess, editItemData = null }) {
         img.src = e.target.result
         img.onload = () => {
           const canvas = document.createElement('canvas')
-          const MAX_WIDTH = 800
-          const MAX_HEIGHT = 800
+          // 600px max — enough for a crisp card thumbnail, keeps files tiny (~50-80KB)
+          const MAX = 600
           let width = img.width
           let height = img.height
-
           if (width > height) {
-            if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH }
+            if (width > MAX) { height = Math.round(height * MAX / width); width = MAX }
           } else {
-            if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT }
+            if (height > MAX) { width = Math.round(width * MAX / height); height = MAX }
           }
           canvas.width = width
           canvas.height = height
           const ctx = canvas.getContext('2d')
           ctx.drawImage(img, 0, 0, width, height)
+          // quality 0.65 = visually good for thumbnails, ~4-6x smaller than original
           canvas.toBlob((blob) => {
             resolve(new File([blob], file.name, { type: 'image/jpeg', lastModified: Date.now() }))
-          }, 'image/jpeg', 0.8)
+          }, 'image/jpeg', 0.65)
         }
       }
     })
@@ -649,6 +649,13 @@ function ListItemModal({ open, onClose, onSuccess, editItemData = null }) {
     const r = editItemData ? await api.editItem(editItemData.id, payload) : await api.listItem(payload)
     setLoading(false)
     if (r.error) return setErr(r.error)
+
+    // 🔥 Optimistic UI: Update local state immediately so user sees the change INSTANTLY
+    if (editItemData && r.item) {
+      setItems(prev => prev.map(it => it.id === editItemData.id ? { ...it, ...r.item } : it))
+      allItemsRef.current = allItemsRef.current.map(it => it.id === editItemData.id ? { ...it, ...r.item } : it)
+    }
+
     onSuccess(); onClose()
   }
 
@@ -1451,16 +1458,17 @@ function ItemRequestsSection({ showToast, currentUserId, reload: reloadActivity,
     if (r?.error) { setLoading(false); return }
     const newReqs = r.requests || []
     // Smart merge — only update if something changed so inputs aren't disrupted
-    const prev = JSON.stringify(reqsRefIRS.current.map(x => ({ id: x.id, status: x.status, offer_count: x.offer_count })))
-    const next = JSON.stringify(newReqs.map(x => ({ id: x.id, status: x.status, offer_count: x.offer_count })))
+    // Included 'title' and 'desc' so edits reflect immediately
+    const prev = JSON.stringify(reqsRefIRS.current.map(x => ({ id: x.id, status: x.status, offer_count: x.offer_count, title: x.title, desc: x.description })))
+    const next = JSON.stringify(newReqs.map(x => ({ id: x.id, status: x.status, offer_count: x.offer_count, title: x.title, desc: x.description })))
     if (prev !== next) { reqsRefIRS.current = newReqs; setRequests(newReqs) }
     setLoading(false)
   }
 
   useEffect(() => {
     load()
-    pollRef.current = setInterval(() => load(), 15000)
-    return () => clearInterval(pollRef.current)
+    const unsub = socketClient.on('refresh:item-requests', load)
+    return () => unsub()
   }, []) // eslint-disable-line
 
   async function loadOffers(reqId) {
@@ -3072,7 +3080,6 @@ export default function App() {
           if (r?.unread) {
             const map = {}
             let total = 0
-            const requestOfferUnreadIds = new Set()
             r.unread.forEach(msg => {
               map[msg.request_id] = (map[msg.request_id] || 0) + 1
               total++
@@ -3081,6 +3088,10 @@ export default function App() {
             setTotalUnread(total)
           }
         })
+      }),
+      // Server tells us the marketplace changed (new item, edit, or delete)
+      socketClient.on('refresh:items', () => {
+        setTick(t => t + 1)
       }),
     ]
 
@@ -3148,8 +3159,15 @@ export default function App() {
     api.getItems(itemParams).then(itemsRes => {
       if (fetchIdRef.current !== myId) return
       if (!itemsRes?.error) {
-        const prev = JSON.stringify(allItemsRef.current.map(x => ({ id: x.id, status: x.status, price_per_day: x.price_per_day, listing_type: x.listing_type })))
-        const next = JSON.stringify((itemsRes.items || []).map(x => ({ id: x.id, status: x.status, price_per_day: x.price_per_day, listing_type: x.listing_type })))
+        // Expanded comparison: include title and notes so edits are reflected immediately
+        const prev = JSON.stringify(allItemsRef.current.map(x => ({ 
+          id: x.id, status: x.status, price: x.price_per_day, type: x.listing_type,
+          title: x.title, notes: x.condition_notes, imgCount: (x.images || []).length
+        })))
+        const next = JSON.stringify((itemsRes.items || []).map(x => ({ 
+          id: x.id, status: x.status, price: x.price_per_day, type: x.listing_type,
+          title: x.title, notes: x.condition_notes, imgCount: (x.images || []).length
+        })))
         if (prev !== next) {
           setItems(itemsRes.items || [])
           allItemsRef.current = itemsRes.items || []

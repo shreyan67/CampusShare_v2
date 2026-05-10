@@ -64,4 +64,13 @@ function emitToUser(userId, event, payload = {}) {
   }
 }
 
-module.exports = { init, emitToUser }
+/**
+ * Emit a real-time event to ALL connected users.
+ * Use this for marketplace updates.
+ */
+function broadcast(event, payload = {}) {
+  if (!io) return
+  io.emit(event, payload)
+}
+
+module.exports = { init, emitToUser, broadcast }

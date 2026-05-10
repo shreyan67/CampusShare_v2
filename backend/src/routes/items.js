@@ -2,6 +2,7 @@ const express  = require('express')
 const multer   = require('multer')
 const { query, queryOne } = require('../db/pool')
 const { requireAuth } = require('../middleware/auth')
+const { broadcast } = require('../socket')
 
 const router  = express.Router()
 
@@ -136,6 +137,7 @@ VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *
 ])
 
     res.status(201).json({ item })
+    broadcast('refresh:items')
   } catch (err) { console.error(err); res.status(500).json({ error: 'Failed to list item.' }) }
 })
 
@@ -148,6 +150,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
     if (item.status === 'borrowed') return res.status(409).json({ error: 'Cannot delete while borrowed.' })
     await query('DELETE FROM items WHERE id=$1', [req.params.id])
     res.json({ success: true })
+    broadcast('refresh:items')
   } catch (err) { console.error(err); res.status(500).json({ error: 'Failed.' }) }
 })
 
@@ -171,21 +174,30 @@ router.patch('/:id', requireAuth, upload.array('photos', 3), async (req, res) =>
     const validTxTypes = ['rent','sell','donate','lend']
     const txType = validTxTypes.includes(transactionType) ? transactionType : paid ? 'rent' : 'lend'
 
-    // If new photos were uploaded, replace old ones (basic implementation).
-    let images = item.images
+    // Only update images if new photos were uploaded.
+    // This prevents slow DB round-trips for massive base64 strings when only editing text.
+    let updated;
     if (req.files && req.files.length > 0) {
-      images = req.files.map(f => `data:${f.mimetype};base64,${f.buffer.toString('base64')}`)
+      const images = req.files.map(f => `data:${f.mimetype};base64,${f.buffer.toString('base64')}`)
+      updated = await queryOne(`
+        UPDATE items
+        SET title=$1, category=$2, condition_notes=$3, max_borrow_days=$4, is_paid=$5, price_per_day=$6, allow_multiple=$7, transaction_type=$8, images=$9
+        WHERE id=$10 RETURNING *
+      `, [
+        title.trim(), category, (conditionNotes||'').trim(), +maxBorrowDays||7, paid, price, allowMultiple === 'true' || allowMultiple === true, txType, images, req.params.id
+      ])
+    } else {
+      updated = await queryOne(`
+        UPDATE items
+        SET title=$1, category=$2, condition_notes=$3, max_borrow_days=$4, is_paid=$5, price_per_day=$6, allow_multiple=$7, transaction_type=$8
+        WHERE id=$9 RETURNING *
+      `, [
+        title.trim(), category, (conditionNotes||'').trim(), +maxBorrowDays||7, paid, price, allowMultiple === 'true' || allowMultiple === true, txType, req.params.id
+      ])
     }
 
-    const updated = await queryOne(`
-      UPDATE items
-      SET title=$1, category=$2, condition_notes=$3, max_borrow_days=$4, is_paid=$5, price_per_day=$6, allow_multiple=$7, transaction_type=$8, images=$9
-      WHERE id=$10 RETURNING *
-    `, [
-      title.trim(), category, (conditionNotes||'').trim(), +maxBorrowDays||7, paid, price, allowMultiple === 'true' || allowMultiple === true, txType, images, req.params.id
-    ])
-
     res.json({ item: updated })
+    broadcast('refresh:items')
   } catch (err) { console.error(err); res.status(500).json({ error: 'Failed to edit item.' }) }
 })
 
