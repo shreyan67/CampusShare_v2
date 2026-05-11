@@ -13,8 +13,9 @@ function ensureFirebase() {
     return false;
   }
   try {
-    // Parse — handle both raw JSON string and env vars with escaped chars
     const creds = JSON.parse(process.env.FIREBASE_CREDENTIALS);
+    // Fix: Render env vars store \n as literal backslash-n; convert to real newlines for RSA signing
+    if (creds.private_key) creds.private_key = creds.private_key.replace(/\\n/g, '\n');
     if (!admin.apps.length) {
       admin.initializeApp({ credential: admin.credential.cert(creds) });
     }
