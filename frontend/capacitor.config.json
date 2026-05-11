@@ -1,0 +1,14 @@
+{
+  "appId": "com.campusshare.app",
+  "appName": "CampusShare",
+  "webDir": "dist",
+  "server": {
+    "hostname": "www.campusshare.co.in",
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    }
+  }
+}

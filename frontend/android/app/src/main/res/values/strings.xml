@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CampusShare</string>
+    <string name="title_activity_main">CampusShare</string>
+    <string name="package_name">com.campusshare.app</string>
+    <string name="custom_url_scheme">com.campusshare.app</string>
+</resources>

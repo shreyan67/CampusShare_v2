@@ -1,7 +1,27 @@
 const express = require('express');
 const router = express.Router();
 const webpush = require('web-push');
+const admin = require('firebase-admin');
 const { pool } = require('../db/pool');
+
+// Lazy Firebase Admin setup
+let firebaseReady = false;
+function ensureFirebase() {
+  if (firebaseReady) return true;
+  if (!process.env.FIREBASE_CREDENTIALS) {
+    console.warn('[push] FIREBASE_CREDENTIALS not set — native FCM push disabled. Add FIREBASE_CREDENTIALS JSON string in .env');
+    return false;
+  }
+  try {
+    const serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS);
+    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+    firebaseReady = true;
+    return true;
+  } catch (e) {
+    console.error('[push] Invalid FIREBASE_CREDENTIALS JSON string');
+    return false;
+  }
+}
 
 // Lazy VAPID setup — only called when first needed, so missing env vars
 // don't crash the server at startup (they just disable push silently).
@@ -78,9 +98,26 @@ async function sendPushNotification(userId, payload) {
 
     for (const row of rows) {
       try {
-        await webpush.sendNotification(row.subscription, JSON.stringify(payload));
+        if (row.subscription.fcm_token) {
+          // Send via Firebase Cloud Messaging (Native App)
+          if (ensureFirebase()) {
+            await admin.messaging().send({
+              token: row.subscription.fcm_token,
+              notification: {
+                title: payload.title,
+                body: payload.body,
+              },
+              data: { url: payload.url || '/' }
+            });
+          }
+        } else {
+          // Send via Web Push (PWA)
+          if (ensureVapid()) {
+            await webpush.sendNotification(row.subscription, JSON.stringify(payload));
+          }
+        }
       } catch (err) {
-        if (err.statusCode === 410 || err.statusCode === 404) {
+        if (err.statusCode === 410 || err.statusCode === 404 || err.code === 'messaging/registration-token-not-registered') {
           // Subscription has expired or is no longer valid
           await pool.query(
             'DELETE FROM push_subscriptions WHERE user_id = $1 AND subscription::text = $2',

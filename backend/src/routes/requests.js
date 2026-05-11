@@ -120,7 +120,8 @@ router.patch('/:id/activate-after-payment', requireAuth, async (req, res) => {
     if (r.status !== 'selected') return res.status(409).json({ error: 'Request not in selected state.' })
     if (!r.payment_confirmed) return res.status(409).json({ error: 'Payment not confirmed yet.' })
 
-    const dueAt = new Date(Date.now() + r.requested_days * 864e5)
+    const noReturn = ['sell', 'donate'].includes(item.transaction_type)
+    const dueAt = noReturn ? null : new Date(Date.now() + r.requested_days * 864e5)
     const pin = Math.floor(1000 + Math.random() * 9000).toString()
 
     await query(
@@ -163,7 +164,8 @@ router.patch('/:id/finalize', requireAuth, async (req, res) => {
       return res.status(409).json({ error: 'Payment not confirmed yet.' })
     }
 
-    const dueAt = new Date(Date.now() + r.requested_days * 864e5)
+    const noReturn = ['sell', 'donate'].includes(item.transaction_type)
+    const dueAt = noReturn ? null : new Date(Date.now() + r.requested_days * 864e5)
     const pin = Math.floor(1000 + Math.random() * 9000).toString()
 
     // Mark this request active — pickup details flow begins

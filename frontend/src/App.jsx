@@ -3,7 +3,21 @@ import { createPortal } from 'react-dom'
 import * as api from './api.js'
 import { subscribeToPush } from './push.js'
 import * as socketClient from './socketClient.js'
+import { App as CapApp } from '@capacitor/app'
+import { Capacitor } from '@capacitor/core'
 
+if (Capacitor.isNativePlatform()) {
+  CapApp.addListener('backButton', ({ canGoBack }) => {
+    if (typeof window.closeTopModal === 'function' && window.closeTopModal()) {
+      return
+    }
+    if (canGoBack) {
+      window.history.back()
+    } else {
+      CapApp.exitApp()
+    }
+  })
+}
 // ── DESIGN TOKENS ─────────────────────────────────────────────────────────────
 const T = {
   navy: '#0F172A',
@@ -3153,18 +3167,27 @@ export default function App() {
   }, [anyModalOpen])
 
   useEffect(() => {
-    const handlePopState = () => {
+    const closeTopModal = () => {
       const m = modalsOpenRef.current
       // Close in priority order: chat > journey > activity > request > list
-      if (m.chat) { setChatRequest(null); return }
-      if (m.journey) { setLifecycleOpenMap({}); return }
-      if (m.activity) { setAct(false); return }
-      if (m.request) { setRequest(false); return }
-      if (m.list) { setList(false); return }
-      // Nothing open — let browser handle it (don't push state again)
+      if (m.chat) { setChatRequest(null); return true }
+      if (m.journey) { setLifecycleOpenMap({}); return true }
+      if (m.activity) { setAct(false); return true }
+      if (m.request) { setRequest(false); return true }
+      if (m.list) { setList(false); return true }
+      return false
+    }
+
+    window.closeTopModal = closeTopModal
+
+    const handlePopState = () => {
+      closeTopModal()
     }
     window.addEventListener('popstate', handlePopState)
-    return () => window.removeEventListener('popstate', handlePopState)
+    return () => {
+      window.removeEventListener('popstate', handlePopState)
+      delete window.closeTopModal
+    }
   }, []) // eslint-disable-line
 
   useEffect(() => {

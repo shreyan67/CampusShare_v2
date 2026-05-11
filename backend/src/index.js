@@ -10,6 +10,8 @@ const PORT = process.env.PORT || 4000
 // ===== SOCKET.IO =====
 const socketModule = require('./socket')
 const CORS_ORIGINS = [
+  'http://localhost',
+  'capacitor://localhost',
   'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:5174',

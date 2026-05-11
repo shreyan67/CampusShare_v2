@@ -1,3 +1,6 @@
+import { PushNotifications } from '@capacitor/push-notifications';
+import { Capacitor } from '@capacitor/core';
+
 // Registers service worker and subscribes to Web Push (VAPID-based).
 // This is what enables background notifications even when the app is closed.
 
@@ -11,6 +14,48 @@ function urlB64ToUint8Array(base64String) {
 }
 
 export async function subscribeToPush(token) {
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+
+  // --- NATIVE ANDROID/IOS (FIREBASE FCM) ---
+  if (Capacitor.isNativePlatform()) {
+    try {
+      let permStatus = await PushNotifications.checkPermissions();
+      if (permStatus.receive === 'prompt') {
+        permStatus = await PushNotifications.requestPermissions();
+      }
+      if (permStatus.receive !== 'granted') {
+        console.warn('[Push] Native notification permission denied.');
+        return;
+      }
+
+      await PushNotifications.register();
+
+      // IMPORTANT: Remove all previous listeners to avoid duplicates when React remounts
+      await PushNotifications.removeAllListeners();
+
+      PushNotifications.addListener('registration', async (tokenObj) => {
+        console.log('[Push] Firebase token obtained');
+        await fetch(`${apiUrl}/push/subscribe`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ subscription: { fcm_token: tokenObj.value }, type: 'user' })
+        });
+      });
+
+      PushNotifications.addListener('registrationError', (error) => {
+        console.error('[Push] FCM Registration Error:', error);
+      });
+
+    } catch (err) {
+      console.error('[Push] Native Push Error:', err);
+    }
+    return; // Exit here so we don't try to register Web Push on mobile
+  }
+
+  // --- WEB PWA (VAPID) ---
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
     console.warn('[Push] Service workers or PushManager not supported.');
     return;
@@ -46,7 +91,6 @@ export async function subscribeToPush(token) {
     }
 
     // Send subscription to backend
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
     const res = await fetch(`${apiUrl}/push/subscribe`, {
       method: 'POST',
       headers: {
