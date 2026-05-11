@@ -1,9 +1,6 @@
 import { PushNotifications } from '@capacitor/push-notifications';
 import { Capacitor } from '@capacitor/core';
 
-// Registers service worker and subscribes to Web Push (VAPID-based).
-// This is what enables background notifications even when the app is closed.
-
 const VAPID_PUBLIC_KEY = "BIuW0xcAAAN5e2bk9EoNmQBh_7bRKwjC7AI2lPimt7lkOdbNBe1MfwqL_ku10h3LmsFO9xzod9O5an7m5dTwyZ4";
 
 function urlB64ToUint8Array(base64String) {
@@ -16,81 +13,100 @@ function urlB64ToUint8Array(base64String) {
 export async function subscribeToPush(token) {
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
-  // --- NATIVE ANDROID/IOS (FIREBASE FCM) ---
+  // ── NATIVE ANDROID/IOS (Firebase FCM) ────────────────────────────────────
   if (Capacitor.isNativePlatform()) {
     try {
+      // 1. Check / request permission
       let permStatus = await PushNotifications.checkPermissions();
+      console.log('[Push] Permission status:', permStatus.receive);
+
       if (permStatus.receive === 'prompt') {
         permStatus = await PushNotifications.requestPermissions();
+        console.log('[Push] After request:', permStatus.receive);
       }
+
       if (permStatus.receive !== 'granted') {
         console.warn('[Push] Native notification permission denied.');
         return;
       }
 
-      await PushNotifications.register();
-
-      // IMPORTANT: Remove all previous listeners to avoid duplicates when React remounts
+      // 2. Remove old listeners BEFORE registering, then add fresh ones
       await PushNotifications.removeAllListeners();
 
+      // 3. Attach listeners BEFORE calling register()
       PushNotifications.addListener('registration', async (tokenObj) => {
-        console.log('[Push] Firebase token obtained');
-        await fetch(`${apiUrl}/push/subscribe`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ subscription: { fcm_token: tokenObj.value }, type: 'user' })
-        });
+        const fcmToken = tokenObj.value;
+        console.log('[Push] FCM token received:', fcmToken.slice(0, 30) + '...');
+
+        try {
+          const resp = await fetch(`${apiUrl}/push/subscribe`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ subscription: { fcm_token: fcmToken }, type: 'user' })
+          });
+          const data = await resp.json();
+          console.log('[Push] Subscription saved to server:', data);
+        } catch (err) {
+          console.error('[Push] Failed to save FCM token to server:', err);
+        }
       });
 
       PushNotifications.addListener('registrationError', (error) => {
-        console.error('[Push] FCM Registration Error:', error);
+        console.error('[Push] FCM Registration Error:', JSON.stringify(error));
       });
+
+      PushNotifications.addListener('pushNotificationReceived', (notification) => {
+        // App is in foreground — show it as an in-app alert or toast
+        console.log('[Push] Foreground notification received:', notification);
+      });
+
+      PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+        console.log('[Push] Notification tapped:', action);
+      });
+
+      // 4. Now register — this triggers the 'registration' event above
+      await PushNotifications.register();
+      console.log('[Push] PushNotifications.register() called');
 
     } catch (err) {
       console.error('[Push] Native Push Error:', err);
     }
-    return; // Exit here so we don't try to register Web Push on mobile
+    return; // Never fall through to Web Push on native
   }
 
-  // --- WEB PWA (VAPID) ---
+  // ── WEB PWA (VAPID) ────────────────────────────────────────────────────────
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
     console.warn('[Push] Service workers or PushManager not supported.');
     return;
   }
 
   try {
-    // Register SW — updateViaCache:'none' ensures we always get the latest sw.js
     const registration = await navigator.serviceWorker.register('/sw.js', {
       updateViaCache: 'none'
     });
-
-    // Wait for SW to be active (handles fresh install + existing SW cases)
     await navigator.serviceWorker.ready;
     console.log('[Push] Service Worker is active.');
 
-    // Ask for notification permission
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') {
       console.warn('[Push] Notification permission denied.');
       return;
     }
 
-    // Check if already subscribed — reuse existing subscription if valid
     let subscription = await registration.pushManager.getSubscription();
     if (!subscription) {
       subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC_KEY)
       });
-      console.log('[Push] New push subscription created.');
+      console.log('[Push] New VAPID subscription created.');
     } else {
-      console.log('[Push] Reusing existing push subscription.');
+      console.log('[Push] Reusing existing VAPID subscription.');
     }
 
-    // Send subscription to backend
     const res = await fetch(`${apiUrl}/push/subscribe`, {
       method: 'POST',
       headers: {
@@ -101,11 +117,11 @@ export async function subscribeToPush(token) {
     });
 
     if (res.ok) {
-      console.log('[Push] Successfully registered with server.');
+      console.log('[Push] VAPID subscription saved to server ✓');
     } else {
       console.warn('[Push] Server registration failed:', res.status);
     }
   } catch (err) {
-    console.error('[Push] Subscription failed:', err);
+    console.error('[Push] Web Push subscription failed:', err);
   }
 }

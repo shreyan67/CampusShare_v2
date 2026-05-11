@@ -4,32 +4,35 @@ const webpush = require('web-push');
 const admin = require('firebase-admin');
 const { pool } = require('../db/pool');
 
-// Lazy Firebase Admin setup
+// ── Firebase Admin (for native FCM) ──────────────────────────────────────────
 let firebaseReady = false;
 function ensureFirebase() {
   if (firebaseReady) return true;
   if (!process.env.FIREBASE_CREDENTIALS) {
-    console.warn('[push] FIREBASE_CREDENTIALS not set — native FCM push disabled. Add FIREBASE_CREDENTIALS JSON string in .env');
+    console.warn('[push] FIREBASE_CREDENTIALS not set — native FCM push disabled.');
     return false;
   }
   try {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS);
-    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+    // Parse — handle both raw JSON string and env vars with escaped chars
+    const creds = JSON.parse(process.env.FIREBASE_CREDENTIALS);
+    if (!admin.apps.length) {
+      admin.initializeApp({ credential: admin.credential.cert(creds) });
+    }
     firebaseReady = true;
+    console.log('[push] Firebase Admin initialised ✓');
     return true;
   } catch (e) {
-    console.error('[push] Invalid FIREBASE_CREDENTIALS JSON string');
+    console.error('[push] Failed to parse FIREBASE_CREDENTIALS:', e.message);
     return false;
   }
 }
 
-// Lazy VAPID setup — only called when first needed, so missing env vars
-// don't crash the server at startup (they just disable push silently).
+// ── VAPID (for web PWA) ───────────────────────────────────────────────────────
 let vapidReady = false;
 function ensureVapid() {
   if (vapidReady) return true;
   if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
-    console.warn('[push] VAPID keys not set — push notifications disabled. Add VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY in Render environment variables.');
+    console.warn('[push] VAPID keys not set — web push disabled.');
     return false;
   }
   webpush.setVapidDetails(
@@ -41,7 +44,11 @@ function ensureVapid() {
   return true;
 }
 
-// Subscribe route
+// Eagerly attempt initialisation at startup so log messages appear early
+ensureFirebase();
+ensureVapid();
+
+// ── POST /api/push/subscribe ──────────────────────────────────────────────────
 router.post('/subscribe', async (req, res) => {
   try {
     const { subscription, type, adminSecret } = req.body;
@@ -53,16 +60,13 @@ router.post('/subscribe', async (req, res) => {
       }
       userId = 'admin';
     } else {
-      // For users, we need them to be authenticated
-      // We will extract token from headers
       const authHeader = req.headers['authorization'];
       const token = authHeader && authHeader.split(' ')[1];
       if (!token) return res.status(401).json({ error: 'No token' });
-      
       const jwt = require('jsonwebtoken');
       try {
-        const user = jwt.verify(token, process.env.JWT_SECRET);
-        userId = user.id;
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        userId = decoded.id;
       } catch (err) {
         return res.status(403).json({ error: 'Invalid token' });
       }
@@ -72,64 +76,104 @@ router.post('/subscribe', async (req, res) => {
       return res.status(400).json({ error: 'Missing data' });
     }
 
-    // Save to database
-    await pool.query(
-      `INSERT INTO push_subscriptions (user_id, subscription) 
-       VALUES ($1, $2) 
-       ON CONFLICT (user_id, subscription) DO NOTHING`,
-      [userId, JSON.stringify(subscription)]
-    );
+    const isFcm = !!(subscription.fcm_token);
+
+    if (isFcm) {
+      // For native apps: upsert by user_id so there is always exactly ONE FCM token per user.
+      // We delete old FCM rows for this user first, then insert the fresh token.
+      await pool.query(
+        `DELETE FROM push_subscriptions WHERE user_id = $1 AND subscription::text LIKE '%fcm_token%'`,
+        [userId]
+      );
+      await pool.query(
+        `INSERT INTO push_subscriptions (user_id, subscription) VALUES ($1, $2)`,
+        [userId, JSON.stringify(subscription)]
+      );
+      console.log(`[push] FCM token registered for user ${userId}`);
+    } else {
+      // For PWA: upsert based on endpoint to avoid duplicates
+      await pool.query(
+        `INSERT INTO push_subscriptions (user_id, subscription)
+         VALUES ($1, $2)
+         ON CONFLICT (user_id, subscription) DO NOTHING`,
+        [userId, JSON.stringify(subscription)]
+      );
+    }
 
     res.status(201).json({ success: true });
   } catch (err) {
-    console.error('Push subscribe error:', err);
+    console.error('[push] Subscribe error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-// Utility to send push notification
+// ── sendPushNotification(userId, payload) ─────────────────────────────────────
 async function sendPushNotification(userId, payload) {
-  if (!ensureVapid()) return; // silently skip if VAPID keys not configured
   try {
     const { rows } = await pool.query(
       'SELECT subscription FROM push_subscriptions WHERE user_id = $1',
       [userId]
     );
 
+    if (rows.length === 0) {
+      console.log(`[push] No subscriptions for user ${userId}`);
+      return;
+    }
+
     for (const row of rows) {
+      const sub = row.subscription; // Postgres returns JSON column already parsed
+
       try {
-        if (row.subscription.fcm_token) {
-          // Send via Firebase Cloud Messaging (Native App)
-          if (ensureFirebase()) {
-            await admin.messaging().send({
-              token: row.subscription.fcm_token,
+        if (sub && sub.fcm_token) {
+          // ── NATIVE: Firebase Cloud Messaging ──
+          if (!ensureFirebase()) {
+            console.warn('[push] Skipping FCM — Firebase not initialised');
+            continue;
+          }
+          console.log(`[push] Sending FCM to token: ${sub.fcm_token.slice(0, 20)}...`);
+          await admin.messaging().send({
+            token: sub.fcm_token,
+            notification: {
+              title: payload.title,
+              body: payload.body,
+            },
+            android: {
+              priority: 'high',
               notification: {
-                title: payload.title,
-                body: payload.body,
-              },
-              data: { url: payload.url || '/' }
-            });
-          }
+                sound: 'default',
+                channelId: 'default',
+              }
+            },
+            data: { url: payload.url || '/' }
+          });
+          console.log(`[push] FCM sent ✓ to user ${userId}`);
         } else {
-          // Send via Web Push (PWA)
-          if (ensureVapid()) {
-            await webpush.sendNotification(row.subscription, JSON.stringify(payload));
+          // ── WEB: VAPID / Service Worker Push ──
+          if (!ensureVapid()) {
+            console.warn('[push] Skipping VAPID — keys not set');
+            continue;
           }
+          await webpush.sendNotification(sub, JSON.stringify(payload));
+          console.log(`[push] VAPID sent ✓ to user ${userId}`);
         }
       } catch (err) {
-        if (err.statusCode === 410 || err.statusCode === 404 || err.code === 'messaging/registration-token-not-registered') {
-          // Subscription has expired or is no longer valid
+        const expired = err.statusCode === 410 || err.statusCode === 404 ||
+          err.code === 'messaging/registration-token-not-registered' ||
+          err.code === 'messaging/invalid-registration-token';
+
+        if (expired) {
+          console.warn(`[push] Stale subscription for user ${userId}, removing...`);
           await pool.query(
             'DELETE FROM push_subscriptions WHERE user_id = $1 AND subscription::text = $2',
-            [userId, JSON.stringify(row.subscription)]
+            [userId, JSON.stringify(sub)]
           );
         } else {
-          console.error('Error sending push:', err);
+          console.error(`[push] Error sending to user ${userId}:`, err.message || err);
         }
       }
     }
   } catch (err) {
-    console.error('Failed to get push subscriptions from DB:', err);
+    console.error('[push] DB query failed in sendPushNotification:', err);
   }
 }
 
