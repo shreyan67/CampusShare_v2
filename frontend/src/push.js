@@ -10,33 +10,37 @@ function urlB64ToUint8Array(base64String) {
   return new Uint8Array([...rawData].map(char => char.charCodeAt(0)));
 }
 
+// Dispatch a visible toast from push.js (read by App.jsx's toast listener)
+function pushToast(msg) {
+  window.dispatchEvent(new CustomEvent('push:status', { detail: msg }));
+}
+
 export async function subscribeToPush(token) {
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
   // ── NATIVE ANDROID/IOS (Firebase FCM) ────────────────────────────────────
   if (Capacitor.isNativePlatform()) {
     try {
-      // 1. Check / request permission
+      // 1. Check current permission
       let permStatus = await PushNotifications.checkPermissions();
-      console.log('[Push] Permission status:', permStatus.receive);
+      pushToast(`[Push] Permission: ${permStatus.receive}`);
 
       if (permStatus.receive === 'prompt') {
         permStatus = await PushNotifications.requestPermissions();
-        console.log('[Push] After request:', permStatus.receive);
+        pushToast(`[Push] After request: ${permStatus.receive}`);
       }
 
       if (permStatus.receive !== 'granted') {
-        console.warn('[Push] Native notification permission denied.');
+        pushToast('[Push] DENIED — go to Settings > Apps > CampusShare > Notifications and enable');
         return;
       }
 
-      // 2. Remove old listeners BEFORE registering, then add fresh ones
+      // 2. Remove old listeners, then add fresh ones BEFORE register()
       await PushNotifications.removeAllListeners();
 
-      // 3. Attach listeners BEFORE calling register()
       PushNotifications.addListener('registration', async (tokenObj) => {
         const fcmToken = tokenObj.value;
-        console.log('[Push] FCM token received:', fcmToken.slice(0, 30) + '...');
+        pushToast('[Push] FCM token obtained! Saving to server...');
 
         try {
           const resp = await fetch(`${apiUrl}/push/subscribe`, {
@@ -47,34 +51,37 @@ export async function subscribeToPush(token) {
             },
             body: JSON.stringify({ subscription: { fcm_token: fcmToken }, type: 'user' })
           });
-          const data = await resp.json();
-          console.log('[Push] Subscription saved to server:', data);
+          if (resp.ok) {
+            pushToast('[Push] ✅ FCM registered! Notifications are active.');
+          } else {
+            pushToast(`[Push] ❌ Server rejected FCM token: ${resp.status}`);
+          }
         } catch (err) {
-          console.error('[Push] Failed to save FCM token to server:', err);
+          pushToast(`[Push] ❌ Network error saving token: ${err.message}`);
         }
       });
 
       PushNotifications.addListener('registrationError', (error) => {
-        console.error('[Push] FCM Registration Error:', JSON.stringify(error));
+        pushToast(`[Push] ❌ FCM Error: ${JSON.stringify(error)}`);
       });
 
       PushNotifications.addListener('pushNotificationReceived', (notification) => {
-        // App is in foreground — show it as an in-app alert or toast
-        console.log('[Push] Foreground notification received:', notification);
+        // App is in foreground — show as in-app toast
+        pushToast(`📣 ${notification.title}: ${notification.body}`);
       });
 
       PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
         console.log('[Push] Notification tapped:', action);
       });
 
-      // 4. Now register — this triggers the 'registration' event above
+      // 3. Register — triggers 'registration' or 'registrationError'
       await PushNotifications.register();
-      console.log('[Push] PushNotifications.register() called');
+      pushToast('[Push] register() called — waiting for FCM token...');
 
     } catch (err) {
-      console.error('[Push] Native Push Error:', err);
+      pushToast(`[Push] Fatal error: ${err.message}`);
     }
-    return; // Never fall through to Web Push on native
+    return;
   }
 
   // ── WEB PWA (VAPID) ────────────────────────────────────────────────────────
@@ -88,13 +95,9 @@ export async function subscribeToPush(token) {
       updateViaCache: 'none'
     });
     await navigator.serviceWorker.ready;
-    console.log('[Push] Service Worker is active.');
 
     const permission = await Notification.requestPermission();
-    if (permission !== 'granted') {
-      console.warn('[Push] Notification permission denied.');
-      return;
-    }
+    if (permission !== 'granted') return;
 
     let subscription = await registration.pushManager.getSubscription();
     if (!subscription) {
@@ -102,12 +105,9 @@ export async function subscribeToPush(token) {
         userVisibleOnly: true,
         applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC_KEY)
       });
-      console.log('[Push] New VAPID subscription created.');
-    } else {
-      console.log('[Push] Reusing existing VAPID subscription.');
     }
 
-    const res = await fetch(`${apiUrl}/push/subscribe`, {
+    await fetch(`${apiUrl}/push/subscribe`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -115,13 +115,7 @@ export async function subscribeToPush(token) {
       },
       body: JSON.stringify({ subscription, type: 'user' })
     });
-
-    if (res.ok) {
-      console.log('[Push] VAPID subscription saved to server ✓');
-    } else {
-      console.warn('[Push] Server registration failed:', res.status);
-    }
   } catch (err) {
-    console.error('[Push] Web Push subscription failed:', err);
+    console.error('[Push] Web Push failed:', err);
   }
 }
