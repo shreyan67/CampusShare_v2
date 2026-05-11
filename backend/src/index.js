@@ -87,6 +87,30 @@ app.get('/api/debug/firebase', async (req, res) => {
   }
 })
 
+// ===== DEBUG: Send test push to a specific user =====
+app.get('/api/debug/test-push/:userId', async (req, res) => {
+  if (req.query.key !== process.env.ADMIN_SECRET) return res.status(403).json({ error: 'Unauthorized' })
+  const { sendPushNotification } = require('./routes/push')
+  const { pool } = require('./db/pool')
+
+  // Check what subscriptions exist for this user
+  const { rows } = await pool.query('SELECT subscription FROM push_subscriptions WHERE user_id=$1', [req.params.userId])
+  if (rows.length === 0) return res.json({ error: 'No subscriptions found for this user', userId: req.params.userId })
+
+  const subTypes = rows.map(r => r.subscription?.fcm_token ? 'FCM' : 'VAPID')
+
+  try {
+    await sendPushNotification(req.params.userId, {
+      title: '🔔 Test Notification',
+      body: 'If you see this, FCM is working!',
+      url: '/'
+    })
+    res.json({ sent: true, subscriptions: subTypes, count: rows.length })
+  } catch (e) {
+    res.json({ sent: false, error: e.message, subscriptions: subTypes })
+  }
+})
+
 // ===== ADMIN ROUTES =====
 
 // 👉 View all items
