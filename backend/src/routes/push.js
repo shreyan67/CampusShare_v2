@@ -66,7 +66,7 @@ router.post('/subscribe', async (req, res) => {
       const jwt = require('jsonwebtoken');
       try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        userId = decoded.id;
+        userId = decoded.sub || decoded.id; // tokens use 'sub' field
       } catch (err) {
         return res.status(403).json({ error: 'Invalid token' });
       }
