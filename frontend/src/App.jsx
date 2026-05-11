@@ -2525,10 +2525,10 @@ function ActivityModal({ open, onClose, refresh, showToast, defaultTab, targetId
     }
     fetchReqs(false)
     // Only poll when no input is focused (pause ref). Also skip if Journey modal open.
-    // Interval raised to 20s to avoid DB connection saturation.
+    // Interval raised to 60s — socket events handle real-time updates.
     pollRef.current = setInterval(() => {
       if (!pausePollRef.current && document.visibilityState === 'visible') fetchReqs(true)
-    }, 20000)
+    }, 60000)
     return () => clearInterval(pollRef.current)
   }, [open]) // eslint-disable-line
 
@@ -3475,11 +3475,11 @@ export default function App() {
       } catch (e) { }
     }
 
-    // Fire once immediately, then every 8s (faster notifications)
+    // Fire once immediately, then every 60s — socket events handle real-time updates
     checkNewRequests(true)
     notifPollRef.current = setInterval(() => {
       if (document.visibilityState === 'visible') checkNewRequests(false)
-    }, 25000)
+    }, 60000)
 
     const handleVis = () => { if (document.visibilityState === 'visible') checkNewRequests() }
     document.addEventListener('visibilitychange', handleVis)
@@ -3507,13 +3507,13 @@ export default function App() {
     }
   }
 
-  // Simple tick-based polling — just increments tick every 8s to re-trigger the single fetch effect above.
+  // Simple tick-based polling — increments tick every 45s to re-trigger the single fetch effect above.
   // This is the ONLY polling mechanism. There is no second fetch effect.
   useEffect(() => {
     if (!user) return
     const interval = setInterval(() => {
       if (document.visibilityState === 'visible') setTick(t => t + 1)
-    }, 20000)
+    }, 45000)
     const handleVis = () => { if (document.visibilityState === 'visible') setTick(t => t + 1) }
     document.addEventListener('visibilitychange', handleVis)
     return () => {

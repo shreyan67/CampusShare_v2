@@ -68,6 +68,25 @@ app.use('/api/push',          require('./routes/push').router)
 // ===== HEALTH =====
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
 
+// ===== DEBUG: Firebase credential check (admin-only) =====
+app.get('/api/debug/firebase', async (req, res) => {
+  if (req.query.key !== process.env.ADMIN_SECRET) return res.status(403).json({ error: 'Unauthorized' })
+  const creds = process.env.FIREBASE_CREDENTIALS
+  if (!creds) return res.json({ ok: false, error: 'FIREBASE_CREDENTIALS not set' })
+  try {
+    const parsed = JSON.parse(creds)
+    res.json({
+      ok: true,
+      project_id: parsed.project_id,
+      client_email: parsed.client_email,
+      private_key_starts: parsed.private_key?.slice(0, 40),
+      has_newlines_in_key: parsed.private_key?.includes('\n'),
+    })
+  } catch (e) {
+    res.json({ ok: false, error: 'JSON parse failed: ' + e.message, raw_length: creds.length })
+  }
+})
+
 // ===== ADMIN ROUTES =====
 
 // 👉 View all items
