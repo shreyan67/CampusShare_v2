@@ -3199,12 +3199,16 @@ export default function App() {
     // Request push notification permission and subscribe for background notifications
     const token = localStorage.getItem('cs_token')
     if (token) {
-      if ('Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission().then(permission => {
-          if (permission === 'granted') subscribeToPush(token)
-        })
-      } else if ('Notification' in window && Notification.permission === 'granted') {
+      if (Capacitor.isNativePlatform()) {
         subscribeToPush(token)
+      } else {
+        if ('Notification' in window && Notification.permission === 'default') {
+          Notification.requestPermission().then(permission => {
+            if (permission === 'granted') subscribeToPush(token)
+          })
+        } else if ('Notification' in window && Notification.permission === 'granted') {
+          subscribeToPush(token)
+        }
       }
     }
 
