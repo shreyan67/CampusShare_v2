@@ -3,13 +3,8 @@ import { io } from 'socket.io-client'
 let socket = null
 const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
-// Persistent list of active listeners to survive socket re-connections
-const activeListeners = []
-
 export function connect(userId) {
-  if (socket?.connected) return socket
-
-  if (socket) socket.disconnect()
+  if (socket) return socket
 
   socket = io(BACKEND_URL, {
     transports: ['websocket', 'polling'],
@@ -19,10 +14,6 @@ export function connect(userId) {
   socket.on('connect', () => {
     console.log('[socket] connected:', socket.id)
     socket.emit('identify', userId)
-    // Re-apply all active listeners whenever we (re)connect
-    activeListeners.forEach(({ event, handler }) => {
-      socket.on(event, handler)
-    })
   })
 
   socket.on('disconnect', (reason) => {
@@ -49,16 +40,13 @@ export function getSocket() {
 
 /** Subscribe to an event. Returns an unsubscribe function. */
 export function on(event, handler) {
-  const listener = { event, handler }
-  activeListeners.push(listener)
-
-  if (socket?.connected) {
-    socket.on(event, handler)
+  // We expect connect() to be called before on(), so socket should exist.
+  // If it doesn't, we can't listen.
+  if (!socket) {
+    console.warn('[socket] tried to listen to', event, 'before connect')
+    return () => {}
   }
-
-  return () => {
-    const idx = activeListeners.indexOf(listener)
-    if (idx !== -1) activeListeners.splice(idx, 1)
-    if (socket) socket.off(event, handler)
-  }
+  
+  socket.on(event, handler)
+  return () => socket.off(event, handler)
 }

@@ -12,7 +12,7 @@ async function req(method, path, body) {
   const token = getToken()
   if (token) headers['Authorization'] = `Bearer ${token}`
 
-  let fetchOpts = { method, headers }
+  let fetchOpts = { method, headers, cache: 'no-store' }
 
   if (body instanceof FormData) {
     fetchOpts.body = body
