@@ -297,37 +297,20 @@ function Toast({ msg }) {
   )
 }
 
-let deferredPromptGlobal = null;
-let promptListeners = [];
-if (typeof window !== 'undefined') {
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPromptGlobal = e;
-    promptListeners.forEach(listener => listener(e));
-  });
-}
-
 function usePwaInstall() {
-  const [prompt, setPrompt] = useState(deferredPromptGlobal);
-
-  useEffect(() => {
-    setPrompt(deferredPromptGlobal);
-    const listener = (p) => setPrompt(p);
-    promptListeners.push(listener);
-    return () => { promptListeners = promptListeners.filter(l => l !== listener); };
-  }, []);
-
-  const installApp = async () => {
-    if (!deferredPromptGlobal) return;
-    deferredPromptGlobal.prompt();
-    const { outcome } = await deferredPromptGlobal.userChoice;
-    if (outcome === 'accepted') {
-      deferredPromptGlobal = null;
-      promptListeners.forEach(listener => listener(null));
-    }
+  // APK download hook — detects Android mobile and offers APK download
+  const isAndroid = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 900;
+  const showInstall = isAndroid && isMobile;
+  const installApp = () => {
+    const a = document.createElement('a');
+    a.href = '/campusshare.apk';
+    a.download = 'CampusShare.apk';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
-
-  return { showInstall: !!prompt, installApp };
+  return { showInstall, installApp };
 }
 
 // ── MODAL ─────────────────────────────────────────────────────────────────────
@@ -456,25 +439,23 @@ function AuthScreen({ onLogin }) {
         <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>College-verified peer sharing</div>
 
       </div>
-      {showInstall && (
-        <div style={{ padding: '0 32px', marginTop: '8px' }}>
-          <button
-            onClick={installApp}
-            style={{
-              padding: "8px 14px",
-              background: "#E8445A",
-              color: "#fff",
-              border: "none",
-              borderRadius: "8px",
-              cursor: "pointer",
-              fontWeight: 600,
-              fontSize: "13px"
-            }}
-          >
-            Install App 🚀
-          </button>
-        </div>
-      )}
+      <div style={{ padding: '0 32px', marginTop: '8px' }}>
+        <a
+          href="/campusshare.apk"
+          download="CampusShare.apk"
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '10px 18px',
+            background: 'linear-gradient(135deg, #E8445A, #C73050)',
+            color: '#fff', textDecoration: 'none',
+            borderRadius: 10, fontWeight: 700, fontSize: 13,
+            boxShadow: '0 4px 12px rgba(232,68,90,0.35)'
+          }}
+        >
+          ⬇️ Download App
+        </a>
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 5 }}>Android APK · Free · No Play Store needed</div>
+      </div>
 
       {/* Card */}
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 16px' }}>
@@ -3028,85 +3009,67 @@ function ChatModal({ request, open, onClose, onMarkRead }) {
 }
 
 function InstallPrompt() {
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [show, setShow] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    // Only target mobile
-    if (window.innerWidth > 768) return;
-
-    // Check if already installed
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-    if (isStandalone) return;
-    
-    // Check if dismissed recently
-    if (localStorage.getItem('cs_install_dismissed') === 'true') return;
-
-    const ua = window.navigator.userAgent;
-    const isIOSDevice = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
-    setIsIOS(isIOSDevice);
-
-    if (isIOSDevice) {
-      // iOS doesn't fire beforeinstallprompt. Show manually after a short delay
-      setTimeout(() => setShow(true), 3000);
-    }
-
-    const handler = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      setTimeout(() => setShow(true), 3000);
-    };
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
+    // Only show on Android mobile browsers (not iOS, not desktop)
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    const isMobile = window.innerWidth <= 900;
+    if (!isAndroid || !isMobile) return;
+    // Dismiss per session so it doesn't harass every page load
+    if (sessionStorage.getItem('cs_apk_dismissed')) return;
+    const t = setTimeout(() => setShow(true), 2500);
+    return () => clearTimeout(t);
   }, []);
 
-  if (!show) return null;
+  if (!show || dismissed) return null;
+
+  const dismiss = () => {
+    setDismissed(true);
+    sessionStorage.setItem('cs_apk_dismissed', '1');
+  };
 
   return (
     <div style={{
-      position: 'fixed', bottom: 0, left: 0, right: 0, 
-      background: '#fff', padding: '20px', borderTopLeftRadius: 20, borderTopRightRadius: 20,
-      boxShadow: '0 -4px 20px rgba(0,0,0,0.15)', zIndex: 999999,
-      display: 'flex', flexDirection: 'column', gap: 12,
-      animation: 'slideUp 0.3s ease-out'
+      position: 'fixed', bottom: 0, left: 0, right: 0,
+      background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
+      padding: '20px 20px 32px',
+      borderTopLeftRadius: 24, borderTopRightRadius: 24,
+      boxShadow: '0 -8px 40px rgba(0,0,0,0.4)',
+      zIndex: 999999,
+      display: 'flex', flexDirection: 'column', gap: 14,
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <h3 style={{ margin: '0 0 4px', fontSize: 18, color: '#0F172A', fontFamily: 'var(--font-head)' }}>Install CampusShare 🚀</h3>
-          <p style={{ margin: 0, fontSize: 13, color: '#475569' }}>
-            Get instant background notifications and a faster app experience!
-          </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 50, height: 50, borderRadius: 14, background: 'linear-gradient(135deg, #E8445A, #7C3AED)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, flexShrink: 0 }}>📲</div>
+          <div>
+            <div style={{ fontFamily: 'var(--font-head)', fontSize: 17, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px' }}>Install CampusShare App</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>Instant notifications · Faster · Better experience</div>
+          </div>
         </div>
-        <button onClick={() => { setShow(false); localStorage.setItem('cs_install_dismissed', 'true'); }} 
-          style={{ background: 'transparent', border: 'none', fontSize: 20, color: '#94A3B8', padding: '0 4px', cursor: 'pointer' }}>✕</button>
+        <button onClick={dismiss} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: 'rgba(255,255,255,0.5)', cursor: 'pointer', flexShrink: 0 }}>✕</button>
       </div>
 
-      {isIOS ? (
-        <div style={{ background: '#F8FAFC', padding: 12, borderRadius: 8, fontSize: 13, color: '#334155', border: '1px solid #E2E8F0' }}>
-          To install: tap the <strong>Share icon</strong> (box with arrow up) at the bottom of Safari, then select <strong>Add to Home Screen</strong> ＋
-        </div>
-      ) : (
-        <button className="btn-press"
-          onClick={async () => {
-            if (deferredPrompt) {
-              deferredPrompt.prompt();
-              const { outcome } = await deferredPrompt.userChoice;
-              if (outcome === 'accepted') {
-                setShow(false);
-              }
-              setDeferredPrompt(null);
-            } else {
-              // Fallback if button clicked before prompt is fully ready or browser blocked it
-              setShow(false);
-              alert("Tap the 3 dots in your browser menu and select 'Install App' or 'Add to Home Screen'.");
-            }
-          }}
-          style={{ background: '#7C3AED', color: '#fff', border: 'none', padding: 12, borderRadius: 10, fontWeight: 700, fontSize: 15, cursor: 'pointer' }}
-        >
-          Install App Now
-        </button>
-      )}
+      <a
+        href="/campusshare.apk"
+        download="CampusShare.apk"
+        onClick={dismiss}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          background: 'linear-gradient(135deg, #E8445A, #C73050)',
+          color: '#fff', textDecoration: 'none',
+          padding: '14px 20px', borderRadius: 14,
+          fontWeight: 700, fontSize: 16,
+          boxShadow: '0 4px 20px rgba(232,68,90,0.45)',
+        }}
+      >
+        ⬇️ Download App Now
+      </a>
+
+      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textAlign: 'center' }}>
+        Free · Android APK · No Play Store needed
+      </div>
     </div>
   );
 }
@@ -3733,9 +3696,9 @@ export default function App() {
                 {user.college_name} · peer lending
               </div>
               {showInstall && (
-                <button onClick={installApp} className="mobile-only" style={{ marginTop: 12, background: 'rgba(232, 68, 90, 0.2)', border: '1px solid rgba(232, 68, 90, 0.5)', borderRadius: 20, padding: '6px 14px', fontSize: 12, fontWeight: 700, color: '#fff', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, backdropFilter: 'blur(4px)' }}>
-                  <span>📲</span> Install App
-                </button>
+                <a href="/campusshare.apk" download="CampusShare.apk" className="mobile-only" style={{ marginTop: 12, background: 'rgba(232, 68, 90, 0.2)', border: '1px solid rgba(232, 68, 90, 0.5)', borderRadius: 20, padding: '6px 14px', fontSize: 12, fontWeight: 700, color: '#fff', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, backdropFilter: 'blur(4px)', textDecoration: 'none' }}>
+                  <span>⬇️</span> Download App
+                </a>
               )}
             </div>
             {/* Live stats chips */}
