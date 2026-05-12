@@ -68,64 +68,6 @@ app.use('/api/push',          require('./routes/push').router)
 // ===== HEALTH =====
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
 
-// ===== DEBUG: Firebase credential check (admin-only) =====
-app.get('/api/debug/firebase', async (req, res) => {
-  if (req.query.key !== process.env.ADMIN_SECRET) return res.status(403).json({ error: 'Unauthorized' })
-  const creds = process.env.FIREBASE_CREDENTIALS
-  if (!creds) return res.json({ ok: false, error: 'FIREBASE_CREDENTIALS not set' })
-  try {
-    const parsed = JSON.parse(creds)
-    res.json({
-      ok: true,
-      project_id: parsed.project_id,
-      client_email: parsed.client_email,
-      private_key_starts: parsed.private_key?.slice(0, 40),
-      has_newlines_in_key: parsed.private_key?.includes('\n'),
-    })
-  } catch (e) {
-    res.json({ ok: false, error: 'JSON parse failed: ' + e.message, raw_length: creds.length })
-  }
-})
-
-// ===== DEBUG: Send test push to a specific user =====
-app.get('/api/debug/test-push/:userId', async (req, res) => {
-  if (req.query.key !== process.env.ADMIN_SECRET) return res.status(403).json({ error: 'Unauthorized' })
-  const admin = require('firebase-admin')
-  const { pool } = require('./db/pool')
-
-  // Check what subscriptions exist
-  const { rows } = await pool.query('SELECT subscription FROM push_subscriptions WHERE user_id=$1', [req.params.userId])
-  if (rows.length === 0) return res.json({ error: 'No subscriptions found', userId: req.params.userId })
-
-  const fcmRow = rows.find(r => r.subscription?.fcm_token)
-  if (!fcmRow) return res.json({ error: 'No FCM subscription found (only VAPID)', rows: rows.map(r => Object.keys(r.subscription)) })
-
-  // Try to init Firebase if not already
-  try {
-    if (!admin.apps.length) {
-      const creds = JSON.parse(process.env.FIREBASE_CREDENTIALS)
-      // Fix private key newlines: replace literal \n with real newlines
-      if (creds.private_key) creds.private_key = creds.private_key.replace(/\\n/g, '\n')
-      admin.initializeApp({ credential: admin.credential.cert(creds) })
-    }
-  } catch (initErr) {
-    return res.json({ error: 'Firebase init failed: ' + initErr.message })
-  }
-
-  // Attempt direct FCM send
-  try {
-    const result = await admin.messaging().send({
-      token: fcmRow.subscription.fcm_token,
-      notification: { title: '🔔 Test Notification', body: 'FCM is working! ✅' },
-      android: { priority: 'high' },
-      data: { url: '/' }
-    })
-    res.json({ sent: true, messageId: result })
-  } catch (sendErr) {
-    res.json({ sent: false, error: sendErr.message, code: sendErr.code, errorInfo: sendErr.errorInfo })
-  }
-})
-
 // ===== ADMIN ROUTES =====
 
 // 👉 View all items

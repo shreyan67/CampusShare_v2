@@ -1,7 +1,7 @@
 const express = require('express')
 const { query, queryOne } = require('../db/pool')
 const { requireAuth } = require('../middleware/auth')
-const { sendPushNotification } = require('./push')
+const { sendPushNotification, notifyCollege } = require('./push')
 const { emitToUser, broadcast } = require('../socket')
 
 const router = express.Router()
