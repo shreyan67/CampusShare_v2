@@ -3279,9 +3279,20 @@ export default function App() {
       }),
     ]
 
+    // When the user switches back to the app (from background), refresh badges immediately.
+    // This catches the case where the socket was disconnected while the app was in the background.
+    const handleAppFocus = () => {
+      api.getMyRequests().then(r => {
+        if (r?.requests) { setMyRequests(r.requests); myRequestsRef.current = r.requests }
+      })
+    }
+    const onVisibility = () => { if (document.visibilityState === 'visible') handleAppFocus() }
+    document.addEventListener('visibilitychange', onVisibility)
+
     return () => {
       unsubs.forEach(fn => fn())
       socketClient.disconnect()
+      document.removeEventListener('visibilitychange', onVisibility)
     }
   }, []) // eslint-disable-line
 
