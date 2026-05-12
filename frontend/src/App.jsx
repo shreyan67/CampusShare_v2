@@ -2463,7 +2463,7 @@ function isGlobalHistory(r) {
   return true;
 }
 
-function ActivityModal({ open, onClose, refresh, showToast, defaultTab, targetId, onClearTarget, newRequestCount = 0, myOffersCount = 0, markRequestsSeen, unreadMap = {}, onMarkRead, lifecycleMap, openJourney, closeJourney, setChatRequest }) {
+function ActivityModal({ open, onClose, refresh, showToast, defaultTab, targetId, onClearTarget, newRequestCount = 0, myOffersCount = 0, markRequestsSeen, unreadMap = {}, onMarkRead, lifecycleMap, openJourney, closeJourney, setChatRequest, myRequests = [] }) {
   const { user, setUser } = useApp()
   const [tab, setTab] = useState(defaultTab || 'borrowing')
   const [reqs, setReqs] = useState([])
