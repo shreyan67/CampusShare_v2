@@ -10,6 +10,17 @@ function urlB64ToUint8Array(base64String) {
   return new Uint8Array([...rawData].map(char => char.charCodeAt(0)));
 }
 
+export async function checkPushPermission() {
+  if (Capacitor.isNativePlatform()) {
+    const status = await PushNotifications.checkPermissions();
+    return status.receive; // 'granted', 'denied', or 'prompt'
+  }
+  if ('Notification' in window) {
+    return Notification.permission; // 'granted', 'denied', or 'default'
+  }
+  return 'denied';
+}
+
 export async function subscribeToPush(token) {
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
@@ -48,8 +59,9 @@ export async function subscribeToPush(token) {
         console.error('[Push] FCM registration error:', error);
       });
 
-      PushNotifications.addListener('pushNotificationReceived', (_notification) => {
-        // Foreground notifications handled by the OS notification channel
+      PushNotifications.addListener('pushNotificationReceived', (notification) => {
+        // Foreground notifications handled by the OS notification channel, but we also want in-app toast
+        window.dispatchEvent(new CustomEvent('app:push', { detail: `📣 ${notification.title}: ${notification.body}` }));
       });
 
       PushNotifications.addListener('pushNotificationActionPerformed', (action) => {

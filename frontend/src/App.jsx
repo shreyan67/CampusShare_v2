@@ -1,7 +1,7 @@
 import { useState, useEffect, createContext, useContext, useCallback, useRef, useMemo, memo } from 'react'
 import { createPortal } from 'react-dom'
 import * as api from './api.js'
-import { subscribeToPush } from './push.js'
+import { subscribeToPush, checkPushPermission } from './push.js'
 import * as socketClient from './socketClient.js'
 import { App as CapApp } from '@capacitor/app'
 import { Capacitor } from '@capacitor/core'
@@ -3142,12 +3142,13 @@ export default function App() {
   const myRequestsRef = useRef([])
   const statsKey = `cs_stats_${user?.id}`
   const { showInstall, installApp } = usePwaInstall();
+  const [pushPromptOpen, setPushPromptOpen] = useState(false);
 
-  // Listen for push notification status events from push.js (shows FCM status as toasts on phone)
+  // Listen for push notification events from push.js (shows live foreground notifications on phone)
   useEffect(() => {
-    const handler = (e) => showToast(e.detail)
-    window.addEventListener('push:status', handler)
-    return () => window.removeEventListener('push:status', handler)
+    const handler = (e) => showToast(e.detail, true)
+    window.addEventListener('app:push', handler)
+    return () => window.removeEventListener('app:push', handler)
   }, []) // eslint-disable-line
 
   // ── HARDWARE BACK BUTTON HANDLER ──────────────────────────────────────────
@@ -3206,17 +3207,14 @@ export default function App() {
     // Request push notification permission and subscribe for background notifications
     const token = localStorage.getItem('cs_token')
     if (token) {
-      if (Capacitor.isNativePlatform()) {
-        subscribeToPush(token)
-      } else {
-        if ('Notification' in window && Notification.permission === 'default') {
-          Notification.requestPermission().then(permission => {
-            if (permission === 'granted') subscribeToPush(token)
-          })
-        } else if ('Notification' in window && Notification.permission === 'granted') {
+      checkPushPermission().then(perm => {
+        if (perm === 'granted') {
           subscribeToPush(token)
+        } else if (perm === 'prompt' || perm === 'default') {
+          const dismissed = sessionStorage.getItem('cs_push_dismissed')
+          if (!dismissed) setPushPromptOpen(true)
         }
-      }
+      })
     }
 
     // Load cached stats immediately on mount
@@ -3845,6 +3843,26 @@ export default function App() {
             </button>
           ))}
         </nav>
+
+        {pushPromptOpen && (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 100000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }}>
+            <div style={{ background: '#fff', padding: 24, borderRadius: 16, width: '90%', maxWidth: 360, textAlign: 'center', animation: 'scaleIn 0.2s ease-out' }}>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>🔔</div>
+              <h3 style={{ margin: '0 0 8px', fontFamily: 'var(--font-head)' }}>Turn on Notifications</h3>
+              <p style={{ margin: '0 0 20px', color: '#666', fontSize: 14 }}>Get instantly notified when someone needs items or accepts your requests.</p>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button onClick={() => {
+                  setPushPromptOpen(false);
+                  sessionStorage.setItem('cs_push_dismissed', 'true');
+                }} style={{ flex: 1, padding: '12px', border: 'none', background: '#f1f5f9', color: '#475569', borderRadius: 'var(--radius-sm)', fontWeight: 600, cursor: 'pointer' }}>Not Now</button>
+                <button onClick={() => {
+                  setPushPromptOpen(false);
+                  subscribeToPush(localStorage.getItem('cs_token'));
+                }} style={{ flex: 1, padding: '12px', border: 'none', background: 'var(--coral)', color: '#fff', borderRadius: 'var(--radius-sm)', fontWeight: 600, cursor: 'pointer' }}>Enable</button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <InstallPrompt />
         <Toast msg={toast} />
