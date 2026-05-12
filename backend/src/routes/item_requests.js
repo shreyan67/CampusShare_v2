@@ -99,8 +99,8 @@ router.post('/', requireAuth, async (req, res) => {
     broadcast('refresh:item-requests')
     // Notify all other users in this college about the new request
     notifyCollege(req.collegeId, req.userId, {
-      title: `🔍 ${u.name} needs something!`,
-      body: `"${title.trim()}" — Can you help?`,
+      title: '🔍 New Item Request',
+      body: `${u.name} needs ${title.trim()} - can u help?`,
       url: '/?requests=all'
     })
   } catch (err) {
