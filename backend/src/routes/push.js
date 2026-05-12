@@ -182,10 +182,10 @@ async function sendPushNotification(userId, payload) {
 async function notifyCollege(collegeId, excludeUserId, payload) {
   try {
     const { rows } = await pool.query(
-      `SELECT s.user_id, s.subscription
-       FROM push_subscriptions s
-       JOIN users u ON s.user_id = u.id
-       WHERE u.college_id = $1 AND u.id != $2`,
+       `SELECT s.user_id, s.subscription
+        FROM push_subscriptions s
+        JOIN users u ON s.user_id = u.id::text
+        WHERE u.college_id = $1 AND u.id != $2`,
       [collegeId, excludeUserId]
     );
     console.log(`[push] notifyCollege: collegeId=${collegeId}, found ${rows.length} subscriber(s) to notify`);
