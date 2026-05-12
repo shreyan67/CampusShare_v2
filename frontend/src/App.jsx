@@ -301,7 +301,8 @@ function usePwaInstall() {
   // APK download hook — detects Android mobile and offers APK download
   const isAndroid = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
   const isMobile = typeof window !== 'undefined' && window.innerWidth <= 900;
-  const showInstall = isAndroid && isMobile;
+  const isNative = typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform();
+  const showInstall = isAndroid && isMobile && !isNative;
   const installApp = () => {
     const a = document.createElement('a');
     a.href = '/campusshare.apk';
@@ -439,23 +440,25 @@ function AuthScreen({ onLogin }) {
         <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>College-verified peer sharing</div>
 
       </div>
-      <div style={{ padding: '0 32px', marginTop: '8px' }}>
-        <a
-          href="/campusshare.apk"
-          download="CampusShare.apk"
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '10px 18px',
-            background: 'linear-gradient(135deg, #E8445A, #C73050)',
-            color: '#fff', textDecoration: 'none',
-            borderRadius: 10, fontWeight: 700, fontSize: 13,
-            boxShadow: '0 4px 12px rgba(232,68,90,0.35)'
-          }}
-        >
-          ⬇️ Download App
-        </a>
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 5 }}>Android APK · Free · No Play Store needed</div>
-      </div>
+      {showInstall && (
+        <div style={{ padding: '0 32px', marginTop: '8px' }}>
+          <a
+            href="/campusshare.apk"
+            download="CampusShare.apk"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '10px 18px',
+              background: 'linear-gradient(135deg, #E8445A, #C73050)',
+              color: '#fff', textDecoration: 'none',
+              borderRadius: 10, fontWeight: 700, fontSize: 13,
+              boxShadow: '0 4px 12px rgba(232,68,90,0.35)'
+            }}
+          >
+            ⬇️ Download App
+          </a>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 5 }}>Android APK · Free · No Play Store needed</div>
+        </div>
+      )}
 
       {/* Card */}
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 16px' }}>
@@ -529,6 +532,7 @@ function AuthScreen({ onLogin }) {
           </>}
         </div>
       </div>
+      <InstallPrompt />
     </div>
   )
 }
@@ -3009,21 +3013,19 @@ function ChatModal({ request, open, onClose, onMarkRead }) {
 }
 
 function InstallPrompt() {
+  const { showInstall } = usePwaInstall();
   const [show, setShow] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    // Only show on Android mobile browsers (not iOS, not desktop)
-    const isAndroid = /Android/i.test(navigator.userAgent);
-    const isMobile = window.innerWidth <= 900;
-    if (!isAndroid || !isMobile) return;
+    if (!showInstall) return;
     // Dismiss per session so it doesn't harass every page load
     if (sessionStorage.getItem('cs_apk_dismissed')) return;
     const t = setTimeout(() => setShow(true), 2500);
     return () => clearTimeout(t);
-  }, []);
+  }, [showInstall]);
 
-  if (!show || dismissed) return null;
+  if (!show || dismissed || !showInstall) return null;
 
   const dismiss = () => {
     setDismissed(true);
