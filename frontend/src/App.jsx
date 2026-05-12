@@ -1520,7 +1520,7 @@ function ItemRequestsSection({ showToast, currentUserId, reload: reloadActivity,
 
   useEffect(() => {
     load()
-    const unsub = socketClient.on('refresh:item-requests', load)
+    const unsub = socketClient.on('refresh:item-requests', () => load())
     return () => unsub()
   }, []) // eslint-disable-line
 
