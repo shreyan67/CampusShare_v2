@@ -188,6 +188,7 @@ async function notifyCollege(collegeId, excludeUserId, payload) {
        WHERE u.college_id = $1 AND u.id != $2`,
       [collegeId, excludeUserId]
     );
+    console.log(`[push] notifyCollege: collegeId=${collegeId}, found ${rows.length} subscriber(s) to notify`);
     for (const row of rows) {
       const sub = row.subscription;
       try {
@@ -199,11 +200,17 @@ async function notifyCollege(collegeId, excludeUserId, payload) {
               android: { priority: 'high', notification: { sound: 'default', channelId: 'default' } },
               data: { url: payload.url || '/' }
             });
+            console.log(`[push] notifyCollege: FCM sent to user ${row.user_id}`);
           }
         } else if (ensureVapid()) {
           await webpush.sendNotification(sub, JSON.stringify(payload));
+          console.log(`[push] notifyCollege: VAPID sent to user ${row.user_id}`);
+        } else {
+          console.warn(`[push] notifyCollege: No valid subscription for user ${row.user_id}`);
         }
-      } catch (_) { /* skip expired/invalid tokens silently */ }
+      } catch (err) {
+        console.error(`[push] notifyCollege: Failed for user ${row.user_id}:`, err.message);
+      }
     }
   } catch (err) {
     console.error('[push] notifyCollege failed:', err);

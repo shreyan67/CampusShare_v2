@@ -3,8 +3,8 @@
   "appName": "CampusShare",
   "webDir": "dist",
   "server": {
-    "hostname": "www.campusshare.co.in",
-    "androidScheme": "https"
+    "url": "https://www.campusshare.co.in",
+    "cleartext": false
   },
   "plugins": {
     "PushNotifications": {
