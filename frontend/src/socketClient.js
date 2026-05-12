@@ -11,12 +11,19 @@ let socket = null
 
 const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
+const listeners = []
+
 export function connect(userId) {
   if (socket?.connected) return socket
 
   socket = io(BACKEND_URL, {
     transports: ['websocket', 'polling'],
     withCredentials: true,
+  })
+
+  // Register any queued listeners
+  listeners.forEach(({ event, handler }) => {
+    socket.on(event, handler)
   })
 
   socket.on('connect', () => {
@@ -48,7 +55,18 @@ export function getSocket() {
 
 /** Subscribe to an event. Returns an unsubscribe function. */
 export function on(event, handler) {
-  if (!socket) return () => {}
-  socket.on(event, handler)
-  return () => socket?.off(event, handler)
+  if (socket) {
+    socket.on(event, handler)
+  } else {
+    listeners.push({ event, handler })
+  }
+  
+  return () => {
+    if (socket) {
+      socket.off(event, handler)
+    } else {
+      const idx = listeners.findIndex(l => l.event === event && l.handler === handler)
+      if (idx !== -1) listeners.splice(idx, 1)
+    }
+  }
 }

@@ -1490,6 +1490,7 @@ function ItemRequestsSection({ showToast, currentUserId, reload: reloadActivity,
   const [requests, setRequests] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const searchRefIRS = useRef('')
   const [expanded, setExpanded] = useState(null)
   const [offers, setOffers] = useState({})
   // borrowReqs keyed by item_request id — for inline lifecycle after acceptance
@@ -1501,12 +1502,13 @@ function ItemRequestsSection({ showToast, currentUserId, reload: reloadActivity,
   const [offerSaving, setOfferSaving] = useState(false)
   const pollRef = useRef(null)
   const reqsRefIRS = useRef([])  // stable ref to avoid re-mounting on poll
+  const expandedRefIRS = useRef(null)
 
   // preserve offer note drafts across polls
   const offerNoteRef = useRef(_offerNoteDraftCache[showOffer] || '')
   useEffect(() => { offerNoteRef.current = _offerNoteDraftCache[showOffer] || '' }, [showOffer])
 
-  async function load(q = search) {
+  async function load(q = searchRefIRS.current) {
     const r = await api.getItemRequests(q)
     if (r?.error) { setLoading(false); return }
     const newReqs = r.requests || []
@@ -1515,6 +1517,8 @@ function ItemRequestsSection({ showToast, currentUserId, reload: reloadActivity,
     const prev = JSON.stringify(reqsRefIRS.current.map(x => ({ id: x.id, status: x.status, offer_count: x.offer_count, title: x.title, desc: x.description })))
     const next = JSON.stringify(newReqs.map(x => ({ id: x.id, status: x.status, offer_count: x.offer_count, title: x.title, desc: x.description })))
     if (prev !== next) { reqsRefIRS.current = newReqs; setRequests(newReqs) }
+    // Refresh offers if card expanded
+    if (expandedRefIRS.current) loadOffers(expandedRefIRS.current)
     setLoading(false)
   }
 
@@ -1523,6 +1527,24 @@ function ItemRequestsSection({ showToast, currentUserId, reload: reloadActivity,
     const unsub = socketClient.on('refresh:item-requests', () => load())
     return () => unsub()
   }, []) // eslint-disable-line
+
+  // Keep inline borrow lifecycle in sync with activeHandovers instantly
+  useEffect(() => {
+    setBorrowReqs(prev => {
+      let changed = false;
+      const next = { ...prev };
+      for (const reqId in next) {
+        const brId = next[reqId]?.id;
+        if (!brId) continue;
+        const fresh = activeHandovers.find(x => x.id === brId) || historyHandovers.find(x => x.id === brId);
+        if (fresh && JSON.stringify(fresh) !== JSON.stringify(next[reqId])) {
+          next[reqId] = fresh;
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [activeHandovers, historyHandovers]);
 
   async function loadOffers(reqId) {
     const r = await api.getItemRequestOffers(reqId)
@@ -1546,8 +1568,8 @@ function ItemRequestsSection({ showToast, currentUserId, reload: reloadActivity,
 
   async function toggleExpand(req) {
     const reqId = req.id
-    if (expanded === reqId) { setExpanded(null); return }
-    setExpanded(reqId)
+    if (expanded === reqId) { setExpanded(null); expandedRefIRS.current = null; return }
+    setExpanded(reqId); expandedRefIRS.current = reqId
     await loadOffers(reqId)
     // If accepted, also load the borrow request for inline lifecycle
     if (req.status === 'closed' && req.accepted_offer_id) {
@@ -3118,7 +3140,7 @@ export default function App() {
   // Always initialize to "now" so requests created before app load never fire a toast.
   // We persist to localStorage only when we actually *see* new ones, so the badge
   // survives cross-tab refreshes without triggering spurious notifications.
-  const lastSeenRequestRef = useRef(new Date().toISOString())
+  const lastSeenRequestRef = useRef(localStorage.getItem('cs_last_seen_req') || new Date().toISOString())
   const [actOpen, setAct] = useState(false)
   const [actTab, setActTab] = useState(null)
   const [targetReqId, setTargetReqId] = useState(null)
@@ -3256,8 +3278,26 @@ export default function App() {
         api.getItemRequests('').then(r => {
           if (r?.requests) {
             // Update unread badge
-            const myOffers = r.requests.filter(req => req.requester_id !== user.id)
-            if (myOffers.length > 0) setNewRequestCount(n => n + 0) // triggers re-render
+            const lastSeen = lastSeenRequestRef.current
+            const newOnes = r.requests.filter(req =>
+              req.requester_id !== user.id &&
+              new Date(req.created_at).getTime() > new Date(lastSeen).getTime()
+            )
+            if (newOnes.length > 0) {
+              setNewRequestCount(n => n + newOnes.length)
+              const newest = newOnes.reduce((a, b) => a.created_at > b.created_at ? a : b)
+              lastSeenRequestRef.current = newest.created_at
+              localStorage.setItem('cs_last_seen_req', newest.created_at)
+              showToast(`📣 ${newOnes[0].requester_name} needs: ${newOnes[0].title}`, true)
+            }
+            const myTotalOffers = r.requests
+              .filter(req => req.requester_id === user.id)
+              .reduce((sum, req) => sum + parseInt(req.offer_count || 0), 0)
+            if (myTotalOffers > prevMyTotalOffersRef.current) {
+              showToast(`📣 You received a new offer for your item request!`, true)
+            }
+            prevMyTotalOffersRef.current = myTotalOffers
+            setMyOffersCount(myTotalOffers)
           }
         })
       }),
@@ -3741,7 +3781,7 @@ export default function App() {
               <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 13, pointerEvents: 'none' }}>🔎</span>
               <input className="dark-search" style={{ ...INP, paddingLeft: 36, borderRadius: 40, background: 'rgba(255,255,255,0.1)', border: '1.5px solid rgba(255,255,255,0.12)', color: '#fff', fontSize: 13, width: '100%' }}
                 placeholder="Search…"
-                value={search} onChange={e => setSearch(e.target.value)} />
+                value={search} onChange={e => { setSearch(e.target.value); searchRefIRS.current = e.target.value }} />
             </div>
           </div>
         </div>
