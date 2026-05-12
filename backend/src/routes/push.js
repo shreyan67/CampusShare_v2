@@ -178,4 +178,36 @@ async function sendPushNotification(userId, payload) {
   }
 }
 
-module.exports = { router, sendPushNotification };
+// Send push to all users in a college (except the author) — e.g. new item request
+async function notifyCollege(collegeId, excludeUserId, payload) {
+  try {
+    const { rows } = await pool.query(
+      `SELECT s.user_id, s.subscription
+       FROM push_subscriptions s
+       JOIN users u ON s.user_id = u.id
+       WHERE u.college_id = $1 AND u.id != $2`,
+      [collegeId, excludeUserId]
+    );
+    for (const row of rows) {
+      const sub = row.subscription;
+      try {
+        if (sub && sub.fcm_token) {
+          if (ensureFirebase()) {
+            await admin.messaging().send({
+              token: sub.fcm_token,
+              notification: { title: payload.title, body: payload.body },
+              android: { priority: 'high', notification: { sound: 'default', channelId: 'default' } },
+              data: { url: payload.url || '/' }
+            });
+          }
+        } else if (ensureVapid()) {
+          await webpush.sendNotification(sub, JSON.stringify(payload));
+        }
+      } catch (_) { /* skip expired/invalid tokens silently */ }
+    }
+  } catch (err) {
+    console.error('[push] notifyCollege failed:', err);
+  }
+}
+
+module.exports = { router, sendPushNotification, notifyCollege };

@@ -10,11 +10,6 @@ function urlB64ToUint8Array(base64String) {
   return new Uint8Array([...rawData].map(char => char.charCodeAt(0)));
 }
 
-// Dispatch a visible toast from push.js (read by App.jsx's toast listener)
-function pushToast(msg) {
-  window.dispatchEvent(new CustomEvent('push:status', { detail: msg }));
-}
-
 export async function subscribeToPush(token) {
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
@@ -23,27 +18,20 @@ export async function subscribeToPush(token) {
     try {
       // 1. Check current permission
       let permStatus = await PushNotifications.checkPermissions();
-      pushToast(`[Push] Permission: ${permStatus.receive}`);
 
       if (permStatus.receive === 'prompt') {
         permStatus = await PushNotifications.requestPermissions();
-        pushToast(`[Push] After request: ${permStatus.receive}`);
       }
 
-      if (permStatus.receive !== 'granted') {
-        pushToast('[Push] DENIED — go to Settings > Apps > CampusShare > Notifications and enable');
-        return;
-      }
+      if (permStatus.receive !== 'granted') return;
 
-      // 2. Remove old listeners, then add fresh ones BEFORE register()
+      // 2. Attach listeners BEFORE register()
       await PushNotifications.removeAllListeners();
 
       PushNotifications.addListener('registration', async (tokenObj) => {
         const fcmToken = tokenObj.value;
-        pushToast('[Push] FCM token obtained! Saving to server...');
-
         try {
-          const resp = await fetch(`${apiUrl}/push/subscribe`, {
+          await fetch(`${apiUrl}/push/subscribe`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -51,23 +39,17 @@ export async function subscribeToPush(token) {
             },
             body: JSON.stringify({ subscription: { fcm_token: fcmToken }, type: 'user' })
           });
-          if (resp.ok) {
-            pushToast('[Push] ✅ FCM registered! Notifications are active.');
-          } else {
-            pushToast(`[Push] ❌ Server rejected FCM token: ${resp.status}`);
-          }
         } catch (err) {
-          pushToast(`[Push] ❌ Network error saving token: ${err.message}`);
+          console.error('[Push] Network error saving token:', err.message);
         }
       });
 
       PushNotifications.addListener('registrationError', (error) => {
-        pushToast(`[Push] ❌ FCM Error: ${JSON.stringify(error)}`);
+        console.error('[Push] FCM registration error:', error);
       });
 
-      PushNotifications.addListener('pushNotificationReceived', (notification) => {
-        // App is in foreground — show as in-app toast
-        pushToast(`📣 ${notification.title}: ${notification.body}`);
+      PushNotifications.addListener('pushNotificationReceived', (_notification) => {
+        // Foreground notifications handled by the OS notification channel
       });
 
       PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
@@ -76,10 +58,9 @@ export async function subscribeToPush(token) {
 
       // 3. Register — triggers 'registration' or 'registrationError'
       await PushNotifications.register();
-      pushToast('[Push] register() called — waiting for FCM token...');
 
     } catch (err) {
-      pushToast(`[Push] Fatal error: ${err.message}`);
+      console.error('[Push] Fatal error:', err.message);
     }
     return;
   }

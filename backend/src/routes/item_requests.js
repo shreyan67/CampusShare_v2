@@ -1,7 +1,7 @@
 const express = require('express')
 const { query, queryOne } = require('../db/pool')
 const { requireAuth } = require('../middleware/auth')
-const { sendPushNotification } = require('./push')
+const { sendPushNotification, notifyCollege } = require('./push')
 const { emitToUser, broadcast } = require('../socket')
 
 const router = express.Router()
@@ -76,7 +76,7 @@ router.post('/', requireAuth, async (req, res) => {
     const { title, description, category, urgency } = req.body
     if (!title?.trim()) return res.status(400).json({ error: 'Title is required.' })
 
-    const u = await queryOne('SELECT id, is_verified, is_flagged FROM users WHERE id=$1', [req.userId])
+    const u = await queryOne('SELECT id, name, is_verified, is_flagged FROM users WHERE id=$1', [req.userId])
     if (!u?.is_verified) return res.status(403).json({ error: 'Verify your account first.' })
     if (u.is_flagged)    return res.status(403).json({ error: 'Your account is flagged. Please contact admin.' })
 
@@ -97,6 +97,12 @@ router.post('/', requireAuth, async (req, res) => {
 
     res.status(201).json({ request: row })
     broadcast('refresh:item-requests')
+    // Notify all other users in this college about the new request
+    notifyCollege(req.collegeId, req.userId, {
+      title: `🔍 ${u.name} needs something!`,
+      body: `"${title.trim()}" — Can you help?`,
+      url: '/?requests=all'
+    })
   } catch (err) {
     console.error('[item-requests POST]', err)
     res.status(500).json({ error: 'Failed to post request.' })

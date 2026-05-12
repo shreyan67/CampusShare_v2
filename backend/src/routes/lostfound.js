@@ -2,6 +2,7 @@ const express = require('express')
 const multer  = require('multer')
 const { query, queryOne } = require('../db/pool')
 const { requireAuth } = require('../middleware/auth')
+const { sendPushNotification } = require('./push')
 
 const router = express.Router()
 
@@ -66,6 +67,12 @@ router.post('/:id/claim', requireAuth, async (req, res) => {
       'INSERT INTO lf_claims(lf_id,claimer_id,message) VALUES($1,$2,$3) RETURNING *',
       [lf.id, req.userId, req.body.message || '']
     )
+    // Notify the poster that someone claimed their item
+    sendPushNotification(lf.poster_id, {
+      title: '🔍 Someone found your item!',
+      body: `New claim received for "${lf.title}".`,
+      url: '/?lostfound=mine'
+    })
     res.status(201).json({ claim })
   } catch (err) { console.error(err); res.status(500).json({ error: 'Failed.' }) }
 })
@@ -98,6 +105,12 @@ router.patch('/claims/:claimId/accept', requireAuth, async (req, res) => {
     await query("UPDATE lf_claims SET status='accepted' WHERE id=$1", [claim.id])
     await query("UPDATE lf_claims SET status='rejected' WHERE lf_id=$1 AND id!=$2", [lf.id, claim.id])
     await query("UPDATE lost_found SET status='claimed' WHERE id=$1", [lf.id])
+    // Notify the claimer their claim was accepted
+    sendPushNotification(claim.claimer_id, {
+      title: '✅ Claim Accepted!',
+      body: `Your claim for "${lf.title}" was accepted!`,
+      url: '/?lostfound=all'
+    })
     res.json({ success: true })
   } catch (err) { console.error(err); res.status(500).json({ error: 'Failed.' }) }
 })
