@@ -98,14 +98,6 @@ router.patch('/claims/:claimId/accept', requireAuth, async (req, res) => {
     await query("UPDATE lf_claims SET status='accepted' WHERE id=$1", [claim.id])
     await query("UPDATE lf_claims SET status='rejected' WHERE lf_id=$1 AND id!=$2", [lf.id, claim.id])
     await query("UPDATE lost_found SET status='claimed' WHERE id=$1", [lf.id])
-
-    // Notify claimer
-    sendPushNotification(claim.claimer_id, {
-      title: '✅ Claim Accepted!',
-      body: `Your claim for "${lf.title}" was accepted!`,
-      url: '/?lostfound=all'
-    })
-
     res.json({ success: true })
   } catch (err) { console.error(err); res.status(500).json({ error: 'Failed.' }) }
 })

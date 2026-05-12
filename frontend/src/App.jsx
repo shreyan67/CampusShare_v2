@@ -3143,6 +3143,13 @@ export default function App() {
   const statsKey = `cs_stats_${user?.id}`
   const { showInstall, installApp } = usePwaInstall();
 
+  // Listen for push notification status events from push.js (shows FCM status as toasts on phone)
+  useEffect(() => {
+    const handler = (e) => showToast(e.detail)
+    window.addEventListener('push:status', handler)
+    return () => window.removeEventListener('push:status', handler)
+  }, []) // eslint-disable-line
+
   // ── HARDWARE BACK BUTTON HANDLER ──────────────────────────────────────────
   // Track which modals are open via a ref (avoids stale closures in popstate)
   const modalsOpenRef = useRef({})
