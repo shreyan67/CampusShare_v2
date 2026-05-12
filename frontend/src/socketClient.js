@@ -1,34 +1,28 @@
-/**
- * socketClient.js — Frontend Socket.io connection manager
- *
- * Connects once per user session and exposes a way to register
- * event listeners. The App component calls connect(userId) on login
- * and disconnect() on logout.
- */
 import { io } from 'socket.io-client'
 
 let socket = null
-
 const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
-const listeners = []
+// Persistent list of active listeners to survive socket re-connections
+const activeListeners = []
 
 export function connect(userId) {
   if (socket?.connected) return socket
+
+  if (socket) socket.disconnect()
 
   socket = io(BACKEND_URL, {
     transports: ['websocket', 'polling'],
     withCredentials: true,
   })
 
-  // Register any queued listeners
-  listeners.forEach(({ event, handler }) => {
-    socket.on(event, handler)
-  })
-
   socket.on('connect', () => {
     console.log('[socket] connected:', socket.id)
     socket.emit('identify', userId)
+    // Re-apply all active listeners whenever we (re)connect
+    activeListeners.forEach(({ event, handler }) => {
+      socket.on(event, handler)
+    })
   })
 
   socket.on('disconnect', (reason) => {
@@ -55,18 +49,16 @@ export function getSocket() {
 
 /** Subscribe to an event. Returns an unsubscribe function. */
 export function on(event, handler) {
-  if (socket) {
+  const listener = { event, handler }
+  activeListeners.push(listener)
+
+  if (socket?.connected) {
     socket.on(event, handler)
-  } else {
-    listeners.push({ event, handler })
   }
-  
+
   return () => {
-    if (socket) {
-      socket.off(event, handler)
-    } else {
-      const idx = listeners.findIndex(l => l.event === event && l.handler === handler)
-      if (idx !== -1) listeners.splice(idx, 1)
-    }
+    const idx = activeListeners.indexOf(listener)
+    if (idx !== -1) activeListeners.splice(idx, 1)
+    if (socket) socket.off(event, handler)
   }
 }

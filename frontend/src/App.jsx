@@ -1525,6 +1525,9 @@ function ItemRequestsSection({ itemReqTick, showToast, currentUserId, reload: re
 
   useEffect(() => {
     load()
+    // Also listen locally just in case
+    const unsub = socketClient.on('refresh:item-requests', () => load())
+    return () => unsub()
   }, [itemReqTick]) // eslint-disable-line
 
   // Keep inline borrow lifecycle in sync with activeHandovers instantly
@@ -1536,7 +1539,7 @@ function ItemRequestsSection({ itemReqTick, showToast, currentUserId, reload: re
         const brId = next[reqId]?.id;
         if (!brId) continue;
         const fresh = activeHandovers.find(x => x.id === brId) || historyHandovers.find(x => x.id === brId);
-        if (fresh && JSON.stringify(fresh) !== JSON.stringify(next[reqId])) {
+        if (fresh) {
           next[reqId] = fresh;
           changed = true;
         }
@@ -3268,6 +3271,7 @@ export default function App() {
     const unsubs = [
       // Server tells us our requests changed (approve, decline, pickup-details etc.)
       socketClient.on('refresh:requests', () => {
+        setTick(t => t + 1) // Force a global re-render
         api.getMyRequests().then(r => {
           if (r?.requests) { setMyRequests(r.requests); myRequestsRef.current = r.requests }
         })
