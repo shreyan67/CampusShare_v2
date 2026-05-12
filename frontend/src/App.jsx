@@ -1273,7 +1273,7 @@ function LifecycleVisualizer({ r, isBorrowing, onClose }) {
 // ── ITEM REQUEST MODAL (Borrower posts "I need X") ────────────────────────────
 const _itemRequestCache = {}   // preserve draft across re-renders
 
-function RequestsModal({ open, onClose, onSuccess, showToast, editData = null, onEditReq, initialTab = 'browse', markRequestsSeen, reloadActivity, activeHandovers = [], historyHandovers = [], unreadMap = {}, openJourney, closeJourney, lifecycleMap, setChatRequest, targetId, onClearTarget, hasForceClosedSlot }) {
+function RequestsModal({ itemReqTick, open, onClose, onSuccess, showToast, editData = null, onEditReq, initialTab = 'browse', markRequestsSeen, reloadActivity, activeHandovers = [], historyHandovers = [], unreadMap = {}, openJourney, closeJourney, lifecycleMap, setChatRequest, targetId, onClearTarget, hasForceClosedSlot }) {
   const { user } = useApp()
   const [tab, setTab] = useState(initialTab) // 'browse', 'post', 'mine'
 
@@ -1410,6 +1410,7 @@ function RequestsModal({ open, onClose, onSuccess, showToast, editData = null, o
           </InfoBanner>
 
           <ItemRequestsSection
+            itemReqTick={itemReqTick}
             showToast={showToast}
             currentUserId={user?.id}
             onMarkSeen={markRequestsSeen}
@@ -1486,7 +1487,7 @@ function RequestsModal({ open, onClose, onSuccess, showToast, editData = null, o
 // module-level offer note draft cache — survives polls
 const _offerNoteDraftCache = {}
 
-function ItemRequestsSection({ showToast, currentUserId, reload: reloadActivity, onMarkSeen, onEdit, activeHandovers = [], historyHandovers = [], openJourney, closeJourney, lifecycleMap = {}, setChatRequest, unreadMap = {}, user }) {
+function ItemRequestsSection({ itemReqTick, showToast, currentUserId, reload: reloadActivity, onMarkSeen, onEdit, activeHandovers = [], historyHandovers = [], openJourney, closeJourney, lifecycleMap = {}, setChatRequest, unreadMap = {}, user }) {
   const [requests, setRequests] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -1524,9 +1525,7 @@ function ItemRequestsSection({ showToast, currentUserId, reload: reloadActivity,
 
   useEffect(() => {
     load()
-    const unsub = socketClient.on('refresh:item-requests', () => load())
-    return () => unsub()
-  }, []) // eslint-disable-line
+  }, [itemReqTick]) // eslint-disable-line
 
   // Keep inline borrow lifecycle in sync with activeHandovers instantly
   useEffect(() => {
@@ -3147,6 +3146,7 @@ export default function App() {
   const [borrowItem, setBorrow] = useState(null)
   const [guideOpen, setGuideOpen] = useState(false)
   const [tick, setTick] = useState(0)
+  const [itemReqTick, setItemReqTick] = useState(0)
   const [toast, showToast] = useToast()
   const [myRequests, setMyRequests] = useState([])
   const [chatRequest, setChatRequest] = useState(null)
@@ -3274,6 +3274,7 @@ export default function App() {
       }),
       // Server tells us item-requests changed (new offer received etc.)
       socketClient.on('refresh:item-requests', () => {
+        setItemReqTick(t => t + 1)
         // This triggers the existing notification check loop instantly
         api.getItemRequests('').then(r => {
           if (r?.requests) {
@@ -3629,6 +3630,7 @@ export default function App() {
         {/* MODALS */}
         {requestOpen && (
           <RequestsModal
+            itemReqTick={itemReqTick}
             open={requestOpen}
             onClose={() => { setRequest(false); setEditRequestData(null); }}
             onSuccess={refresh}
