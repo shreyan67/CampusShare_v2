@@ -1532,10 +1532,15 @@ function ItemRequestsSection({ showToast, currentUserId, reload: reloadActivity,
   // Load borrow request for an accepted offer — used to show inline lifecycle
   async function loadBorrowReq(reqId, borrowRequestId) {
     if (!borrowRequestId) return
-    const r = await api.getMyRequests()
-    if (!r?.error) {
-      const br = (r.requests || []).find(x => x.id === borrowRequestId)
-      if (br) setBorrowReqs(prev => ({ ...prev, [reqId]: br }))
+    const br = activeHandovers.find(x => x.id === borrowRequestId) || historyHandovers.find(x => x.id === borrowRequestId)
+    if (br) {
+      setBorrowReqs(prev => ({ ...prev, [reqId]: br }))
+    } else {
+      const r = await api.getMyRequests()
+      if (!r?.error) {
+        const freshBr = (r.requests || []).find(x => x.id === borrowRequestId)
+        if (freshBr) setBorrowReqs(prev => ({ ...prev, [reqId]: freshBr }))
+      }
     }
   }
 
