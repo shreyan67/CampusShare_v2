@@ -3307,7 +3307,7 @@ export default function App() {
       socketClient.disconnect()
       document.removeEventListener('visibilitychange', onVisibility)
     }
-  }, []) // eslint-disable-line
+  }, [user?.id]) // eslint-disable-line
 
   // Watch for state changes in myRequests to trigger native push notifications
   const prevReqsRef = useRef(null)
