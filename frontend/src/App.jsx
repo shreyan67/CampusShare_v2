@@ -1261,6 +1261,17 @@ const _itemRequestCache = {}   // preserve draft across re-renders
 function RequestsModal({ itemReqTick, open, onClose, onSuccess, showToast, editData = null, onEditReq, initialTab = 'browse', markRequestsSeen, reloadActivity, activeHandovers = [], historyHandovers = [], unreadMap = {}, openJourney, closeJourney, lifecycleMap, setChatRequest, targetId, onClearTarget, hasForceClosedSlot }) {
   const { user } = useApp()
   const [tab, setTab] = useState(initialTab) // 'browse', 'post', 'mine'
+  const [showPostPopup, setShowPostPopup] = useState(false)
+
+  useEffect(() => {
+    if (open && tab === 'browse') {
+      const t1 = setTimeout(() => setShowPostPopup(true), 800)
+      const t2 = setTimeout(() => setShowPostPopup(false), 7800)
+      return () => { clearTimeout(t1); clearTimeout(t2); }
+    } else {
+      setShowPostPopup(false)
+    }
+  }, [open, tab])
 
   useEffect(() => {
     if (open && targetId) {
@@ -1350,23 +1361,33 @@ function RequestsModal({ itemReqTick, open, onClose, onSuccess, showToast, editD
         </div>
 
         {!editData && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0, background: 'rgba(0,0,0,0.25)', borderRadius: '12px 12px 0 0', overflow: 'hidden' }}>
-            <button onClick={() => setTab('browse')} style={{
-              padding: '14px 8px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14, transition: 'all 0.2s',
-              background: tab === 'browse' ? '#fff' : 'transparent',
-              color: tab === 'browse' ? '#7C3AED' : 'rgba(255,255,255,0.7)',
-              borderRadius: tab === 'browse' ? '10px 10px 0 0' : 0,
-            }}>
-              🔍 Browse Requests
-            </button>
-            <button onClick={() => setTab('post')} style={{
-              padding: '14px 8px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14, transition: 'all 0.2s',
-              background: tab === 'post' ? '#fff' : 'transparent',
-              color: tab === 'post' ? '#7C3AED' : 'rgba(255,255,255,0.7)',
-              borderRadius: tab === 'post' ? '10px 10px 0 0' : 0,
-            }}>
-              ✏️ Post a Request
-            </button>
+          <div style={{ position: 'relative' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0, background: 'rgba(0,0,0,0.25)', borderRadius: '12px 12px 0 0', overflow: 'hidden' }}>
+              <button onClick={() => setTab('browse')} style={{
+                padding: '14px 8px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14, transition: 'all 0.2s',
+                background: tab === 'browse' ? '#fff' : 'transparent',
+                color: tab === 'browse' ? '#7C3AED' : 'rgba(255,255,255,0.7)',
+                borderRadius: tab === 'browse' ? '10px 10px 0 0' : 0,
+              }}>
+                🔍 Browse Requests
+              </button>
+              <button onClick={() => setTab('post')} style={{
+                padding: '14px 8px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14, transition: 'all 0.2s',
+                background: tab === 'post' ? '#fff' : 'transparent',
+                color: tab === 'post' ? '#7C3AED' : 'rgba(255,255,255,0.7)',
+                borderRadius: tab === 'post' ? '10px 10px 0 0' : 0,
+              }}>
+                ✏️ Post a Request
+              </button>
+            </div>
+            {showPostPopup && (
+              <div className="pop-in" style={{ position: 'absolute', top: '100%', left: '75%', zIndex: 1000, pointerEvents: 'none', marginTop: 12 }}>
+                <div style={{ transform: 'translateX(-50%)', width: 180, background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(8px)', border: '1.5px solid #E8445A', color: '#fff', padding: '10px 14px', borderRadius: 12, fontSize: 13, fontFamily: 'var(--font-head)', fontWeight: 700, textAlign: 'center', lineHeight: 1.3, boxShadow: '0 8px 24px rgba(232,68,90,0.3)', whiteSpace: 'normal' }}>
+                  Click here to <span style={{color: '#E8445A'}}>Request</span> an item you want!
+                  <div style={{ position: 'absolute', top: -5, left: '50%', transform: 'translateX(-50%) rotate(45deg)', width: 10, height: 10, background: '#0F172A', borderTop: '1.5px solid #E8445A', borderLeft: '1.5px solid #E8445A' }}/>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
