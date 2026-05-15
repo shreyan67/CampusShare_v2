@@ -289,9 +289,27 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: err.message || 'Internal server error.' })
 })
 
+// ===== STARTUP IMAGE CLEANUP =====
+// Runs once on every server boot — works on Render free tier even after spin-down.
+// Strips images from all soft-deleted/completed items so they never leak egress.
+async function stripImagesOnBoot() {
+  try {
+    const { query } = require('./db/pool')
+    const result = await query(
+      "UPDATE items SET images = '{}'::text[] WHERE is_deleted = TRUE AND array_length(images, 1) > 0"
+    )
+    if (result.rowCount > 0) {
+      console.log(`[Boot] Stripped images from ${result.rowCount} deleted/completed items.`)
+    }
+  } catch (err) {
+    console.error('[Boot] Image cleanup failed (non-fatal):', err.message)
+  }
+}
+
 // ===== SERVER =====
 server.listen(PORT, () => {
   console.log(`\n🚀 CampusShare API → http://localhost:${PORT}`)
   console.log(`   Health: http://localhost:${PORT}/api/health\n`)
   initCronJobs()
+  stripImagesOnBoot()
 })

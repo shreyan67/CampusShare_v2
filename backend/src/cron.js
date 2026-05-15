@@ -80,6 +80,22 @@ function initCronJobs() {
       console.error('[Cron] Error running daily tasks:', err);
     }
   });
+
+  // Run every day at 01:00 AM — strip images from deleted/completed items
+  // This ensures no historical record ever leaks large base64 images into egress.
+  // New images are already compressed by the frontend, but this is a permanent safety net.
+  cron.schedule('0 1 * * *', async () => {
+    try {
+      const result = await query(
+        "UPDATE items SET images = '{}'::text[] WHERE is_deleted = TRUE AND array_length(images, 1) > 0"
+      );
+      if (result.rowCount > 0) {
+        console.log(`[Cron] Stripped images from ${result.rowCount} deleted/completed items.`);
+      }
+    } catch (err) {
+      console.error('[Cron] Error stripping images:', err);
+    }
+  });
 }
 
 module.exports = { initCronJobs };
