@@ -228,6 +228,24 @@ app.delete("/admin/delete-all-items", adminAuth, async (req, res) => {
     res.status(500).send("Error deleting all items");
   }
 });
+
+// 👉 Bulk delete selected items by ID array
+app.post("/admin/delete-items-bulk", adminAuth, async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0)
+      return res.status(400).json({ error: "No IDs provided." });
+    const placeholders = ids.map((_, i) => `$${i + 1}`).join(", ");
+    const result = await pool.query(
+      `DELETE FROM items WHERE id IN (${placeholders}) RETURNING id`,
+      ids
+    );
+    res.json({ deleted: result.rowCount });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Bulk delete failed." });
+  }
+});
 app.delete("/admin/delete-user/:id", adminAuth, async (req, res) => {
   const client = await pool.connect();
 
