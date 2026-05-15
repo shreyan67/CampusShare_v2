@@ -3585,7 +3585,7 @@ export default function App() {
     checkNewRequests(true)
     notifPollRef.current = setInterval(() => {
       if (document.visibilityState === 'visible') checkNewRequests(false)
-    }, 60000)
+    }, 600000)
 
     const handleVis = () => { if (document.visibilityState === 'visible') checkNewRequests() }
     document.addEventListener('visibilitychange', handleVis)
@@ -3619,7 +3619,7 @@ export default function App() {
     if (!user) return
     const interval = setInterval(() => {
       if (document.visibilityState === 'visible') setTick(t => t + 1)
-    }, 45000)
+    }, 600000)
     const handleVis = () => { if (document.visibilityState === 'visible') setTick(t => t + 1) }
     document.addEventListener('visibilitychange', handleVis)
     return () => {

@@ -11,7 +11,7 @@ const REQUEST_JOIN = `
   SELECT
     br.*,
     i.title AS item_title, i.category AS item_category, i.listing_type,
-    i.is_paid, i.price_per_day, i.images AS item_images,
+    i.is_paid, i.price_per_day,
     i.transaction_type, i.allow_multiple, i.status AS item_status,
     borrower.name AS borrower_name, borrower.avatar AS borrower_avatar, borrower.color AS borrower_color,
     owner.name AS owner_name,
