@@ -2,7 +2,7 @@ const express = require('express')
 const multer  = require('multer')
 const { query, queryOne } = require('../db/pool')
 const { requireAuth } = require('../middleware/auth')
-const { sendPushNotification } = require('./push')
+const { sendPushNotification, notifyCollege } = require('./push')
 
 const router = express.Router()
 
@@ -46,6 +46,14 @@ router.post('/', requireAuth, upload.array('images', 3), async (req, res) => {
     `, [req.collegeId, req.userId, title.trim(), description.trim(), lostBy, (location||'').trim(), images])
 
     res.status(201).json({ item })
+
+    // Notify all college users about the new L&F item
+    const poster = await queryOne('SELECT name FROM users WHERE id=$1', [req.userId])
+    notifyCollege(req.collegeId, req.userId, {
+      title: '🔍 Lost & Found — Item Reported!',
+      body: `${poster?.name || 'Someone'} found "${title.trim()}" — is it yours?`,
+      url: '/?tab=lostfound'
+    }).catch(() => {})
   } catch (err) { console.error(err); res.status(500).json({ error: 'Failed to post.' }) }
 })
 

@@ -550,13 +550,13 @@ function Logo({ light = false }) {
 }
 
 // ── LIST ITEM MODAL ───────────────────────────────────────────────────────────
-function ListItemModal({ open, onClose, onSuccess, editItemData = null }) {
+function ListItemModal({ open, onClose, onSuccess, editItemData = null, initialLtype = 'borrow' }) {
   const { user, setUser } = useApp()
   const titleRef = useRef(editItemData?.title || '')
   const notesRef = useRef(editItemData?.condition_notes || '')
   const [category, setCat] = useState(editItemData?.category || 'Books & Notes')
   const [maxDays, setMaxDays] = useState(editItemData?.max_borrow_days?.toString() || '7')
-  const [ltype, setLtype] = useState(editItemData?.listing_type || 'borrow')
+  const [ltype, setLtype] = useState(editItemData?.listing_type || initialLtype)
   const [txType, setTxType] = useState(editItemData?.transaction_type || 'lend')  // rent|sell|donate|lend
   const [ppd, setPpd] = useState(editItemData?.price_per_day?.toString() || '')
   const [upiId, setUpiId] = useState(user?.upi_id || '')
@@ -571,7 +571,7 @@ function ListItemModal({ open, onClose, onSuccess, editItemData = null }) {
     notesRef.current = editItemData?.condition_notes || ''
     setCat(editItemData?.category || 'Books & Notes')
     setMaxDays(editItemData?.max_borrow_days?.toString() || '7')
-    setLtype(editItemData?.listing_type || 'borrow')
+    setLtype(editItemData?.listing_type || initialLtype)
     setTxType(editItemData?.transaction_type || 'lend')
     setPpd(editItemData?.price_per_day?.toString() || '')
     setAllowMulti(editItemData?.allow_multiple || false)
@@ -2061,10 +2061,13 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
         )}
 
         <div style={{ display: 'flex', gap: 6 }}>
-          <button className="btn-press" onClick={(e) => { e.stopPropagation(); openChat(r); }} style={{ flex: 1, padding: '6px', background: '#10B981', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 6, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, cursor: 'pointer' }}>
-            💬 Chat {unreadCount > 0 && `(${unreadCount})`}
-          </button>
-          {isBorrowing && r.status === 'active' && !r.item_given && (
+          {/* Chat: for L&F only show after claimer is approved; for normal items always show */}
+          {(!isLF || ['selected', 'active'].includes(r.status)) && (
+            <button className="btn-press" onClick={(e) => { e.stopPropagation(); openChat(r); }} style={{ flex: 1, padding: '6px', background: '#10B981', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 6, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, cursor: 'pointer' }}>
+              💬 Chat {unreadCount > 0 && `(${unreadCount})`}
+            </button>
+          )}
+          {isBorrowing && r.status === 'active' && !r.item_given && !isLF && (
             <button className="btn-press" onClick={async (e) => {
               e.stopPropagation();
               if (r.borrower_complaint) { showToast('Admin informed.'); return }
@@ -2212,8 +2215,8 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
         {/* ACTION BUTTONS */}
         <div className="req-actions" style={{ ...row(8), flexWrap: 'wrap', marginTop: 8 }}>
 
-          {/* Chat button */}
-          {['active', 'overdue'].includes(r.status) && (
+          {/* Chat button — shown for all active/overdue items, AND for L&F when claimer is approved (selected) */}
+          {(['active', 'overdue'].includes(r.status) || (isLF && r.status === 'selected')) && (
             <button className="btn-press" style={{ ...btn(false, true), background: '#25D366', color: '#fff', border: 'none', flex: 1, position: 'relative' }} onClick={() => openChat(r)}>
               💬 Chat
               {unreadCount > 0 && <span style={{ position: 'absolute', top: -6, right: -6, background: T.coral, color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 20, boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{unreadCount}</span>}
@@ -3201,6 +3204,7 @@ export default function App() {
   }, [search])
 
   const [listOpen, setList] = useState(false)
+  const [listInitialLtype, setListInitialLtype] = useState('borrow')
   const [editItemData, setEditItemData] = useState(null)
   const [requestOpen, setRequest] = useState(false)
   const [editRequestData, setEditRequestData] = useState(null)
@@ -3731,7 +3735,7 @@ export default function App() {
             hasForceClosedSlot={myRequests.some(r => r.force_closed && r.borrower_id === user?.id)}
           />
         )}
-        {listOpen && <ListItemModal open={listOpen} onClose={() => { setList(false); setEditItemData(null); }} onSuccess={refresh} editItemData={editItemData} />}
+        {listOpen && <ListItemModal open={listOpen} onClose={() => { setList(false); setEditItemData(null); setListInitialLtype('borrow'); }} onSuccess={refresh} editItemData={editItemData} initialLtype={editItemData?.listing_type || listInitialLtype} />}
         {showSlotInfo && (
           <Modal open={showSlotInfo} onClose={() => setShowSlotInfo(false)}>
             <div style={{ textAlign: 'center', padding: '8px 12px 12px' }}>
@@ -3883,7 +3887,7 @@ export default function App() {
           {/* Bottom row: tab pills + search — stacks on mobile */}
           <div className="hero-bottom" style={{ padding: '0 24px 14px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', width: '100%', boxSizing: 'border-box' }}>
             <div className="hero-tabs" style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-              {[['marketplace', '📦 Market'], ['lostfound', '🔍 L&F']].map(([id, label]) => (
+              {[['marketplace', '📦 Market'], ['lostfound', '🔍 Lost & Found']].map(([id, label]) => (
                 <button key={id} className="btn-press" onClick={() => {
                   if (id !== tab) { fetchIdRef.current++; setItems([]); setSearch(''); setCat('all') }
                   setTab(id)
@@ -3966,12 +3970,19 @@ export default function App() {
               <span style={{ fontSize: 12, color: T.textSoft }}>Most recent first</span>
             </div>
 
+            {/* Always-visible Report button on L&F tab */}
+            {tab === 'lostfound' && !search && (
+              <button className="btn-press" style={{ ...btn(true), marginBottom: 16, width: '100%' }}
+                onClick={() => { setEditItemData(null); setListInitialLtype('lost_found'); setList(true); }}>
+                🔍 Report a Found Item
+              </button>
+            )}
+
             {displayItems.length === 0 && tab === 'lostfound' && (
               <div style={{ textAlign: 'center', padding: '4rem 0' }}>
                 <div style={{ fontSize: 56, marginBottom: 12 }}>🔍</div>
                 <div style={{ fontSize: 16, color: T.textMid, marginBottom: 6, fontWeight: 600 }}>{search ? 'No matches found.' : 'No lost & found items yet.'}</div>
-                <div style={{ fontSize: 14, color: T.textSoft, marginBottom: 20 }}>{search ? 'Try a different search term.' : 'Found something? Let others know.'}</div>
-                {!search && <button className="btn-press" style={btn(true)} onClick={() => setList(true)}>Report a found item</button>}
+                <div style={{ fontSize: 14, color: T.textSoft }}>{search ? 'Try a different search term.' : 'Found something? Let others know.'}</div>
               </div>
             )}
 

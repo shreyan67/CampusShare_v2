@@ -7,12 +7,20 @@ const { emitToUser } = require('../socket')
 const router = express.Router()
 
 async function checkChatAccess(requestId, userId) {
-  const r = await queryOne('SELECT * FROM borrow_requests WHERE id=$1', [requestId])
+  const r = await queryOne(`
+    SELECT br.*, i.listing_type
+    FROM borrow_requests br
+    JOIN items i ON i.id = br.item_id
+    WHERE br.id=$1
+  `, [requestId])
   if (!r) return { error: 'Transaction not found.', status: 404 }
   if (r.borrower_id !== userId && r.owner_id !== userId) {
     return { error: 'Not authorized to view this chat.', status: 403 }
   }
-  if (!['active', 'overdue'].includes(r.status)) {
+  // L&F items allow chat once claimer is approved (selected) or active
+  const isLF = r.listing_type === 'lost_found'
+  const allowed = ['active', 'overdue'].includes(r.status) || (isLF && r.status === 'selected')
+  if (!allowed) {
     return { error: 'Chat is only available for active or overdue transactions.', status: 403 }
   }
   return { request: r }
@@ -30,7 +38,8 @@ router.get('/unread', requireAuth, async (req, res) => {
       JOIN users u ON m.sender_id = u.id
       WHERE m.sender_id != $1 AND m.is_read = false
         AND (br.borrower_id = $1 OR br.owner_id = $1)
-        AND br.status IN ('active', 'overdue')
+        AND (br.status IN ('active', 'overdue')
+          OR (i.listing_type = 'lost_found' AND br.status = 'selected'))
       ORDER BY m.created_at ASC
     `, [req.userId])
     

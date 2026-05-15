@@ -3,6 +3,7 @@ const multer   = require('multer')
 const { query, queryOne } = require('../db/pool')
 const { requireAuth } = require('../middleware/auth')
 const { broadcast } = require('../socket')
+const { notifyCollege } = require('./push')
 
 const router  = express.Router()
 
@@ -138,6 +139,16 @@ VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *
 
     res.status(201).json({ item })
     broadcast('refresh:items')
+
+    // If it's a Lost & Found post, notify all college users so they can claim it
+    if ((req.body.listingType || 'borrow') === 'lost_found') {
+      const poster = await queryOne('SELECT name FROM users WHERE id=$1', [req.userId])
+      notifyCollege(req.collegeId, req.userId, {
+        title: '🔍 Lost & Found — Item Reported!',
+        body: `${poster?.name || 'Someone'} found "${title.trim()}" — is it yours?`,
+        url: '/'
+      }).catch(() => {})
+    }
   } catch (err) { console.error(err); res.status(500).json({ error: 'Failed to list item.' }) }
 })
 
