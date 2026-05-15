@@ -2725,7 +2725,7 @@ function ActivityModal({ open, onClose, refresh, showToast, defaultTab, targetId
             <TierBadge tier={user?.trust_tier} />
             {hasForceClosedSlot
               ? <span style={{ fontSize: 13, color: '#DC2626', fontWeight: 600 }}>🔒 All slots locked (unreturned item)</span>
-              : <span style={{ fontSize: 13, color: T.textMid }}>{activeCount} used / {tier.limit - activeCount} free slots ({tier.limit} total)</span>
+              : <span style={{ fontSize: 13, color: T.textMid }}>{activeCount} used / {tier.limit} total borrow slots</span>
             }
           </div>
           {hasForceClosedSlot && (
@@ -3161,6 +3161,7 @@ export default function App() {
 
   const [showReqPopup, setShowReqPopup] = useState(false)
   const [showListPopup, setShowListPopup] = useState(false)
+  const [showSlotInfo, setShowSlotInfo] = useState(false)
 
   useEffect(() => {
     if (!user?.id) return;
@@ -3710,6 +3711,24 @@ export default function App() {
           />
         )}
         {listOpen && <ListItemModal open={listOpen} onClose={() => { setList(false); setEditItemData(null); }} onSuccess={refresh} editItemData={editItemData} />}
+        {showSlotInfo && (
+          <Modal open={showSlotInfo} onClose={() => setShowSlotInfo(false)}>
+            <div style={{ textAlign: 'center', padding: '8px 12px 12px' }}>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>🎫</div>
+              <ModalTitle>Borrow Slots</ModalTitle>
+              <div style={{ fontSize: 14, color: T.textMid, lineHeight: 1.6, marginTop: 8 }}>
+                You are currently using <strong style={{color: T.navy, fontSize: 16}}>{activeCount}</strong> of your <strong style={{color: T.navy, fontSize: 16}}>{tier.limit}</strong> total slots.
+              </div>
+              <div style={{ background: 'rgba(15,23,42,0.04)', padding: '16px', borderRadius: 12, marginTop: 16, textAlign: 'left' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: T.navy, marginBottom: 6 }}>What are borrow slots?</div>
+                <div style={{ fontSize: 13, color: T.textMid, lineHeight: 1.5 }}>
+                  They allow you to borrow multiple items at the same time. Returning items promptly and maintaining a good track record will upgrade your trust tier, unlocking even more slots.
+                </div>
+              </div>
+              <button className="btn-press" style={{ ...btn(true), marginTop: 24, width: '100%' }} onClick={() => setShowSlotInfo(false)}>Got it</button>
+            </div>
+          </Modal>
+        )}
         {borrowItem && <BorrowModal open={!!borrowItem} item={borrowItem} onClose={() => setBorrow(null)} onSuccess={(newReq) => {
           // Optimistically add to myRequests so Request button disables instantly
           if (newReq) setMyRequests(prev => [...prev, { ...newReq, item_id: borrowItem.id, status: 'pending', borrower_id: user.id }])
@@ -3832,8 +3851,8 @@ export default function App() {
                   <span style={{ fontSize: 11, color: '#FCA5A5', fontWeight: 700 }}>Slots locked</span>
                 </div>
               ) : (
-                <div style={{ background: `${T.coral}22`, borderRadius: 20, padding: '4px 10px', display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0, border: `1px solid ${T.coral}44` }}>
-                  <span style={{ fontSize: 11, color: T.coral, fontWeight: 700 }}>{activeCount} used / {tier.limit - activeCount} free slots</span>
+                <div onClick={() => setShowSlotInfo(true)} className="btn-press" style={{ cursor: 'pointer', background: `${T.coral}22`, borderRadius: 20, padding: '4px 10px', display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0, border: `1px solid ${T.coral}44` }}>
+                  <span style={{ fontSize: 11, color: T.coral, fontWeight: 700 }}>{activeCount} used / {tier.limit} total borrow slots</span>
                   <TierBadge tier={user.trust_tier} />
                 </div>
               )}
