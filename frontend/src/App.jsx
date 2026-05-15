@@ -470,7 +470,7 @@ function AuthScreen({ onLogin }) {
             {err && <div style={ERR}>{err}</div>}
             <div style={{ marginBottom: 16 }}>
               <label style={LBL}>College email</label>
-              <input style={INP} placeholder="cs2021001@mail.iitb.ac.in" value={fields.email} onChange={set('email')} onKeyDown={e => e.key === 'Enter' && doLogin()} autoComplete="email" />
+              <input style={{ ...INP, textTransform: 'lowercase' }} placeholder="cs2021001@mail.iitb.ac.in" value={fields.email} onChange={set('email')} onKeyDown={e => e.key === 'Enter' && doLogin()} autoComplete="email" />
             </div>
             <button className="btn-press" style={{ ...btn(true), width: '100%', padding: '13px', fontSize: 15 }} onClick={doLogin} disabled={loading}>
               {loading ? 'Sending code…' : 'Continue →'}
@@ -493,7 +493,7 @@ function AuthScreen({ onLogin }) {
               return (
                 <div key={key} style={{ marginBottom: 14 }}>
                   <label style={LBL}>{label}</label>
-                  <input style={INP} placeholder={ph} value={fields[key]} onChange={set(key)} autoComplete={ac} onKeyDown={e => e.key === 'Enter' && key === 'roll' && doSignup()} />
+                  <input style={key === 'email' ? { ...INP, textTransform: 'lowercase' } : INP} placeholder={ph} value={fields[key]} onChange={set(key)} autoComplete={ac} onKeyDown={e => e.key === 'Enter' && key === 'roll' && doSignup()} />
                 </div>
               )
             })}
