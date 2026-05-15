@@ -500,6 +500,7 @@ function ItemsTab({ apiFetch }) {
     try {
       await apiFetch(`/admin/delete-item-request/${id}`, { method: "DELETE" })
       setRequests(r => r.filter(x => x.id !== id))
+      setSelected(s => { const n = new Set(s); n.delete(id); return n })
     } catch (e) { alert("Failed: " + e.message) }
   }
 
@@ -532,16 +533,19 @@ function ItemsTab({ apiFetch }) {
   async function deleteSelected() {
     const ids = [...selected]
     if (ids.length === 0) return
-    if (!window.confirm(`Delete ${ids.length} selected item(s)? This cannot be undone.`)) return
+    const label = view === "items" ? "item(s)" : "borrow request(s)"
+    if (!window.confirm(`Delete ${ids.length} selected ${label}? This cannot be undone.`)) return
     try {
-      const res = await apiFetch("/admin/delete-items-bulk", {
+      const endpoint = view === "items" ? "/admin/delete-items-bulk" : "/admin/delete-requests-bulk"
+      const res = await apiFetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ids })
       })
-      setItems(i => i.filter(x => !selected.has(x.id)))
+      if (view === "items") setItems(i => i.filter(x => !selected.has(x.id)))
+      else setRequests(r => r.filter(x => !selected.has(x.id)))
       setSelected(new Set())
-      alert(`${res.deleted} item(s) deleted.`)
+      alert(`${res.deleted} ${label} deleted.`)
     } catch (e) { alert("Failed: " + e.message) }
   }
 
@@ -596,7 +600,7 @@ function ItemsTab({ apiFetch }) {
             style={{ padding: "6px 12px", borderRadius: 20, border: "0.5px solid #ccc", fontSize: 12, width: 220, flex: 1 }}
           />
           <button className="mobile-full-btn" onClick={load} style={{ ...S.btn(false) }}>↻ Refresh</button>
-          {view === "items" && selected.size > 0 && (
+          {selected.size > 0 && (
             <button className="mobile-full-btn" onClick={deleteSelected}
               style={{ ...S.btn(true), background: "#e94560", display: "flex", alignItems: "center", gap: 6 }}>
               🗑 Delete Selected
@@ -608,18 +612,16 @@ function ItemsTab({ apiFetch }) {
       </div>
       <div style={{ fontSize: 12, color: "#666", marginBottom: 8 }}>
         {list.length} records found
-        {view === "items" && selected.size > 0 && <span style={{ marginLeft: 8, color: "#e94560", fontWeight: 600 }}>{selected.size} selected</span>}
+        {selected.size > 0 && <span style={{ marginLeft: 8, color: "#e94560", fontWeight: 600 }}>{selected.size} selected</span>}
       </div>
       <div className="table-container">
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ background: "#f5f5f0" }}>
-              {view === "items" && (
-                <th style={{ ...S.th, width: 36, textAlign: "center" }}>
-                  <input type="checkbox" checked={allSelected} onChange={toggleSelectAll}
-                    style={{ cursor: "pointer", width: 14, height: 14 }} />
-                </th>
-              )}
+              <th style={{ ...S.th, width: 36, textAlign: "center" }}>
+                <input type="checkbox" checked={allSelected} onChange={toggleSelectAll}
+                  style={{ cursor: "pointer", width: 14, height: 14 }} />
+              </th>
               <th style={S.th}>Title</th>
               <th style={S.th}>{view === "items" ? "Owner" : "Requester"}</th>
               <th style={S.th}>Status</th>
@@ -628,19 +630,17 @@ function ItemsTab({ apiFetch }) {
           </thead>
           <tbody>
             {list.length === 0 ? (
-              <tr><td colSpan={view === "items" ? 5 : 4} style={{ ...S.td, textAlign: "center", color: "#999" }}>No {view} found</td></tr>
+              <tr><td colSpan={5} style={{ ...S.td, textAlign: "center", color: "#999" }}>No {view} found</td></tr>
             ) : list.map(item => {
               const name = item.owner_name || item.requester_name || "Unknown User";
               const email = item.owner_email || item.requester_email || "No Email";
               const isChecked = selected.has(item.id)
               return (
               <tr key={item.id} style={{ background: isChecked ? "#fff8f0" : "transparent" }}>
-                {view === "items" && (
-                  <td style={{ ...S.td, textAlign: "center" }}>
-                    <input type="checkbox" checked={isChecked} onChange={() => toggleSelect(item.id)}
-                      style={{ cursor: "pointer", width: 14, height: 14 }} />
-                  </td>
-                )}
+                <td style={{ ...S.td, textAlign: "center" }}>
+                  <input type="checkbox" checked={isChecked} onChange={() => toggleSelect(item.id)}
+                    style={{ cursor: "pointer", width: 14, height: 14 }} />
+                </td>
                 <td style={S.td}>
                   <div style={{ fontWeight: 500 }}>{item.title}</div>
                   <div style={{ fontSize: 11, color: "#999" }}>{item.id.slice(0,8)}…</div>
