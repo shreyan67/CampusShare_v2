@@ -3159,6 +3159,20 @@ export default function App() {
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
 
+  const [showReqPopup, setShowReqPopup] = useState(false)
+  const [showListPopup, setShowListPopup] = useState(false)
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const t1 = setTimeout(() => setShowReqPopup(true), 1000);
+    const t2 = setTimeout(() => {
+      setShowReqPopup(false);
+      setShowListPopup(true);
+    }, 6000);
+    const t3 = setTimeout(() => setShowListPopup(false), 11000);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [user?.id]);
+
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 150)
     return () => clearTimeout(timer)
@@ -3744,8 +3758,26 @@ export default function App() {
             <button className="btn-press" style={{ ...btn(false), background: '#7C3AED22', color: '#7C3AED', border: '1px solid #7C3AED44', position: 'relative' }} onClick={() => setRequest(true)}>
               🙋 Request
               {requestActionCount > 0 && <span style={{ position: 'absolute', top: -6, right: -6, background: T.coral, color: '#fff', fontSize: 10, fontWeight: 800, borderRadius: '50%', width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #fff' }}>{requestActionCount > 9 ? '9+' : requestActionCount}</span>}
+              {showReqPopup && (
+                <div className="pop-in" style={{ position: 'absolute', top: '130%', left: '50%', zIndex: 1000, pointerEvents: 'none' }}>
+                  <div style={{ transform: 'translateX(-50%)', width: 180, background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(8px)', border: '1.5px solid #E8445A', color: '#fff', padding: '10px 14px', borderRadius: 12, fontSize: 13, fontFamily: 'var(--font-head)', fontWeight: 700, textAlign: 'center', lineHeight: 1.3, boxShadow: '0 8px 24px rgba(232,68,90,0.3)' }}>
+                    Request anything you want to <span style={{color: '#E8445A'}}>Borrow/Buy!</span>
+                    <div style={{ position: 'absolute', top: -5, left: '50%', transform: 'translateX(-50%) rotate(45deg)', width: 10, height: 10, background: '#0F172A', borderTop: '1.5px solid #E8445A', borderLeft: '1.5px solid #E8445A' }}/>
+                  </div>
+                </div>
+              )}
             </button>
-            <button className="btn-press" style={btn(true)} onClick={() => setList(true)}>+ List Item</button>
+            <button className="btn-press" style={{ ...btn(true), position: 'relative' }} onClick={() => setList(true)}>
+              + List Item
+              {showListPopup && (
+                <div className="pop-in" style={{ position: 'absolute', top: '130%', left: '50%', zIndex: 1000, pointerEvents: 'none' }}>
+                  <div style={{ transform: 'translateX(-50%)', width: 180, background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(8px)', border: '1.5px solid #E8445A', color: '#fff', padding: '10px 14px', borderRadius: 12, fontSize: 13, fontFamily: 'var(--font-head)', fontWeight: 700, textAlign: 'center', lineHeight: 1.3, boxShadow: '0 8px 24px rgba(232,68,90,0.3)' }}>
+                    List anything you want to <span style={{color: '#E8445A'}}>Lend/Sell!</span>
+                    <div style={{ position: 'absolute', top: -5, left: '50%', transform: 'translateX(-50%) rotate(45deg)', width: 10, height: 10, background: '#0F172A', borderTop: '1.5px solid #E8445A', borderLeft: '1.5px solid #E8445A' }}/>
+                  </div>
+                </div>
+              )}
+            </button>
             <button className="btn-press" style={{ ...btn(false), fontSize: 12 }} onClick={handleLogout}>Sign out</button>
           </div>
         </header>
@@ -3923,14 +3955,30 @@ export default function App() {
           {[
             { icon: '📦', label: 'Market', action: () => { if (tab !== 'marketplace') { fetchIdRef.current++; setItems([]) } setTab('marketplace') }, active: tab === 'marketplace' },
             { icon: '🔍', label: 'L&F', action: () => { if (tab !== 'lostfound') { fetchIdRef.current++; setItems([]) } setTab('lostfound') }, active: tab === 'lostfound' },
-            { icon: '➕', label: 'List', action: () => setList(true), active: false, primary: true },
-            { icon: '🙋', label: 'Requests', action: () => { setRequest(true); markRequestsSeen(); }, active: false, badge: requestActionCount },
+            { id: 'list', icon: '➕', label: 'List', action: () => setList(true), active: false, primary: true },
+            { id: 'req', icon: '🙋', label: 'Requests', action: () => { setRequest(true); markRequestsSeen(); }, active: false, badge: requestActionCount },
             { icon: '📋', label: 'Activity', action: () => setAct(true), active: false, badge: activityActionCount }
-          ].map(({ icon, label, action, active, primary, badge }) => (
+          ].map(({ id, icon, label, action, active, primary, badge }) => (
             <button key={label} onClick={action} className="btn-press" style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, background: primary ? T.coral : 'transparent', color: primary ? '#fff' : active ? T.coral : T.textSoft, border: 'none', cursor: 'pointer', padding: primary ? '10px 16px' : '6px 12px', borderRadius: primary ? 40 : 'var(--radius-xs)', fontWeight: 600, transition: 'all 0.18s', boxShadow: primary ? 'var(--shadow-coral)' : 'none' }}>
               {badge > 0 && <span style={{ position: 'absolute', top: 0, right: 4, background: T.coral, color: '#fff', fontSize: 9, fontWeight: 800, borderRadius: 20, minWidth: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>{badge > 9 ? '9+' : badge}</span>}
               <span style={{ fontSize: primary ? 22 : 18 }}>{icon}</span>
               <span style={{ fontSize: 10 }}>{label}</span>
+              {id === 'req' && showReqPopup && (
+                <div className="pop-in" style={{ position: 'absolute', bottom: '130%', left: '50%', zIndex: 1000, pointerEvents: 'none' }}>
+                  <div style={{ transform: 'translateX(-70%)', width: 160, background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(8px)', border: '1.5px solid #E8445A', color: '#fff', padding: '10px 12px', borderRadius: 12, fontSize: 13, fontFamily: 'var(--font-head)', fontWeight: 700, textAlign: 'center', lineHeight: 1.3, boxShadow: '0 8px 24px rgba(232,68,90,0.3)' }}>
+                    Request anything you want to <span style={{color: '#E8445A'}}>Borrow/Buy!</span>
+                    <div style={{ position: 'absolute', bottom: -5, left: '70%', transform: 'translateX(-50%) rotate(45deg)', width: 10, height: 10, background: '#0F172A', borderBottom: '1.5px solid #E8445A', borderRight: '1.5px solid #E8445A' }}/>
+                  </div>
+                </div>
+              )}
+              {id === 'list' && showListPopup && (
+                <div className="pop-in" style={{ position: 'absolute', bottom: '130%', left: '50%', zIndex: 1000, pointerEvents: 'none' }}>
+                  <div style={{ transform: 'translateX(-50%)', width: 160, background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(8px)', border: '1.5px solid #E8445A', color: '#fff', padding: '10px 12px', borderRadius: 12, fontSize: 13, fontFamily: 'var(--font-head)', fontWeight: 700, textAlign: 'center', lineHeight: 1.3, boxShadow: '0 8px 24px rgba(232,68,90,0.3)' }}>
+                    List anything you want to <span style={{color: '#E8445A'}}>Lend/Sell!</span>
+                    <div style={{ position: 'absolute', bottom: -5, left: '50%', transform: 'translateX(-50%) rotate(45deg)', width: 10, height: 10, background: '#0F172A', borderBottom: '1.5px solid #E8445A', borderRight: '1.5px solid #E8445A' }}/>
+                  </div>
+                </div>
+              )}
             </button>
           ))}
         </nav>
