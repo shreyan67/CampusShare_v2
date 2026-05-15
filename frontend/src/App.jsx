@@ -1728,9 +1728,16 @@ function ItemRequestsSection({ itemReqTick, showToast, currentUserId, reload: re
                 </div>
 
                 {/* Expanded offers panel */}
-                {isExp && isOpen && (
+                {isExp && (
                   <div style={{ borderTop: `1px solid var(--border-soft)`, padding: '10px 12px', background: 'rgba(15,23,42,0.02)' }}>
                     {reqOffers.length === 0 && <div style={{ fontSize: 12, color: T.textSoft, textAlign: 'center' }}>No offers yet.</div>}
+                    
+                    {reqOffers.length > 0 && isOwn && !isOpen && (
+                      <div style={{ marginBottom: 12 }}>
+                        <InfoBanner type="warn">⏸️ You have already accepted an offer for this request. Cancel it first to accept another one.</InfoBanner>
+                      </div>
+                    )}
+
                     {reqOffers.map(offer => (
                       <div key={offer.id} style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '8px', background: 'rgba(15,23,42,0.03)', borderRadius: 'var(--radius-xs)', marginBottom: 5 }}>
                         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
@@ -1813,7 +1820,7 @@ function ItemRequestsSection({ itemReqTick, showToast, currentUserId, reload: re
 // ── INLINE LIFECYCLE PANEL ────────────────────────────────────────────────────
 // Removed as it is now handled by ReqCard inside the Activity tab.
 
-function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJourney, lifecycleMap, openChat, unreadCount = 0, inlineReq = false }) {
+function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJourney, lifecycleMap, openChat, unreadCount = 0, inlineReq = false, itemHasSelectedBorrower = false }) {
   const isPaid = r.is_paid
   const isLF = r.listing_type === 'lost_found'
   const txType = r.transaction_type || (isPaid ? 'rent' : 'lend')
@@ -2001,6 +2008,36 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
             <button className="btn-press" style={{ ...btn(true, true), fontSize: 10, padding: '6px', width: '100%' }} onClick={() => act(api.confirmReturn, r.id)}>Confirm Return</button>
           )}
         </div>
+
+        {/* Cancel Request / Dismiss Borrower for inline requests */}
+        {isBorrowing && (
+          (r.status === 'pending') ||
+          (isPaid && r.status === 'selected' && !r.payment_confirmed) ||
+          (!isPaid && ['selected', 'active'].includes(r.status) && !r.item_given)
+        ) && (
+          <button className="btn-press" style={{ ...btn(false, true), fontSize: 10, padding: '6px', color: T.error, border: `1px solid ${T.error}44`, width: '100%', marginBottom: 6 }} onClick={async (e) => {
+            e.stopPropagation();
+            const isSelectedOrActive = ['selected', 'active'].includes(r.status)
+            const label = isSelectedOrActive ? 'Cancel this approved request? It will move to history.' : 'Revoke this request?'
+            if (!window.confirm(label)) return
+            const res = await act(api.revokeRequest, r.id)
+            if (res?.error) { showToast(res.error); return }
+            showToast(isSelectedOrActive ? 'Request cancelled and moved to history.' : 'Request revoked.')
+            await reload()
+          }}>{['selected', 'active'].includes(r.status) ? 'Cancel Request' : 'Revoke'}</button>
+        )}
+
+        {!isBorrowing && (
+          (isPaid && r.status === 'selected' && !r.payment_confirmed) ||
+          (!isPaid && ['selected', 'active'].includes(r.status) && !r.item_given)
+        ) && (
+          <button className="btn-press" style={{ ...btn(false, true), fontSize: 10, padding: '6px', color: T.error, border: `1px solid ${T.error}44`, width: '100%', marginBottom: 6 }} onClick={async (e) => {
+            e.stopPropagation();
+            if (!window.confirm('Dismiss this borrower? This will move the transaction to history for both of you, and other pending requests will become approvable again.')) return
+            const res = await act(api.declineRequest, r.id)
+            if (res && !res.error) showToast('Borrower dismissed. Other requests are now approvable.')
+          }}>Dismiss Borrower</button>
+        )}
 
         <div style={{ display: 'flex', gap: 6 }}>
           <button className="btn-press" onClick={(e) => { e.stopPropagation(); openChat(r); }} style={{ flex: 1, padding: '6px', background: '#10B981', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 6, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, cursor: 'pointer' }}>
@@ -2234,15 +2271,19 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
               {isPaid && !user?.upi_id && (
                 <InfoBanner type="error">⚠️ Add UPI ID in Profile tab before approving paid requests.</InfoBanner>
               )}
-              <button className="btn-press" style={{ ...btn(true, true) }} onClick={async () => {
-                if (isPaid && !user?.upi_id) { showToast('Add UPI ID in Profile first.'); return }
-                try {
-                  const res = await api.approveRequest(r.id)
-                  if (res?.error) { showToast(res.error); return }
-                  showToast('Approved!')
-                  await reload()
-                } catch (err) { console.error(err); showToast('Approval failed') }
-              }}>Approve</button>
+              {itemHasSelectedBorrower ? (
+                <InfoBanner type="warn">⏸️ You already have an approved borrower for this item. Dismiss them first to approve someone else.</InfoBanner>
+              ) : (
+                <button className="btn-press" style={{ ...btn(true, true) }} onClick={async () => {
+                  if (isPaid && !user?.upi_id) { showToast('Add UPI ID in Profile first.'); return }
+                  try {
+                    const res = await api.approveRequest(r.id)
+                    if (res?.error) { showToast(res.error); return }
+                    showToast('Approved!')
+                    await reload()
+                  } catch (err) { console.error(err); showToast('Approval failed') }
+                }}>Approve</button>
+              )}
               <button className="btn-press" style={btn(false, true)} onClick={async () => { await act(api.declineRequest, r.id); showToast('Declined.') }}>Decline</button>
             </>
           )}
@@ -2255,15 +2296,37 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
             }}>Confirm &amp; Proceed</button>
           )}
 
-          {/* Revoke */}
-          {isBorrowing && r.status === 'pending' && (
-            <button className="btn-press" style={{ ...btn(false, true), color: T.error, border: `1px solid ${T.error}44` }} onClick={async () => {
-              if (!window.confirm('Revoke this request?')) return
+          {/* Dismiss Borrower (Lender):
+               Free items (lend/donate): dismissable at selected OR active stage (before item physically given)
+               Paid items (rent/sell): dismissable only at selected stage before payment confirmed */}
+          {!isBorrowing && (
+            (isPaid && r.status === 'selected' && !r.payment_confirmed) ||
+            (!isPaid && ['selected', 'active'].includes(r.status) && !r.item_given)
+          ) && (
+            <button className="btn-press" style={{ ...btn(false, true), color: T.error, border: `1px solid ${T.error}44`, marginTop: 8, width: '100%' }} onClick={async () => {
+              if (!window.confirm('Dismiss this borrower? This will move the transaction to history for both of you, and other pending requests will become approvable again.')) return
+              const res = await act(api.declineRequest, r.id)
+              if (res && !res.error) showToast('Borrower dismissed. Other requests are now approvable.')
+            }}>Dismiss Borrower</button>
+          )}
+
+          {/* Revoke / Cancel (Borrower):
+               - Paid items: pending OR selected (before payment)
+               - Free items: pending, selected OR active (before handover) */}
+          {isBorrowing && (
+            (r.status === 'pending') ||
+            (isPaid && r.status === 'selected' && !r.payment_confirmed) ||
+            (!isPaid && ['selected', 'active'].includes(r.status) && !r.item_given)
+          ) && (
+            <button className="btn-press" style={{ ...btn(false, true), color: T.error, border: `1px solid ${T.error}44`, marginTop: 8, width: '100%' }} onClick={async () => {
+              const isSelectedOrActive = ['selected', 'active'].includes(r.status)
+              const label = isSelectedOrActive ? 'Cancel this approved request? It will move to history.' : 'Revoke this request?'
+              if (!window.confirm(label)) return
               const res = await api.revokeRequest(r.id)
               if (res?.error) { showToast(res.error); return }
-              showToast('Request revoked.')
+              showToast(isSelectedOrActive ? 'Request cancelled and moved to history.' : 'Request revoked.')
               await reload()
-            }}>Revoke</button>
+            }}>{['selected', 'active'].includes(r.status) ? 'Cancel Request' : 'Revoke'}</button>
           )}
 
           {/* Handover PIN Display (Borrower) */}
@@ -2466,7 +2529,8 @@ function getActionRequired(r, isBorrowing) {
 }
 
 function isGlobalHistory(r) {
-  if (!['returned', 'declined', 'closed'].includes(r.status)) return false;
+  if (r.status === 'declined') return true;
+  if (!['returned', 'closed'].includes(r.status)) return false;
   if (r.force_closed) return false;
   if (r.is_paid && r.payout_status && !['done', 'na'].includes(r.payout_status)) return false;
   return true;
@@ -2579,18 +2643,21 @@ function ActivityModal({ open, onClose, refresh, showToast, defaultTab, targetId
 
   const borrowing = reqs.filter(r => r.borrower_id === user?.id && !r.from_item_request)
   const activeBorrowing = borrowing.filter(r => !isHistory(r))
-  const historyBorrowing = borrowing.filter(r => isHistory(r))
+  let historyBorrowing = borrowing.filter(r => isHistory(r))
+  if (historyBorrowing.length >= 15) historyBorrowing = []
 
   // True only if there is at least one borrow_request that is actually force_closed (including item requests)
   const hasForceClosedSlot = reqs.some(r => r.force_closed && r.borrower_id === user?.id)
 
   const lending = reqs.filter(r => r.owner_id === user?.id && !r.from_item_request)
   const activeLending = lending.filter(r => !isHistory(r))
-  const historyLending = lending.filter(r => isHistory(r))
+  let historyLending = lending.filter(r => isHistory(r))
+  if (historyLending.length >= 15) historyLending = []
 
   const requestHandovers = reqs.filter(r => r.from_item_request)
   const activeHandovers = requestHandovers.filter(r => !isHistory(r))
-  const historyHandovers = requestHandovers.filter(r => isHistory(r))
+  let historyHandovers = requestHandovers.filter(r => isHistory(r))
+  if (historyHandovers.length >= 15) historyHandovers = []
 
   const bCount = activeBorrowing.filter(r => getActionRequired(r, true)).length
   const lCount = activeLending.filter(r => getActionRequired(r, false)).length
@@ -2706,7 +2773,10 @@ function ActivityModal({ open, onClose, refresh, showToast, defaultTab, targetId
               <div style={{ fontSize: 36, marginBottom: 8 }}>📤</div>
               <div>No active lending right now. <span style={{ color: T.coral, cursor: 'pointer', fontWeight: 600 }} onClick={onClose}>List an item!</span></div>
             </div>
-            : activeLending.map(r => <ReqCard key={r.id} r={r} isBorrowing={false} user={user} showToast={showToast} reload={reload} openJourney={openJourney} closeJourney={closeJourney} lifecycleMap={lifecycleMap} openChat={setChatRequest} unreadCount={unreadMap[r.id] || 0} />)
+            : activeLending.map(r => {
+                const itemHasSelectedBorrower = activeLending.some(other => other.item_id === r.item_id && other.id !== r.id && ['selected','active'].includes(other.status))
+                return <ReqCard key={r.id} r={r} isBorrowing={false} user={user} showToast={showToast} reload={reload} openJourney={openJourney} closeJourney={closeJourney} lifecycleMap={lifecycleMap} openChat={setChatRequest} unreadCount={unreadMap[r.id] || 0} itemHasSelectedBorrower={itemHasSelectedBorrower} />
+              })
           }
 
           {historyLending.length > 0 && (
@@ -2715,7 +2785,10 @@ function ActivityModal({ open, onClose, refresh, showToast, defaultTab, targetId
                 History ({historyLending.length > 10 ? '10+' : historyLending.length})
               </summary>
               <div style={{ paddingTop: 12 }}>
-                {historyLending.slice(0, 10).map(r => <ReqCard key={r.id} r={r} isBorrowing={false} user={user} showToast={showToast} reload={reload} openJourney={openJourney} closeJourney={closeJourney} lifecycleMap={lifecycleMap} openChat={setChatRequest} unreadCount={unreadMap[r.id] || 0} />)}
+                {historyLending.slice(0, 10).map(r => {
+                  const itemHasSelectedBorrower = activeLending.some(other => other.item_id === r.item_id && ['selected','active'].includes(other.status))
+                  return <ReqCard key={r.id} r={r} isBorrowing={false} user={user} showToast={showToast} reload={reload} openJourney={openJourney} closeJourney={closeJourney} lifecycleMap={lifecycleMap} openChat={setChatRequest} unreadCount={unreadMap[r.id] || 0} itemHasSelectedBorrower={itemHasSelectedBorrower} />
+                })}
               </div>
             </details>
           )}
@@ -3329,6 +3402,7 @@ export default function App() {
 
       if (isBorrower && nr.status === 'selected' && old.status === 'pending') showToast(`✅ Request for ${nr.item_title} approved!`, true)
       if (isBorrower && nr.status === 'declined' && old.status === 'pending') showToast(`❌ Request for ${nr.item_title} declined.`, true)
+      if (isBorrower && nr.status === 'declined' && old.status === 'selected') showToast(`🔄 Lender withdrew approval for ${nr.item_title}. Request closed.`, true)
       if (isBorrower && nr.pickup_details && !old.pickup_details) showToast(`📍 Pickup details sent for ${nr.item_title}!`, true)
       if (isBorrower && nr.item_given && !old.item_given) showToast(`🤝 Lender handed over ${nr.item_title}. Confirm receipt!`, true)
 
@@ -3336,6 +3410,7 @@ export default function App() {
       if (isLender && nr.payment_confirmed && !old.payment_confirmed) showToast(`💳 Payment confirmed for ${nr.item_title}!`, true)
       if (isLender && nr.pickup_message && !old.pickup_message) showToast(`📍 Claimer sent pickup message for ${nr.item_title}.`, true)
       if (isLender && nr.status === 'declined' && old.status === 'pending') showToast(`❌ Request for ${nr.item_title} was revoked.`, true)
+      if (isLender && nr.status === 'declined' && old.status === 'selected') showToast(`🔄 Approved borrower cancelled their request for ${nr.item_title}. You can approve someone else.`, true)
     })
     prevReqsRef.current = myRequests
   }, [myRequests, user, showToast])

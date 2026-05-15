@@ -301,12 +301,9 @@ router.patch('/:id/offers/:offerId/accept', requireAuth, async (req, res) => {
       pin
     ])
 
-    // 3. Mark request as closed, decline other offers
+    // 3. Mark request as closed, but DO NOT decline other offers yet!
+    // They will be auto-declined only after payment (for rent/sell) or handover (for lend/donate).
     await query("UPDATE item_requests SET status='closed', accepted_offer_id=$1 WHERE id=$2", [offer.id, r.id])
-    await query(
-      "UPDATE item_request_offers SET status='declined' WHERE request_id=$1 AND id<>$2 AND status='pending'",
-      [r.id, offer.id]
-    )
     await query("UPDATE item_request_offers SET status='accepted' WHERE id=$1", [offer.id])
 
     // Notify offerer that their offer was accepted

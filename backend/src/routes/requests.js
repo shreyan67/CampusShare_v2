@@ -12,7 +12,7 @@ const REQUEST_JOIN = `
     br.*,
     i.title AS item_title, i.category AS item_category, i.listing_type,
     i.is_paid, i.price_per_day, i.images AS item_images,
-    i.transaction_type,
+    i.transaction_type, i.allow_multiple, i.status AS item_status,
     borrower.name AS borrower_name, borrower.avatar AS borrower_avatar, borrower.color AS borrower_color,
     owner.name AS owner_name,
     -- flag borrow_requests that came from item_request offers (keep in Requests tab only)
@@ -26,6 +26,18 @@ const REQUEST_JOIN = `
 // GET /api/requests/mine
 router.get('/mine', requireAuth, async (req, res) => {
   try {
+    // Automatic History Cleanup: Delete history requests if count reaches 15
+    const historyCount = await queryOne(
+      "SELECT COUNT(*) FROM borrow_requests WHERE (borrower_id=$1 OR owner_id=$1) AND (status='declined' OR (status='returned' AND payout_status IN ('na', 'done')) OR (force_closed=TRUE AND item_id NOT IN (SELECT id FROM items WHERE listing_type='request_offer')))",
+      [req.userId]
+    )
+    if (historyCount && parseInt(historyCount.count) >= 15) {
+      await query(
+        "DELETE FROM borrow_requests WHERE (borrower_id=$1 OR owner_id=$1) AND (status='declined' OR (status='returned' AND payout_status IN ('na', 'done')) OR (force_closed=TRUE AND item_id NOT IN (SELECT id FROM items WHERE listing_type='request_offer')))", 
+        [req.userId]
+      )
+    }
+
     const reqs = await query(
       REQUEST_JOIN + ' WHERE (br.borrower_id=$1 OR br.owner_id=$1) ORDER BY br.requested_at DESC',
       [req.userId]
@@ -132,10 +144,41 @@ router.patch('/:id/activate-after-payment', requireAuth, async (req, res) => {
     // Decline all other pending/selected requests for this item — payment is committed
     if (!item.allow_multiple) {
       await query("UPDATE items SET status='borrowed' WHERE id=$1", [item.id])
-      await query(
-        "UPDATE borrow_requests SET status='declined' WHERE item_id=$1 AND id<>$2 AND status IN ('pending','selected')",
+      
+      const declinedReqs = await query(
+        "UPDATE borrow_requests SET status='declined' WHERE item_id=$1 AND id<>$2 AND status IN ('pending','selected') RETURNING borrower_id",
         [item.id, r.id]
       )
+      
+      declinedReqs.rows.forEach(dr => {
+        sendPushNotification(dr.borrower_id, {
+          title: '❌ Item No Longer Available',
+          body: `Another borrower completed payment for "${item.title}". Your request was automatically declined.`,
+          url: '/'
+        }).catch(() => {})
+        emitToUser(dr.borrower_id, 'refresh:requests')
+      })
+
+      if (item.listing_type === 'request_offer') {
+        const ir = await queryOne(`
+          SELECT ir.id FROM item_requests ir
+          JOIN item_request_offers o ON ir.accepted_offer_id = o.id
+          WHERE ir.requester_id = $1 AND o.offerer_id = $2 AND ir.status = 'closed'
+          ORDER BY ir.created_at DESC LIMIT 1
+        `, [r.borrower_id, r.owner_id])
+        if (ir) {
+          const declinedOffers = await query("UPDATE item_request_offers SET status='declined' WHERE request_id=$1 AND status='pending' RETURNING offerer_id", [ir.id])
+          declinedOffers.rows.forEach(doffer => {
+            sendPushNotification(doffer.offerer_id, {
+              title: '❌ Offer Declined',
+              body: `Another offer was finalized for "${item.title}". Your offer was automatically declined.`,
+              url: '/'
+            }).catch(() => {})
+            emitToUser(doffer.offerer_id, 'refresh:requests')
+          })
+          broadcast('refresh:item-requests')
+        }
+      }
     }
 
     emitToUser(r.owner_id, 'refresh:requests')
@@ -180,10 +223,40 @@ router.patch('/:id/finalize', requireAuth, async (req, res) => {
     // if selected borrower doesn't show up. Others get declined at item-given.
     if (item.is_paid && !item.allow_multiple) {
       await query("UPDATE items SET status='borrowed' WHERE id=$1", [item.id])
-      await query(
-        "UPDATE borrow_requests SET status='declined' WHERE item_id=$1 AND id<>$2 AND status IN ('pending','selected')",
+      const declinedReqs = await query(
+        "UPDATE borrow_requests SET status='declined' WHERE item_id=$1 AND id<>$2 AND status IN ('pending','selected') RETURNING borrower_id",
         [item.id, r.id]
       )
+      
+      declinedReqs.rows.forEach(dr => {
+        sendPushNotification(dr.borrower_id, {
+          title: '❌ Item No Longer Available',
+          body: `Another borrower completed payment for "${item.title}". Your request was automatically declined.`,
+          url: '/'
+        }).catch(() => {})
+        emitToUser(dr.borrower_id, 'refresh:requests')
+      })
+
+      if (item.listing_type === 'request_offer') {
+        const ir = await queryOne(`
+          SELECT ir.id FROM item_requests ir
+          JOIN item_request_offers o ON ir.accepted_offer_id = o.id
+          WHERE ir.requester_id = $1 AND o.offerer_id = $2 AND ir.status = 'closed'
+          ORDER BY ir.created_at DESC LIMIT 1
+        `, [r.borrower_id, r.owner_id])
+        if (ir) {
+          const declinedOffers = await query("UPDATE item_request_offers SET status='declined' WHERE request_id=$1 AND status='pending' RETURNING offerer_id", [ir.id])
+          declinedOffers.rows.forEach(doffer => {
+            sendPushNotification(doffer.offerer_id, {
+              title: '❌ Offer Declined',
+              body: `Another offer was finalized for "${item.title}". Your offer was automatically declined.`,
+              url: '/'
+            }).catch(() => {})
+            emitToUser(doffer.offerer_id, 'refresh:requests')
+          })
+          broadcast('refresh:item-requests')
+        }
+      }
     }
     // For multi-borrower items, item stays 'available' so other selected borrowers can also finalize
 
@@ -216,12 +289,15 @@ router.patch('/:id/approve', requireAuth, async (req, res) => {
       return res.status(409).json({ error: 'Request not in pending state.' })
     }
 
-    // If item does NOT allow multiple borrowers, de-select any previously selected request first
+    // If item does NOT allow multiple borrowers, block approval if another is already selected or active
     if (!item.allow_multiple) {
-      await query(
-        "UPDATE borrow_requests SET status='pending' WHERE item_id=$1 AND status='selected' AND id<>$2",
+      const existingSelected = await queryOne(
+        "SELECT id FROM borrow_requests WHERE item_id=$1 AND status IN ('selected', 'active') AND id<>$2",
         [item.id, r.id]
       )
+      if (existingSelected) {
+        return res.status(409).json({ error: 'You already have an approved or active borrower for this item. Dismiss them first before approving someone else.' })
+      }
     }
 
     await query(
@@ -246,18 +322,60 @@ router.patch('/:id/approve', requireAuth, async (req, res) => {
   }
 })
 // PATCH /api/requests/:id/decline
+// Used by lender to: decline a pending request, OR dismiss an approved borrower (selected/active)
+// Dismissal rules:
+//   - Paid items (rent/sell): dismissable only when status='selected' AND payment NOT confirmed
+//   - Free items (lend/donate): dismissable when status='selected' OR 'active' (before item physically given)
 router.patch('/:id/decline', requireAuth, async (req, res) => {
   try {
     const r    = await queryOne('SELECT * FROM borrow_requests WHERE id=$1', [req.params.id])
     const item = await queryOne('SELECT * FROM items WHERE id=$1', [r?.item_id])
     if (!r || !item) return res.status(404).json({ error: 'Not found.' })
     if (item.owner_id !== req.userId) return res.status(403).json({ error: 'Not your item.' })
+
+    // Block if trying to dismiss a paid borrower who has already paid
+    if (item.is_paid && r.status === 'selected' && r.payment_confirmed) {
+      return res.status(409).json({ error: 'Payment already made by this borrower, cannot dismiss.' })
+    }
+    // Block if trying to dismiss during 'active' state for paid items (too late — item in transit)
+    if (item.is_paid && r.status === 'active') {
+      return res.status(409).json({ error: 'Item is already active with payment confirmed. Use force-close if needed.' })
+    }
+    // Block if item already physically given (too late to dismiss)
+    if (r.status === 'active' && r.item_given) {
+      return res.status(409).json({ error: 'Item already handed over, cannot dismiss.' })
+    }
+    // Only allow decline/dismiss on pending, selected, or (for free items) active-before-given
+    const allowedStatuses = ['pending', 'selected', 'active']
+    if (!allowedStatuses.includes(r.status)) {
+      return res.status(409).json({ error: 'Cannot decline/dismiss in current state.' })
+    }
+
     await query("UPDATE borrow_requests SET status='declined' WHERE id=$1", [r.id])
 
-    // Notify borrower: request declined
+    // If this was an accepted offer on a "Wanted" post, reopen the wanted post!
+    if (item.listing_type === 'request_offer') {
+      const ir = await queryOne(`
+        SELECT ir.id, ir.accepted_offer_id FROM item_requests ir
+        JOIN item_request_offers o ON ir.accepted_offer_id = o.id
+        WHERE ir.requester_id = $1 AND o.offerer_id = $2 AND ir.status = 'closed'
+        ORDER BY ir.created_at DESC LIMIT 1
+      `, [r.borrower_id, item.owner_id])
+      if (ir) {
+        await query("UPDATE item_requests SET status='open', accepted_offer_id=NULL WHERE id=$1", [ir.id])
+        await query("UPDATE item_request_offers SET status='declined' WHERE id=$1", [ir.accepted_offer_id])
+        emitToUser(r.borrower_id, 'refresh:item-requests')
+        broadcast('refresh:item-requests')
+      }
+    }
+
+    // Notify borrower: context-aware message
+    const wasDismissed = ['selected', 'active'].includes(r.status)
     sendPushNotification(r.borrower_id, {
-      title: '❌ Request Declined',
-      body: `Your request for "${item.title}" was declined by the lender.`,
+      title: wasDismissed ? '🔄 Borrower Dismissed' : '❌ Request Declined',
+      body: wasDismissed
+        ? `The lender dismissed you from the transaction for "${item.title}". The request has been closed.`
+        : `Your request for "${item.title}" was declined by the lender.`,
       url: '/'
     }).catch(() => {})
     emitToUser(r.borrower_id, 'refresh:requests')
@@ -542,11 +660,42 @@ router.patch('/:id/verify-handover', requireAuth, async (req, res) => {
     await query('UPDATE borrow_requests SET item_given=TRUE, borrower_received=TRUE WHERE id=$1', [r.id])
 
     // item-given logic: decline others, mark borrowed
-    await query(
-      "UPDATE borrow_requests SET status='declined' WHERE item_id=$1 AND id<>$2 AND status IN ('pending','selected')",
+    const declinedReqs = await query(
+      "UPDATE borrow_requests SET status='declined' WHERE item_id=$1 AND id<>$2 AND status IN ('pending','selected') RETURNING borrower_id",
       [r.item_id, r.id]
     )
+    
+    declinedReqs.rows.forEach(dr => {
+      sendPushNotification(dr.borrower_id, {
+        title: '❌ Item No Longer Available',
+        body: `Another borrower received "${item.title}". Your request was automatically declined.`,
+        url: '/'
+      }).catch(() => {})
+      emitToUser(dr.borrower_id, 'refresh:requests')
+    })
+    
     await query("UPDATE items SET status='borrowed' WHERE id=$1", [r.item_id])
+
+    if (item.listing_type === 'request_offer') {
+      const ir = await queryOne(`
+        SELECT ir.id FROM item_requests ir
+        JOIN item_request_offers o ON ir.accepted_offer_id = o.id
+        WHERE ir.requester_id = $1 AND o.offerer_id = $2 AND ir.status = 'closed'
+        ORDER BY ir.created_at DESC LIMIT 1
+      `, [r.borrower_id, r.owner_id])
+      if (ir) {
+        const declinedOffers = await query("UPDATE item_request_offers SET status='declined' WHERE request_id=$1 AND status='pending' RETURNING offerer_id", [ir.id])
+        declinedOffers.rows.forEach(doffer => {
+          sendPushNotification(doffer.offerer_id, {
+            title: '❌ Offer Declined',
+            body: `Another offer was finalized for "${item.title}". Your offer was automatically declined.`,
+            url: '/'
+          }).catch(() => {})
+          emitToUser(doffer.offerer_id, 'refresh:requests')
+        })
+        broadcast('refresh:item-requests')
+      }
+    }
 
     // borrower-received logic: handle sell/donate instantly
     const noReturn = ['sell','donate'].includes(item.transaction_type)
@@ -575,17 +724,65 @@ router.patch('/:id/verify-handover', requireAuth, async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ error: 'Failed.' }) }
 })
 
-// PATCH /api/requests/:id/revoke — borrower cancels their own pending request
-// Only allowed while status is 'pending' — once selected, borrower cannot revoke
+// PATCH /api/requests/:id/revoke — borrower cancels their own pending/selected/active request
+// Rules:
+//   - Paid items (rent/sell): cancellable only when status='pending' or 'selected' (before payment confirmed)
+//   - Free items (lend/donate): cancellable when status='pending', 'selected', or 'active' (before item physically given)
 router.patch('/:id/revoke', requireAuth, async (req, res) => {
   try {
     const r = await queryOne('SELECT * FROM borrow_requests WHERE id=$1', [req.params.id])
-    if (!r) return res.status(404).json({ error: 'Not found.' })
+    const item = await queryOne('SELECT * FROM items WHERE id=$1', [r?.item_id])
+    if (!r || !item) return res.status(404).json({ error: 'Not found.' })
     if (r.borrower_id !== req.userId) return res.status(403).json({ error: 'Not your request.' })
-    if (r.status !== 'pending') {
-      return res.status(409).json({ error: 'You can only revoke a pending request. Once selected, contact the lender.' })
+    
+    // Block if trying to revoke a paid request that is already confirmed/active
+    if (item.is_paid && r.status === 'selected' && r.payment_confirmed) {
+      return res.status(409).json({ error: 'Payment already made, cannot cancel. Contact lender.' })
     }
+    if (item.is_paid && r.status === 'active') {
+      return res.status(409).json({ error: 'Request is active with payment confirmed. Contact lender.' })
+    }
+    // Block if item already physically given
+    if (r.status === 'active' && r.item_given) {
+      return res.status(409).json({ error: 'Item already handed over, cannot cancel.' })
+    }
+
+    // Only allow revoke on pending, selected, or (for free items) active-before-given
+    const allowedStatuses = ['pending', 'selected', 'active']
+    if (!allowedStatuses.includes(r.status)) {
+      return res.status(409).json({ error: 'Cannot cancel request in current state.' })
+    }
+
     await query("UPDATE borrow_requests SET status='declined' WHERE id=$1", [r.id])
+
+    // If this was an accepted offer on a "Wanted" post, reopen the wanted post!
+    if (item.listing_type === 'request_offer') {
+      const ir = await queryOne(`
+        SELECT ir.id, ir.accepted_offer_id FROM item_requests ir
+        JOIN item_request_offers o ON ir.accepted_offer_id = o.id
+        WHERE ir.requester_id = $1 AND o.offerer_id = $2 AND ir.status = 'closed'
+        ORDER BY ir.created_at DESC LIMIT 1
+      `, [r.borrower_id, r.owner_id])
+      if (ir) {
+        await query("UPDATE item_requests SET status='open', accepted_offer_id=NULL WHERE id=$1", [ir.id])
+        await query("UPDATE item_request_offers SET status='declined' WHERE id=$1", [ir.accepted_offer_id])
+        emitToUser(r.borrower_id, 'refresh:item-requests')
+        broadcast('refresh:item-requests')
+      }
+    }
+
+    // If borrower cancels a selected/active request, notify lender so they can re-approve someone else
+    const wasApproved = ['selected', 'active'].includes(r.status)
+    if (wasApproved) {
+      sendPushNotification(r.owner_id, {
+        title: '🔄 Borrower Cancelled',
+        body: `The borrower cancelled their request for "${item.title}". You can now approve someone else.`,
+        url: '/'
+      }).catch(() => {})
+      emitToUser(r.owner_id, 'refresh:requests')
+    }
+    emitToUser(r.borrower_id, 'refresh:requests')
+
     res.json({ success: true })
   } catch (err) { console.error(err); res.status(500).json({ error: 'Failed.' }) }
 })
