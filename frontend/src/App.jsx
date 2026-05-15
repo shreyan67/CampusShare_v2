@@ -381,7 +381,7 @@ function AuthScreen({ onLogin }) {
   const [loading, setLoading] = useState(false)
   const [consoleOtp, setConsoleOtp] = useState('')
   const [fields, setFields] = useState({ name: '', email: '', roll: '', otp: '' })
-  const set = key => e => setFields(prev => ({ ...prev, [key]: e.target.value }))
+  const set = key => e => setFields(prev => ({ ...prev, [key]: key === 'email' ? e.target.value.toLowerCase() : e.target.value }))
 
   async function doLogin() {
     setErr('')

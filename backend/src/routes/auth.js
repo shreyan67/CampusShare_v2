@@ -40,7 +40,8 @@ router.get('/colleges', async (_req, res) => {
 // Body: { name, email, rollNumber, collegeId }
 router.post('/signup', async (req, res) => {
   try {
-    const { name, email, rollNumber } = req.body
+    let { name, email, rollNumber } = req.body
+    if (email) email = email.trim().toLowerCase()
 
     // ✅ FIXED (removed collegeId)
     if (!name || !email || !rollNumber)
@@ -72,7 +73,7 @@ if (isBypassEmail(email)) {
 }
 
     // Check duplicate email
-    if (await queryOne('SELECT id FROM users WHERE email=$1', [email]))
+    if (await queryOne('SELECT id FROM users WHERE LOWER(email)=$1', [email]))
       return res.status(409).json({ error: 'An account with this email already exists.' })
 
     const avatar = name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase()
@@ -125,10 +126,11 @@ if (isBypassEmail(email)) {
 // POST /api/auth/login  (passwordless — sends OTP to registered email)
 router.post('/login', async (req, res) => {
   try {
-    const { email } = req.body
+    let { email } = req.body
+    if (email) email = email.trim().toLowerCase()
     if (!email) return res.status(400).json({ error: 'Email is required.' })
 
-    const user = await queryOne('SELECT id, name, email FROM users WHERE email=$1', [email])
+    const user = await queryOne('SELECT id, name, email FROM users WHERE LOWER(email)=$1', [email])
     if (!user) {
   return res.status(404).json({
     error: 'No account with that email. Please sign up first.'
