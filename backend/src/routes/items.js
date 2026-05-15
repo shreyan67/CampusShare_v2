@@ -7,15 +7,7 @@ const { notifyCollege } = require('./push')
 
 const router  = express.Router()
 
-// multer: store images in memory as buffer, convert to base64
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits:  { fileSize: 2 * 1024 * 1024, files: 4 },   // 2MB per file, max 4 files
-  fileFilter: (_req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) cb(null, true)
-    else cb(new Error('Only image files allowed.'))
-  },
-})
+// No longer using multer, images are uploaded directly to Cloudinary from the frontend
 
 // GET /api/items/stats
 router.get('/stats', requireAuth, async (req, res) => {
@@ -88,10 +80,9 @@ router.get('/', requireAuth, async (req, res) => {
   }
 })
 
-// POST /api/items  (with optional image upload)
-router.post('/', requireAuth, upload.array('photos', 3), async (req, res) => {
+router.post('/', requireAuth, async (req, res) => {
   try {
-    const { title, category, conditionNotes, maxBorrowDays, isPaid, pricePerDay, allowMultiple, transactionType } = req.body
+    const { title, category, conditionNotes, maxBorrowDays, isPaid, pricePerDay, allowMultiple, transactionType, photos } = req.body
     if (!title?.trim()) return res.status(400).json({ error: 'Title is required.' })
 
     const validCats = ['Books & Notes', 'Lab Equipment', 'Electronics', 'Accessories', 'Stationary', 'Food', 'Other']
@@ -102,10 +93,8 @@ router.post('/', requireAuth, upload.array('photos', 3), async (req, res) => {
     if (!u?.is_verified) return res.status(403).json({ error: 'Verify your account first.' })
     if (u.is_flagged) return res.status(403).json({ error: 'Your account is flagged. Please contact admin.' })
 
-    // Convert uploaded images to base64
-    const images = (req.files || []).map(f =>
-      `data:${f.mimetype};base64,${f.buffer.toString('base64')}`
-    )
+    // URLs from Cloudinary
+    const images = Array.isArray(photos) ? photos : (photos ? [photos] : [])
 
     const paid  = isPaid === 'true' || isPaid === true
     const price = paid ? parseFloat(pricePerDay || 0) : 0
@@ -166,14 +155,14 @@ router.delete('/:id', requireAuth, async (req, res) => {
 })
 
 // PATCH /api/items/:id
-router.patch('/:id', requireAuth, upload.array('photos', 3), async (req, res) => {
+router.patch('/:id', requireAuth, async (req, res) => {
   try {
     const item = await queryOne('SELECT * FROM items WHERE id=$1', [req.params.id])
     if (!item) return res.status(404).json({ error: 'Not found.' })
     if (item.owner_id !== req.userId) return res.status(403).json({ error: 'Not your item.' })
     if (item.status !== 'available') return res.status(409).json({ error: 'Cannot edit an item that is currently requested or borrowed.' })
 
-    const { title, category, conditionNotes, maxBorrowDays, isPaid, pricePerDay, allowMultiple, transactionType } = req.body
+    const { title, category, conditionNotes, maxBorrowDays, isPaid, pricePerDay, allowMultiple, transactionType, photos } = req.body
     if (!title?.trim()) return res.status(400).json({ error: 'Title is required.' })
 
     const validCats = ['Books & Notes','Lab Equipment','Electronics','Accessories','Food','Stationary','Other']
@@ -185,11 +174,9 @@ router.patch('/:id', requireAuth, upload.array('photos', 3), async (req, res) =>
     const validTxTypes = ['rent','sell','donate','lend']
     const txType = validTxTypes.includes(transactionType) ? transactionType : paid ? 'rent' : 'lend'
 
-    // Only update images if new photos were uploaded.
-    // This prevents slow DB round-trips for massive base64 strings when only editing text.
     let updated;
-    if (req.files && req.files.length > 0) {
-      const images = req.files.map(f => `data:${f.mimetype};base64,${f.buffer.toString('base64')}`)
+    if (photos !== undefined) {
+      const images = Array.isArray(photos) ? photos : (photos ? [photos] : [])
       updated = await queryOne(`
         UPDATE items
         SET title=$1, category=$2, condition_notes=$3, max_borrow_days=$4, is_paid=$5, price_per_day=$6, allow_multiple=$7, transaction_type=$8, images=$9

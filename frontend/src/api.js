@@ -73,20 +73,10 @@ export const getLostFound = f => get('/items/lostfound?' + new URLSearchParams(c
 export const getStats     = () => get('/items/stats')
 export const deleteItem   = id => del(`/items/${id}`)
 export function listItem(data) {
-  const fd = new FormData()
-  Object.entries(data).forEach(([k, v]) => {
-    if (k === 'photos') { (v || []).forEach(f => fd.append('photos', f)) }
-    else if (v !== undefined && v !== null) fd.append(k, v)
-  })
-  return req('POST', '/items', fd)
+  return post('/items', data)
 }
 export function editItem(id, data) {
-  const fd = new FormData()
-  Object.entries(data).forEach(([k, v]) => {
-    if (k === 'photos') { (v || []).forEach(f => fd.append('photos', f)) }
-    else if (v !== undefined && v !== null) fd.append(k, v)
-  })
-  return req('PATCH', `/items/${id}`, fd)
+  return patch(`/items/${id}`, data)
 }
 
 // Requests

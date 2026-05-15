@@ -634,6 +634,34 @@ function ListItemModal({ open, onClose, onSuccess, editItemData = null, initialL
         if (upiRes?.user) { setUser(upiRes.user); api.persistUser(upiRes.user) }
       }
     }
+    // CLOUDINARY UPLOAD
+    let finalPhotos = undefined;
+    if (photos.length > 0) {
+      const newFiles = photos.filter(p => typeof p !== 'string');
+      const existingUrls = photos.filter(p => typeof p === 'string');
+      const uploadedUrls = [];
+      
+      for (const file of newFiles) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', 'ml_default');
+        try {
+          const res = await fetch('https://api.cloudinary.com/v1_1/dmpakiaqh/image/upload', {
+            method: 'POST',
+            body: formData
+          });
+          const data = await res.json();
+          if (data.secure_url) uploadedUrls.push(data.secure_url);
+        } catch (e) {
+          console.error('Cloudinary error', e);
+          setErr('Failed to upload images to Cloudinary.');
+          setLoading(false);
+          return;
+        }
+      }
+      finalPhotos = [...existingUrls, ...uploadedUrls];
+    }
+
     const payload = {
       title: titleRef.current, category,
       conditionNotes: notesRef.current,
@@ -643,7 +671,7 @@ function ListItemModal({ open, onClose, onSuccess, editItemData = null, initialL
       pricePerDay: isPaid ? ppd : '',
       transactionType: txType,
       allowMultiple: (!noReturn && ltype === 'borrow') ? String(allowMulti) : 'false',
-      photos: photos.length > 0 ? photos : undefined,
+      photos: finalPhotos,
     }
     const r = editItemData ? await api.editItem(editItemData.id, payload) : await api.listItem(payload)
     setLoading(false)
