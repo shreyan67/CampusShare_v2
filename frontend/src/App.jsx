@@ -1936,7 +1936,7 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
                 config: {
                   display: {
                     blocks: {
-                      upi: { name: "Pay via UPI", instruments: [{ method: "upi" }] },
+                      upi: { name: "Pay via UPI (PhonePe, Paytm, GPay)", instruments: [{ method: "upi" }] },
                       other: { name: "Other Payment Modes", instruments: [{ method: "card" }, { method: "netbanking" }, { method: "wallet" }] }
                     },
                     sequence: ["block.upi", "block.other"],
