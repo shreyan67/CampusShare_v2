@@ -1931,6 +1931,17 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
                 key: orderRes.keyId, amount: orderRes.amount, currency: orderRes.currency,
                 name: 'CampusShare', description: `Rental: ${r.item_title}`,
                 order_id: orderRes.orderId, theme: { color: T.coral },
+                prefill: { email: user?.email || '' },
+                config: {
+                  display: {
+                    blocks: {
+                      upi: { name: "Pay via UPI", instruments: [{ method: "upi" }] },
+                      other: { name: "Other Payment Modes", instruments: [{ method: "card" }, { method: "netbanking" }, { method: "wallet" }] }
+                    },
+                    sequence: ["block.upi", "block.other"],
+                    preferences: { show_default_blocks: false }
+                  }
+                },
                 handler: async (response) => {
                   const verifyRes = await api.verifyPayment({
                     requestId: r.id,
@@ -2294,6 +2305,17 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
                 key: orderRes.keyId, amount: orderRes.amount, currency: orderRes.currency,
                 name: 'CampusShare', description: `Rental: ${r.item_title}`,
                 order_id: orderRes.orderId, theme: { color: T.coral },
+                prefill: { email: user?.email || '' },
+                config: {
+                  display: {
+                    blocks: {
+                      upi: { name: "Pay via UPI", instruments: [{ method: "upi" }] },
+                      other: { name: "Other Payment Modes", instruments: [{ method: "card" }, { method: "netbanking" }, { method: "wallet" }] }
+                    },
+                    sequence: ["block.upi", "block.other"],
+                    preferences: { show_default_blocks: false }
+                  }
+                },
                 handler: async (response) => {
                   const verifyRes = await api.verifyPayment({
                     requestId: r.id,
