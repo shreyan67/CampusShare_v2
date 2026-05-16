@@ -1931,6 +1931,7 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
                 key: orderRes.keyId, amount: orderRes.amount, currency: orderRes.currency,
                 name: 'CampusShare', description: `Rental: ${r.item_title}`,
                 order_id: orderRes.orderId, theme: { color: T.coral },
+                webview_intent: true,
                 prefill: { email: user?.email || '' },
                 config: {
                   display: {
@@ -2305,6 +2306,7 @@ function ReqCard({ r, isBorrowing, user, showToast, reload, openJourney, closeJo
                 key: orderRes.keyId, amount: orderRes.amount, currency: orderRes.currency,
                 name: 'CampusShare', description: `Rental: ${r.item_title}`,
                 order_id: orderRes.orderId, theme: { color: T.coral },
+                webview_intent: true,
                 prefill: { email: user?.email || '' },
                 config: {
                   display: {
